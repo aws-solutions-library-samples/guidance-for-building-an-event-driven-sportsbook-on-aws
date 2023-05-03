@@ -120,13 +120,12 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: true
-        InviteMessageTemplate:
-          EmailMessage: "Your Sportsbook username is {username} and the temporary password is {####}"
-          EmailSubject: "Your temporary password for Sportsbook"
+      EmailVerificationMessage: "Your Sportsbook confirmation code is {####}"
+      EmailVerificationSubject: "Your confirmation code for Sportsbook"
       AutoVerifiedAttributes:
         - email
+      UsernameAttributes:
+        - 'email'
       UserPoolAddOns:
         AdvancedSecurityMode: !Ref CognitoAdvancedSecurity
       Policies:
