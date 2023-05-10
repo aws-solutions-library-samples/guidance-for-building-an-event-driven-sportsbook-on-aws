@@ -3,16 +3,25 @@ Transform: AWS::Serverless-2016-10-31
 Description: Sportsbook Event Driven Example Application
 
 Globals:
+
   Function:
-    Timeout: 3
-    Runtime: nodejs18.x
+    Runtime: python3.9
     Tracing: Active
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
 
 Parameters:
+
+  EventBusName:
+    Type: String
+    Default: "SportsbookEvents"
+    Description: Optional name for the eventbus used in this application
+
   AccessLogsBucket:
     Type: String
     Default: ""
     Description: Optional bucket for access logs. Leave blank to disable access logging
+
   CognitoAdvancedSecurity:
     Description: The type of Cognito advanced security to enable. Disabled by default.
     Type: String
@@ -26,6 +35,12 @@ Conditions:
   WithAccessLogs: !Not [!Equals [!Ref AccessLogsBucket, ""]]
 
 Resources:
+
+  EventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+        Name: !Ref EventBusName
+
   WebUIBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -136,12 +151,43 @@ Resources:
           RequireSymbols: true
           RequireUppercase: true
 
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: postConfirmation.lambda_handler
+      CodeUri: infrastructure/lambda/auth/
+      Description: Event receiver for auth events
+      Timeout: 10
+      MemorySize: 256
+      Events:
+        CognitoPostConfirmation:
+          Type: Cognito
+          Properties:
+            UserPool: !Ref UserPool
+            Trigger: PostConfirmation
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBus
+
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders:
         - COGNITO
+
+  AppSyncLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Layer containing appsync graphql utilities
+      ContentUri: infrastructure/lambda/gql/
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
 
   AppSyncLoggingRole:
     Type: AWS::IAM::Role
@@ -190,6 +236,17 @@ Resources:
     Properties:
       ApiId: !GetAtt AppSyncApi.ApiId
       DefinitionS3Location: "./schema.graphql"
+
+  # Services
+  WalletServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/wallet-service.yaml
+      Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
 Outputs:
   Region:

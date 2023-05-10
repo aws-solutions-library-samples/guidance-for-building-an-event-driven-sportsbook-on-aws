@@ -1,20 +1,35 @@
-type Project {
-  id: ID!
-  name: String!
-  createdAt: AWSDateTime
-  updatedAt: AWSDateTime
+# Wallet service
+type Wallet @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  amount: Float!
 }
 
-input CreateProjectInput {
-  name: String!
+interface Error {
+  message: String!
 }
+
+type NotFoundError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type InputError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+union WalletResult = Wallet | NotFoundError | InputError
+
+input CreateWalletInput {
+  userId: ID!
+}
+
 
 type Query {
-  getProjects: [Project]
+  getWallet: WalletResult @aws_cognito_user_pools
+  getWalletByUserId(userId: ID!): WalletResult @aws_iam
 }
 
 type Mutation {
-  createProject(input: CreateProjectInput): Project
+  createWallet(input: CreateWalletInput): WalletResult @aws_iam
 }
 
 schema {

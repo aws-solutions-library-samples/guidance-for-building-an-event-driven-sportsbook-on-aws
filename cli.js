@@ -87,7 +87,7 @@ const echoOutput = (output) => (options) => {
   }
 
   getStackDetails(samConfig, samConfigEnv)
-    .then((details) => getOutputs(details.stackName, details.region))
+    .then((details) => getStackOutputs(details.stackName, details.region))
     .then((stackOutputs) => console.log(stackOutputs[output]));
 };
 
