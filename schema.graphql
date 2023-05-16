@@ -1,7 +1,7 @@
 # Wallet service
 type Wallet @aws_cognito_user_pools @aws_iam {
   userId: ID!
-  amount: Float!
+  balance: Float!
 }
 
 interface Error {
@@ -16,12 +16,19 @@ type InputError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
-union WalletResult = Wallet | NotFoundError | InputError
+type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+union WalletResult = Wallet | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
 }
 
+input WithdrawOrDepositInput {
+  amount: Float!
+}
 
 type Query {
   getWallet: WalletResult @aws_cognito_user_pools
@@ -30,6 +37,8 @@ type Query {
 
 type Mutation {
   createWallet(input: CreateWalletInput): WalletResult @aws_iam
+  withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
 }
 
 schema {

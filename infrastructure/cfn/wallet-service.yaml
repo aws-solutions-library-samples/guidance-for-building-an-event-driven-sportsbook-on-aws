@@ -152,3 +152,19 @@ Resources:
       TypeName: Mutation
       FieldName: createWallet
       DataSourceName: !GetAtt WalletLambdaDataSource.Name
+
+  WithdrawFundsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: withdrawFunds
+      DataSourceName: !GetAtt WalletLambdaDataSource.Name
+
+  DepositFundsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: depositFunds
+      DataSourceName: !GetAtt WalletLambdaDataSource.Name
