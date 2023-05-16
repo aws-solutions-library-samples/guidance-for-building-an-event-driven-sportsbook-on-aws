@@ -20,36 +20,98 @@ dynamodb = session.resource('dynamodb')
 table = dynamodb.Table(table_name)
 
 # User pool resolvers
+
+
 @app.resolver(type_name="Query", field_name="getWallet")
 @tracer.capture_method
 def get_wallet() -> dict:
     userId = get_user_id(app.current_event)
     logger.debug(app.current_event)
     try:
-        item = table.get_item(
-            Key={"userId": userId}
-        )["Item"]
-        return wallet_response(item)
-    except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
-        return wallet_error(None, 'No wallet exists for user')
-
-
-# IAM resolvers
-@app.resolver(type_name="Query", field_name="getWalletByUserId")
-@tracer.capture_method
-def get_wallet_by_user_id(userId) -> dict:
-    if not userId:
-        return wallet_error('InputError', 'You must provide a valid userId')
-
-    try:
-        item = table.get_item(
-            Key={"userId": userId}
-        )["Item"]
+        item = _try_get_wallet(userId)
         return wallet_response(item)
     except KeyError:
         logger.info(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
+    except Exception as e:
+        logger.info({'UnknownError': e})
+        return wallet_error('Unknown error', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="withdrawFunds")
+@tracer.capture_method
+def withdraw_funds(input: dict) -> dict:
+    logger.debug(app.current_event)
+    logger.debug(input)
+    userId = get_user_id(app.current_event)
+
+    try:
+        item = _try_get_wallet(userId)
+        item['balance'] -= Decimal(input['amount'])
+
+        table.update_item(
+            Key={'userId': userId},
+            UpdateExpression="set balance=:r",
+            ExpressionAttributeValues={
+                ':r': item['balance']
+            },
+            ReturnValues="UPDATED_NEW")
+
+        return wallet_response(item)
+    except KeyError:
+        logger.info(f'Failed to get wallet for user {userId}')
+        return wallet_error('NotFoundError', 'No wallet exists for user')
+    except Exception as e:
+        logger.info({'UnknownError': e})
+        return wallet_error('Unknown error', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="depositFunds")
+@tracer.capture_method
+def deposit_funds(input: dict) -> dict:
+    logger.debug(app.current_event)
+    logger.debug(input)
+    userId = get_user_id(app.current_event)
+
+    try:
+        item = _try_get_wallet(userId)
+        item['balance'] += Decimal(input['amount'])
+
+        table.update_item(
+            Key={'userId': userId},
+            UpdateExpression="set balance=:r",
+            ExpressionAttributeValues={
+                ':r': item['balance']
+            },
+            ReturnValues="UPDATED_NEW")
+
+        return wallet_response(item)
+    except KeyError:
+        logger.info(f'Failed to get wallet for user {userId}')
+        return wallet_error('NotFoundError', 'No wallet exists for user')
+    except Exception as e:
+        logger.info({'UnknownError': e})
+        return wallet_error('Unknown error', 'An unknown error occured.')
+
+
+# IAM resolvers
+
+
+@app.resolver(type_name="Query", field_name="getWalletByUserId")
+@tracer.capture_method
+def get_wallet_by_user_id(userId: str) -> dict:
+    if not userId:
+        return wallet_error('InputError', 'You must provide a valid userId')
+
+    try:
+        item = _try_get_wallet(userId)
+        return wallet_response(item)
+    except KeyError:
+        logger.info(f'Failed to get wallet for user {userId}')
+        return wallet_error('NotFoundError', 'No wallet exists for user')
+    except Exception as e:
+        logger.info({'UnknownError': e})
+        return wallet_error('Unknown error', 'An unknown error occured.')
 
 
 @app.resolver(type_name="Mutation", field_name="createWallet")
@@ -59,10 +121,16 @@ def create_wallet(input: dict) -> dict:
     logger.debug(input)
     item = {
         'userId': input['userId'],
-        'amount': Decimal(0),
+        'balance': Decimal(0),
     }
     table.put_item(Item=item)
     return wallet_response(item)
+
+
+def _try_get_wallet(userId: str):
+    return table.get_item(
+        Key={"userId": userId}
+    )["Item"]
 
 
 def get_user_id(event: AppSyncResolverEvent):
@@ -71,6 +139,7 @@ def get_user_id(event: AppSyncResolverEvent):
 
 def wallet_error(errorType: str, error_msg: str) -> dict:
     return {'__typename': errorType, 'message': error_msg}
+
 
 def wallet_response(data: dict) -> dict:
     return {**{'__typename': 'Wallet'}, **data}

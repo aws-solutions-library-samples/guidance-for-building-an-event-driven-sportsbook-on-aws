@@ -1,0 +1,30 @@
+export const getWallet = /* GraphQL */ `
+  query GetWallet {
+    getWallet {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+export const getWalletByUserId = /* GraphQL */ `
+  query GetWalletByUserId($userId: ID!) {
+    getWalletByUserId(userId: $userId) {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;

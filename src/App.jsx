@@ -1,15 +1,20 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import diceImage from "./assets/dice.jpeg";
+
+import { Outlet, Link, useLocation } from "react-router-dom";
 
 import { Amplify, Auth } from "aws-amplify";
-import { Authenticator, ThemeProvider } from "@aws-amplify/ui-react";
+import {
+  Authenticator,
+  ThemeProvider as AmplifyThemeProvider,
+} from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
-
 import useAmplifyTheme from "./hooks/useAmplifyTheme";
 
-import { AppBar, Button, Typography } from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { Button, Typography, CssBaseline, Container } from "@mui/material";
+import { brown } from "@mui/material/colors";
+
+import SportsbookAppBar from "./components/SportsbookAppBar";
 
 import {
   AWS_REGION,
@@ -25,7 +30,25 @@ Amplify.configure({
     userPoolWebClientId: AWS_USER_POOL_WEB_CLIENT_ID,
     mandatorySignIn: true,
   },
+  aws_appsync_graphqlEndpoint: AWS_APPSYNC_API_URL,
+  aws_appsync_region: AWS_REGION,
+  aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
 });
+
+const theme = createTheme();
+
+function App({ user, signOut }) {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Container>
+        <SportsbookAppBar user={user} signOut={signOut} />
+        <img src={diceImage} alt="dice" width="100%" />
+        <Outlet />
+      </Container>
+    </ThemeProvider>
+  );
+}
 
 const components = {
   Header() {
@@ -54,43 +77,13 @@ const formFields = {
   },
 };
 
-const App = ({ user, signOut }) => {
-  const [count, setCount] = useState(0);
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <p>Welcome {user.attributes.email}</p>
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <Button onClick={signOut}>Sign Out</Button>
-    </>
-  );
-};
-
 export default function AuthenticatedApp() {
-  const theme = useAmplifyTheme();
+  const amplifyTheme = useAmplifyTheme();
   return (
-    <ThemeProvider theme={theme}>
+    <AmplifyThemeProvider amplifyTheme={theme}>
       <Authenticator components={components} formFields={formFields}>
         {({ signOut, user }) => <App signOut={signOut} user={user} />}
       </Authenticator>
-    </ThemeProvider>
+    </AmplifyThemeProvider>
   );
 }

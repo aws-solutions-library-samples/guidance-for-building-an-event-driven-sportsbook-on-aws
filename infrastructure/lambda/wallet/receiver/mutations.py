@@ -3,7 +3,7 @@ mutation CreateWallet ($input: CreateWalletInput!) {
   createWallet(input: $input) {
     ... on Wallet {
       __typename
-      amount
+      balance
       userId
     }
     ... on Error {
