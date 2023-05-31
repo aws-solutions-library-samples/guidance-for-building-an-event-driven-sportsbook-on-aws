@@ -7,12 +7,12 @@ import {
   CardContent,
   CircularProgress,
 } from "@mui/material";
-import logo from "../assets/logo.png";
+import walletLogo from "../assets/wallet.jpeg";
 
 export const WalletPending = () => {
   return (
     <Card>
-      <CardMedia sx={{ height: 200 }} image={logo} title="Wallet Image" />
+      <CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />
       <CardContent>
         <Typography gutterBottom component="div">
           Your wallet is currently processing, please wait...

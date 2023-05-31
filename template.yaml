@@ -248,6 +248,20 @@ Resources:
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
+  ThirdPartyServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/thirdparty-service.yaml
+      Parameters:
+        EventBus: !Ref EventBus
+
+  TradingServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/trading-service.yaml
+      Parameters:
+        EventBus: !Ref EventBus
+
 Outputs:
   Region:
     Description: Deployment region

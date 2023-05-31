@@ -19,11 +19,13 @@ session = boto3.Session()
 events = session.client('events')
 
 
+@tracer.capture_method
 def handle_auth_event(event: dict, context: LambdaContext) -> dict:
     if event['detail-type'] == 'UserSignedUp':
         initialise_wallet(event)
 
 
+@tracer.capture_method
 def initialise_wallet(event: dict) -> None:
     user_info = {
         'userId': event['detail']['userId']
@@ -44,6 +46,7 @@ def initialise_wallet(event: dict) -> None:
             f"createWallet failed: {response['message']}")
 
 
+@tracer.capture_method
 def raise_wallet_event(detailType: str, detail: str) -> None:
     events.put_events(
         Entries=[
