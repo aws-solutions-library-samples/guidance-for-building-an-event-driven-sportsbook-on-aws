@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+
+  Function:
+    Runtime: python3.9
+    Tracing: Active
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: thirdparty
+
+Parameters:
+
+  EventBus:
+    Type: String
+
+Resources:
+  OddsFetcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/thirdparty/fetcher/
+      Description: Lambda for fetching third party event data
+      Timeout: 10
+      MemorySize: 256
+      Events:
+        CWSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'rate(1 minute)'
+            Name: ThirdParty1Minute
+            Description: Calls the odds fetcher function
+            Enabled: true
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBus
