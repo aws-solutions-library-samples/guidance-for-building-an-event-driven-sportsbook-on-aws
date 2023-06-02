@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
 import { API } from "aws-amplify";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as queries from "../graphql/queries.js";
 import * as mutations from "../graphql/mutations.js";
-import { dark } from "@mui/material/styles/createPalette.js";
 
 export const CACHE_PATH = "wallet";
 

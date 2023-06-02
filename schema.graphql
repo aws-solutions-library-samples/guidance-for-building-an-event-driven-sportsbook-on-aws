@@ -10,6 +10,7 @@ type Event @aws_cognito_user_pools @aws_iam {
   away: String!
   start: AWSDateTime!
   end: AWSDateTime!
+  updatedAt: AWSDateTime!
 }
 
 type EventList {
@@ -64,10 +65,11 @@ type Mutation {
 }
 
 type Subscription {
-    events: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+    updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
 }
 
 schema {
   query: Query
   mutation: Mutation
+  subscription: Subscription
 }
