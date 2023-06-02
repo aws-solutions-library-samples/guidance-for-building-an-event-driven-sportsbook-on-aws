@@ -1,3 +1,24 @@
+export const getEvents = /* GraphQL */ `
+  query GetEvents($startKey: String) {
+    getEvents(startKey: $startKey) {
+      ... on EventList {
+        items {
+          eventId
+          odds
+          home
+          away
+          start
+          end
+          updatedAt
+        }
+        nextToken
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
 export const getWallet = /* GraphQL */ `
   query GetWallet {
     getWallet {

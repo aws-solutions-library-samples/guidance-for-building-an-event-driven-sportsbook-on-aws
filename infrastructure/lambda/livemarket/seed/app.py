@@ -5,6 +5,7 @@ import json
 from crhelper import CfnResource
 
 from aws_lambda_powertools import Logger
+from aws_lambda_powertools.utilities.data_classes.appsync import scalar_types_utils
 
 logger = Logger()
 
@@ -27,10 +28,11 @@ def create(event, context):
         events = json.load(f)
 
     logger.info(events)
-
+    now = scalar_types_utils.aws_datetime()
     with table.batch_writer() as batch:
-        for event in events:
-            batch.put_item(Item=event)
+        for event_item in events:
+            event_item['updatedAt'] = now
+            batch.put_item(Item=event_item)
 
     logger.info('Event seed complete')
 

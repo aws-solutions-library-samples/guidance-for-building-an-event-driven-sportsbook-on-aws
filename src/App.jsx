@@ -40,9 +40,9 @@ function App({ user, signOut }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <SportsbookAppBar user={user} signOut={signOut} />
+      <img src={diceImage} alt="dice" width="100%" />
       <Container>
-        <SportsbookAppBar user={user} signOut={signOut} />
-        <img src={diceImage} alt="dice" width="100%" />
         <Outlet />
       </Container>
     </ThemeProvider>

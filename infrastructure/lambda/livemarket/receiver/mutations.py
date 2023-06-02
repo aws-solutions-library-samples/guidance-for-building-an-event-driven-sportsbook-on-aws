@@ -8,7 +8,8 @@ mutation MyMutation ($input: UpdateEventOddsInput!) {
       home
       eventId
       end
-      away
+      away,
+      updatedAt
     }
     ... on Error {
       __typename

@@ -11,6 +11,7 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler import AppSyncResolver
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.data_classes.appsync import scalar_types_utils
 
 tracer = Tracer()
 logger = Logger()
@@ -53,10 +54,10 @@ def update_event_odds(input: dict) -> dict:
     try:
         response = table.update_item(
             Key={'eventId': input['eventId']},
-            UpdateExpression="set odds=:o",
+            UpdateExpression="set odds=:o, updatedAt=:u",
             ConditionExpression="attribute_exists(eventId)",
             ExpressionAttributeValues={
-                ':o': input['odds']},
+                ':o': input['odds'], ':u': scalar_types_utils.aws_datetime()},
             ReturnValues="ALL_NEW")
         logger.info(response)
 
