@@ -230,6 +230,7 @@ Resources:
         UserPoolId: !Ref UserPool
         AwsRegion: !Sub ${AWS::Region}
         DefaultAction: ALLOW
+      XrayEnabled: true
 
   AppSyncSchema:
     Type: AWS::AppSync::GraphQLSchema
@@ -261,6 +262,16 @@ Resources:
       Location: infrastructure/cfn/trading-service.yaml
       Parameters:
         EventBus: !Ref EventBus
+
+  LiveMarketServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/livemarket-service.yaml
+      Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
 Outputs:
   Region:

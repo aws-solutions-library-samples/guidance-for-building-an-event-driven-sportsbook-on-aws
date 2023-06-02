@@ -1,6 +1,9 @@
 from os import getenv
 import json
 import boto3
+from gql_utils import get_client
+from mutations import update_event_odds
+from gql import gql
 
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -11,27 +14,38 @@ processor = BatchProcessor(event_type=EventType.SQS)
 tracer = Tracer()
 logger = Logger()
 
+appsync_url = getenv("APPSYNC_URL")
+region = getenv("REGION")
 event_bus_name = getenv('EVENT_BUS')
+gql_client = get_client(region, appsync_url)
 session = boto3.Session()
 events = session.client('events')
 
 
 @tracer.capture_method
-def handle_thirdparty_event(event: dict, context: LambdaContext) -> dict:
-    if event['detail-type'] == 'UpdatedOdds':
-        handle_updated_odds(event)
-
-
-@tracer.capture_method
 def handle_updated_odds(item: dict) -> dict:
-    # Here we effectively just re-raise the event under the trading namespace
-    # In a real world scenario the odds would be assessed by this service to produce new odds
-    return form_event('UpdatedOdds', item['detail'])
+    update_info = {
+        'eventId': item['detail']['eventId'],
+        'odds': item['detail']['odds']
+    }
+    gql_input = {
+        'input': update_info
+    }
+    response = gql_client.execute(gql(update_event_odds), variable_values=gql_input)[
+        'updateEventOdds']
+
+    if response['__typename'] == 'Event':
+        logger.info("Odds updated")
+        return form_event('UpdatedOdds', update_info)
+    elif 'Error' in response['__typename']:
+        logger.exception("Failed to update odds")
+        raise ValueError(
+            f"updateEventOdds failed: {response['message']}")
 
 
 def form_event(detailType, detail):
     return {
-        'Source': 'com.trading',
+        'Source': 'com.livemarket',
         'DetailType': detailType,
         'Detail': json.dumps(detail),
         'EventBusName': event_bus_name
@@ -45,11 +59,11 @@ def record_handler(record: SQSRecord):
     payload = record.body
     if payload:
         item = json.loads(payload)
-        if item['source'] == 'com.thirdparty':
+        if item['source'] == 'com.trading':
             if item['detail-type'] == 'UpdatedOdds':
                 return handle_updated_odds(item)
 
-    logger.info({"message": "Unknown record type", "record": item})
+    logger.warning({"message": "Unknown record type", "record": item})
     return None
 
 
