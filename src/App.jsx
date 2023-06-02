@@ -11,8 +11,7 @@ import "@aws-amplify/ui-react/styles.css";
 import useAmplifyTheme from "./hooks/useAmplifyTheme";
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { Button, Typography, CssBaseline, Container } from "@mui/material";
-import { brown } from "@mui/material/colors";
+import { Typography, CssBaseline, Container } from "@mui/material";
 
 import SportsbookAppBar from "./components/SportsbookAppBar";
 

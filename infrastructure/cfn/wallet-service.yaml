@@ -55,7 +55,7 @@ Resources:
         - !Ref AppSyncLambdaLayer
       Events:
         UserSignedUp:
-          Type: CloudWatchEvent
+          Type: EventBridgeRule
           Properties:
             Enabled: true
             EventBusName: !Ref EventBus

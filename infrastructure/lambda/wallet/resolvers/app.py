@@ -111,7 +111,7 @@ def get_wallet_by_user_id(userId: str) -> dict:
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
         logger.info({'UnknownError': e})
-        return wallet_error('Unknown error', 'An unknown error occured.')
+        return wallet_error('UnknownError', 'An unknown error occured.')
 
 
 @app.resolver(type_name="Mutation", field_name="createWallet")
