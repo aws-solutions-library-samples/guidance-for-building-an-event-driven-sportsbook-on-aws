@@ -4,7 +4,9 @@ export const getEvents = /* GraphQL */ `
       ... on EventList {
         items {
           eventId
-          odds
+          homeOdds
+          awayOdds
+          drawOdds
           home
           away
           start

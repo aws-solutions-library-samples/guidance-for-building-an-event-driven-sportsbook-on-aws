@@ -26,7 +26,9 @@ events = session.client('events')
 def handle_updated_odds(item: dict) -> dict:
     update_info = {
         'eventId': item['detail']['eventId'],
-        'odds': item['detail']['odds']
+        'homeOdds': item['detail']['homeOdds'],
+        'awayOdds': item['detail']['awayOdds'],
+        'drawOdds': item['detail']['drawOdds']
     }
     gql_input = {
         'input': update_info

@@ -48,13 +48,19 @@ def get_new_odds():
     results = []
     sample = random.sample(KNOWN_EVENTS, 3)
     for event in sample:
-        results.append({'eventId': event['id'], 'odds': random_odds()})
+        results.append({
+            'eventId': event['id'],
+            'homeOdds': random_odds(),
+            'awayOdds': random_odds(),
+            'drawOdds': random_odds(),
+        })
 
     return results
 
 
 def random_odds():
     return f'{random.randint(2, 9)}/{random.randint(1, 9)}'
+
 
 def form_event(detailType, detail):
     return {

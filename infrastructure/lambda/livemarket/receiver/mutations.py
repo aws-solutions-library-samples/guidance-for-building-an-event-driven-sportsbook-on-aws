@@ -4,7 +4,9 @@ mutation MyMutation ($input: UpdateEventOddsInput!) {
     ... on Event {
       __typename
       start
-      odds
+      homeOdds
+      awayOdds
+      drawOdds
       home
       eventId
       end
