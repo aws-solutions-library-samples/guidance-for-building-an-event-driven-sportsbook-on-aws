@@ -6,7 +6,9 @@ export const updatedEventOdds = /* GraphQL */ `
     updatedEventOdds {
       ... on Event {
         eventId
-        odds
+        homeOdds
+        awayOdds
+        drawOdds
         home
         away
         start

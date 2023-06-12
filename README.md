@@ -20,13 +20,14 @@ There are two stages to deploying:
 Run the following command from the repository root to deploy the backend:
 
 ```bash
-sam deploy --guided
+sam build
+sam deploy --guided --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
 ```
 
 The default parameters can be accepted or overridden as desired.
 
 The stack will be deployed and config will be saved to `samconfig.toml`.
-You can omit the `--guided` CLI options for subsequent deployments.
+You can omit the `--guided` and `--capabilities` CLI options for subsequent deployments: `sam build && sam deploy`
 
 ### Deploy the frontend application
 

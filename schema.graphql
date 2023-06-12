@@ -5,7 +5,9 @@ type Wallet @aws_cognito_user_pools @aws_iam {
 
 type Event @aws_cognito_user_pools @aws_iam {
   eventId: ID!
-  odds: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
   home: String!
   away: String!
   start: AWSDateTime!
@@ -48,7 +50,9 @@ input WithdrawOrDepositInput {
 
 input UpdateEventOddsInput {
   eventId: ID!
-  odds: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
 }
 
 type Query {

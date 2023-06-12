@@ -1,82 +1,102 @@
 [
   {
     "away": "Team 1",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "e46436a8-a916-4143-a05c-99d120eabfdb",
     "home": "Team 2",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 3",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "9a3d7a1f-4cf8-4db8-a13d-421ee9c35703",
     "home": "Team 4",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 5",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "0f66c58b-81eb-42c8-a058-62e54bba6493",
     "home": "Team 6",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 7",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "a613af9f-c76d-4384-ac43-96fcae0db562",
     "home": "Team 8",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 9",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "53837eee-4ba4-49f2-87be-76969b8ee68d",
     "home": "Team 10",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 11",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "ec1fec4d-2cdb-4c54-bb43-a7f89f73107d",
     "home": "Team 12",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 13",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "250a3a85-324f-4f4b-ae8d-f0419e4a20a6",
     "home": "Team 14",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 15",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "a0ed26b1-626e-4e30-8111-cc2b8e0293d7",
     "home": "Team 16",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 17",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "8badd072-b6e2-41fe-9c55-6d719b4af546",
     "home": "Team 18",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   },
   {
     "away": "Team 19",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
     "end": "2024-01-01T16:45:00Z",
     "eventId": "ceac8915-fa87-4e08-93a7-e17c9a509fae",
     "home": "Team 20",
-    "odds": "N/A",
+    "homeOdds": "N/A",
     "start": "2024-01-01T15:00:00Z"
   }
 ]

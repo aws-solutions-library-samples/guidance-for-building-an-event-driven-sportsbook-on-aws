@@ -54,10 +54,14 @@ def update_event_odds(input: dict) -> dict:
     try:
         response = table.update_item(
             Key={'eventId': input['eventId']},
-            UpdateExpression="set odds=:o, updatedAt=:u",
+            UpdateExpression="set homeOdds=:h, awayOdds=:a, drawOdds=:d, updatedAt=:u",
             ConditionExpression="attribute_exists(eventId)",
             ExpressionAttributeValues={
-                ':o': input['odds'], ':u': scalar_types_utils.aws_datetime()},
+                ':h': input['homeOdds'],
+                ':a': input['awayOdds'],
+                ':d': input['drawOdds'],
+                ':u': scalar_types_utils.aws_datetime()
+            },
             ReturnValues="ALL_NEW")
         logger.info(response)
 

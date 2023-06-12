@@ -2,6 +2,14 @@ import { Typography, Card } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useEvents } from "../hooks/useEvents";
 
+const dateOptions = {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+};
+
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
 
@@ -18,20 +26,35 @@ export const EventOdds = () => {
         `${params.row.home || ""} vs ${params.row.away || ""}`,
     },
     {
-      field: "odds",
-      headerName: "Odds",
+      field: "homeOdds",
+      headerName: "Home Win",
+      sortable: false,
+    },
+    {
+      field: "awayOdds",
+      headerName: "Away Win",
+      sortable: false,
+    },
+    {
+      field: "drawOdds",
+      headerName: "Draw",
+      sortable: false,
     },
     {
       field: "start",
       headerName: "Starts",
+      sortable: false,
       flex: 1,
-      valueFormatter: ({ value }) => value.toLocaleString(),
+      valueFormatter: ({ value }) =>
+        new Date(value).toLocaleString("en-GB", dateOptions),
     },
     {
       field: "updatedAt",
       headerName: "Updated",
+      sortable: false,
       flex: 1,
-      valueFormatter: ({ value }) => value.toLocaleString(),
+      valueFormatter: ({ value }) =>
+        new Date(value).toLocaleString("en-GB", dateOptions),
     },
   ];
 
