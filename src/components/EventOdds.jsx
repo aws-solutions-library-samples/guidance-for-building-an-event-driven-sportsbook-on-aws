@@ -14,7 +14,6 @@ export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
 
   if (loadingEvents) return <Typography>Loading...</Typography>;
-  const sortedEvents = [...events].sort((a, b) => b.updatedAt - a.updatedAt);
 
   const columns = [
     {
@@ -64,7 +63,7 @@ export const EventOdds = () => {
         Latest Odds
       </Typography>
       <DataGrid
-        rows={sortedEvents}
+        rows={events}
         columns={columns}
         initialState={{
           pagination: {
@@ -72,9 +71,11 @@ export const EventOdds = () => {
               pageSize: 10,
             },
           },
+          sorting: {
+            sortModel: [{ field: "updatedAt", sort: "desc" }],
+          },
         }}
         getRowId={(row) => row?.eventId}
-        sortingMode="server"
         disableColumnSelector
         disableColumnFilter
         disableColumnMenu
