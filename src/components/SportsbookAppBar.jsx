@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 import MenuIcon from "@mui/icons-material/Menu";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import LogoutIcon from "@mui/icons-material/Logout";
 import {
   AppBar,
@@ -13,7 +14,14 @@ import {
   Toolbar,
   Typography,
   Stack,
+  Popover,
 } from "@mui/material";
+import {
+  usePopupState,
+  bindTrigger,
+  bindMenu,
+} from "material-ui-popup-state/hooks";
+import Wallet from "./Wallet";
 
 import { Link, useLocation } from "react-router-dom";
 
@@ -21,6 +29,7 @@ const pages = ["about"];
 
 function SportsbookAppBar({ user, signOut }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
+  const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
 
   const location = useLocation();
   useEffect(() => {
@@ -36,7 +45,7 @@ function SportsbookAppBar({ user, signOut }) {
 
   return (
     <AppBar position="sticky" color="primary">
-      <Container maxWidth="xl">
+      <Container maxWidth="xxl">
         <Toolbar disableGutters>
           <img src={logo} width={48} alt="sportsbook logo" />
           <Typography
@@ -136,6 +145,24 @@ function SportsbookAppBar({ user, signOut }) {
           <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
             {user.attributes.email}
           </Typography>
+          <IconButton color="inherit" {...bindTrigger(popupState)}>
+            <AccountBalanceIcon />
+          </IconButton>
+          <Popover
+            {...bindMenu(popupState)}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+          >
+            <Box width={300}>
+              <Wallet />
+            </Box>
+          </Popover>
           <Button color="inherit" onClick={signOut}>
             <LogoutIcon />
           </Button>

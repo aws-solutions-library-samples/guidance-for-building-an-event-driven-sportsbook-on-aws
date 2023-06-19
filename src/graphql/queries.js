@@ -21,24 +21,39 @@ export const getEvents = /* GraphQL */ `
     }
   }
 `;
-export const getWallet = /* GraphQL */ `
-  query GetWallet {
-    getWallet {
-      ... on Wallet {
+export const getBets = /* GraphQL */ `
+  query GetEvents($startKey: String) {
+    getBets(startKey: $startKey) {
+      ... on BetList {
         __typename
-        userId
-        balance
+        items {
+          betId
+          odds
+          outcome
+          placedAt
+          event {
+            away
+            awayOdds
+            drawOdds
+            end
+            eventId
+            home
+            homeOdds
+            start
+            updatedAt
+          }
+        }
+        nextToken
       }
       ... on Error {
-        __typename
         message
       }
     }
   }
 `;
-export const getWalletByUserId = /* GraphQL */ `
-  query GetWalletByUserId($userId: ID!) {
-    getWalletByUserId(userId: $userId) {
+export const getWallet = /* GraphQL */ `
+  query GetWallet {
+    getWallet {
       ... on Wallet {
         __typename
         userId

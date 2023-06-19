@@ -43,6 +43,28 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  LiveMarketHistoryStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expiry
+        Enabled: true
+
   SeedLambda:
     Type: AWS::Serverless::Function
     Description: Custom resource for seeding dynamo
@@ -146,11 +168,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref LiveMarketDataStore
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketHistoryStore
       Environment:
         Variables:
           DB_TABLE: !Ref LiveMarketDataStore
+          DB_HISTORY_TABLE: !Ref LiveMarketHistoryStore
           ACCOUNT_ID: !Ref AWS::AccountId
           APPSYNC_API_ID: !Ref AppSyncApiId
+          DB_HISTORY_RETENTION: 3600
 
   LiveMarketAppSyncRole:
     Type: AWS::IAM::Role
@@ -191,6 +217,14 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Query
       FieldName: getEvents
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  GetEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getEvent
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
 
   UpdateEventOddsResolver:

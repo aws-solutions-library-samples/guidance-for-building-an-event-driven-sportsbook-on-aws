@@ -1,19 +1,27 @@
 import diceImage from "./assets/dice.jpeg";
-
-import { Outlet, Link, useLocation } from "react-router-dom";
-
-import { Amplify, Auth } from "aws-amplify";
+import { Outlet } from "react-router-dom";
+import { Amplify } from "aws-amplify";
 import {
   Authenticator,
   ThemeProvider as AmplifyThemeProvider,
 } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import useAmplifyTheme from "./hooks/useAmplifyTheme";
-
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { Typography, CssBaseline, Container } from "@mui/material";
-
+import {
+  Typography,
+  CssBaseline,
+  Container,
+  Drawer,
+  Fab,
+  Box,
+  Stack,
+  Collapse,
+} from "@mui/material";
 import SportsbookAppBar from "./components/SportsbookAppBar";
+import BetSlip from "./components/BetSlip";
+import { BetSlipProvider } from "./providers/BetSlipProvider";
+import { useBetSlip } from "./providers/BetSlipContext";
 
 import {
   AWS_REGION,
@@ -34,17 +42,74 @@ Amplify.configure({
   aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
 });
 
-const theme = createTheme();
+const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1200,
+      xl: 1536,
+      xxl: 1800,
+    },
+  },
+});
 
 function App({ user, signOut }) {
+  const { showHub, setShowHub } = useBetSlip();
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <SportsbookAppBar user={user} signOut={signOut} />
-      <img src={diceImage} alt="dice" width="100%" />
-      <Container>
-        <Outlet />
+      <Container disableGutters={true} maxWidth="xxl">
+        <Stack
+          direction={"row"}
+          sx={{ position: "relative", height: "calc(100vh - 64px)" }}
+        >
+          <Box
+            sx={{
+              height: "100%",
+              paddingBottom: "50px",
+              position: "relative",
+              overflowY: "scroll",
+            }}
+          >
+            <img src={diceImage} alt="dice" width="100%" />
+            <Outlet />
+          </Box>
+          <Box
+            sx={{
+              height: "100%",
+              display: { lg: "flex", xs: "none" },
+              background: "#fafafa",
+            }}
+          >
+            <Collapse orientation="horizontal" in={showHub}>
+              <Box sx={{ width: "300px" }}>
+                <BetSlip />
+              </Box>
+            </Collapse>
+          </Box>
+          <Fab
+            color="primary"
+            variant="extended"
+            aria-label="add"
+            sx={{ width: 280, position: "absolute", bottom: 10, right: 10 }}
+            onClick={() => setShowHub(!showHub)}
+          >
+            {showHub ? "Close" : "Open"} Bet slip
+          </Fab>
+        </Stack>
       </Container>
+      <Drawer
+        sx={{ display: { lg: "none", xs: "block" } }}
+        anchor="right"
+        variant={"temporary"}
+        open={showHub}
+        onClose={() => setShowHub(false)}
+      >
+        <BetSlip />
+      </Drawer>
     </ThemeProvider>
   );
 }
@@ -80,9 +145,11 @@ export default function AuthenticatedApp() {
   const amplifyTheme = useAmplifyTheme();
   return (
     <AmplifyThemeProvider amplifyTheme={theme}>
-      <Authenticator components={components} formFields={formFields}>
-        {({ signOut, user }) => <App signOut={signOut} user={user} />}
-      </Authenticator>
+      <BetSlipProvider>
+        <Authenticator components={components} formFields={formFields}>
+          {({ signOut, user }) => <App signOut={signOut} user={user} />}
+        </Authenticator>
+      </BetSlipProvider>
     </AmplifyThemeProvider>
   );
 }

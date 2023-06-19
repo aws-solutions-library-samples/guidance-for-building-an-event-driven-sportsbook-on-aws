@@ -1,6 +1,7 @@
-import { Typography, Card } from "@mui/material";
+import { Typography, Card, Button, Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useEvents } from "../hooks/useEvents";
+import { useBetSlip } from "../providers/BetSlipContext";
 
 const dateOptions = {
   year: "numeric",
@@ -8,6 +9,21 @@ const dateOptions = {
   day: "numeric",
   hour: "numeric",
   minute: "numeric",
+};
+
+const renderOdds = (params) => {
+  const { addToSlip } = useBetSlip();
+
+  return (
+    <Button
+      variant="outlined"
+      size="small"
+      tabIndex={params.hasFocus ? 0 : -1}
+      onClick={() => addToSlip(params.row, params.field)}
+    >
+      {params.value}
+    </Button>
+  );
 };
 
 export const EventOdds = () => {
@@ -19,41 +35,42 @@ export const EventOdds = () => {
     {
       field: "eventName",
       headerName: "Event",
-      flex: 1,
       sortable: false,
-      valueGetter: (params) =>
-        `${params.row.home || ""} vs ${params.row.away || ""}`,
+      flex: 1,
+      renderCell: ({ row }) => (
+        <Box>
+          <Typography variant={"subtitle2"} fontWeight={600}>
+            {row.home} vs {row.away}
+          </Typography>
+          <Typography variant={"caption"}>
+            Starts at {new Date(row.start).toLocaleString("en-GB", dateOptions)}
+          </Typography>
+        </Box>
+      ),
     },
     {
       field: "homeOdds",
       headerName: "Home Win",
       sortable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
     },
     {
       field: "awayOdds",
       headerName: "Away Win",
       sortable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
     },
     {
       field: "drawOdds",
       headerName: "Draw",
       sortable: false,
-    },
-    {
-      field: "start",
-      headerName: "Starts",
-      sortable: false,
-      flex: 1,
-      valueFormatter: ({ value }) =>
-        new Date(value).toLocaleString("en-GB", dateOptions),
-    },
-    {
-      field: "updatedAt",
-      headerName: "Updated",
-      sortable: false,
-      flex: 1,
-      valueFormatter: ({ value }) =>
-        new Date(value).toLocaleString("en-GB", dateOptions),
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
     },
   ];
 

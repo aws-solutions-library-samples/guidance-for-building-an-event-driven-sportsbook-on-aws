@@ -53,10 +53,9 @@ def record_handler(record: SQSRecord):
     return None
 
 
-@logger.inject_lambda_context
+@logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(event)
     batch = event["Records"]
     with processor(records=batch, handler=record_handler):
         processed_messages = processor.process()

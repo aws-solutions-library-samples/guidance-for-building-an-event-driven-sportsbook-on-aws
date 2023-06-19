@@ -43,3 +43,33 @@ export const depositFunds = /* GraphQL */ `
     }
   }
 `;
+export const createBets = /* GraphQL */ `
+  mutation CreateBets($input: CreateBetsInput) {
+    createBets(input: $input) {
+      ... on BetList {
+        __typename
+        nextToken
+        items {
+          betId
+          outcome
+          odds
+          event {
+            away
+            awayOdds
+            drawOdds
+            end
+            eventId
+            home
+            homeOdds
+            start
+            updatedAt
+          }
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;

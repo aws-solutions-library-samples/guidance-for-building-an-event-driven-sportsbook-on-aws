@@ -145,8 +145,7 @@ def wallet_response(data: dict) -> dict:
     return {**{'__typename': 'Wallet'}, **data}
 
 
-@logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER)
+@logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(json.dumps(event))
     return app.resolve(event, context)

@@ -3,6 +3,7 @@ import random
 import json
 import boto3
 
+from fractions import Fraction
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
@@ -59,7 +60,9 @@ def get_new_odds():
 
 
 def random_odds():
-    return f'{random.randint(2, 9)}/{random.randint(1, 9)}'
+    q = Fraction(random.randint(1, 9), random.randint(2, 9))
+
+    return f'{q.numerator}/{q.denominator}'
 
 
 def form_event(detailType, detail):

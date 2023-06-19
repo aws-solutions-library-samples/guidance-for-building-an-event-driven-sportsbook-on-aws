@@ -15,7 +15,7 @@ export const WalletPending = () => {
       <CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />
       <CardContent>
         <Typography gutterBottom component="div">
-          Your wallet is currently processing, please wait...
+          Your wallet is currently loading, please wait...
         </Typography>
         <Box
           sx={{
