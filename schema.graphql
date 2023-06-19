@@ -15,10 +15,30 @@ type Event @aws_cognito_user_pools @aws_iam {
   updatedAt: AWSDateTime!
 }
 
-type EventList {
+type EventList @aws_cognito_user_pools @aws_iam {
   items: [Event]!
   nextToken: String
 }
+
+type Bet @aws_cognito_user_pools @aws_iam {
+  betId: ID!
+  event: Event!
+  outcome: EventOutcome!
+  odds: String!
+  amount: Float!
+  placedAt: AWSDateTime!
+}
+
+type BetList @aws_cognito_user_pools @aws_iam {
+  items: [Bet]!
+  nextToken: String
+}
+
+ enum EventOutcome {
+    homeWin
+    awayWin
+    draw
+ }
 
 interface Error {
   message: String!
@@ -39,6 +59,7 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
 union WalletResult = Wallet | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
@@ -55,10 +76,23 @@ input UpdateEventOddsInput {
   drawOdds: String!
 }
 
+input BetRequest {
+  eventId: ID!
+  outcome: EventOutcome
+  odds: String!
+  amount: Float!
+}
+
+input CreateBetsInput {
+  bets: [BetRequest]!
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
+  getBets(startKey: String): BetsResult @aws_cognito_user_pools
   getWalletByUserId(userId: ID!): WalletResult @aws_iam
+  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam
 }
 
 type Mutation {
@@ -66,10 +100,11 @@ type Mutation {
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
 }
 
 type Subscription {
-    updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
 }
 
 schema {
