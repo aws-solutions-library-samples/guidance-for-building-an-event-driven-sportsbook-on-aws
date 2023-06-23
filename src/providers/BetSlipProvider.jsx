@@ -22,13 +22,22 @@ export function BetSlipProvider(props) {
     setPendingBets([...pendingBets, newPendingBet]);
   };
 
+  const removeFromSlip = (bet) => {
+    console.log('removing bet from slip. bet: ', bet);
+    let newPendingBets = [];
+    pendingBets.forEach(b => {
+      if (b != bet) newPendingBets.push(b)
+    });
+    setPendingBets(newPendingBets);
+  }
+
   const clearSlip = () => {
     setPendingBets([]);
   };
 
   return (
     <betSlipContext.Provider
-      value={{ showHub, setShowHub, pendingBets, addToSlip, clearSlip }}
+      value={{ showHub, setShowHub, pendingBets, addToSlip, removeFromSlip, clearSlip }}
       {...props}
     />
   );
