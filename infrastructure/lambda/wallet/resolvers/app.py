@@ -47,7 +47,13 @@ def withdraw_funds(input: dict) -> dict:
 
     try:
         item = _try_get_wallet(userId)
-        item['balance'] -= Decimal(input['amount'])
+        withdrawAmount = Decimal(input['amount'])
+        logger.info(f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
+        if ((item['balance'] - withdrawAmount) >= 0):
+            item['balance'] -= withdrawAmount
+        else:
+            logger.info(f'Insufficient funds for withdrawal request')
+            return wallet_error('InsufficientFunds', 'Wallet contains insufficuient funds to withdraw') 
 
         table.update_item(
             Key={'userId': userId},

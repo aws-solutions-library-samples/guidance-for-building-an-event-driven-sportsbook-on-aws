@@ -21,11 +21,19 @@ export const Wallet = () => {
   const { mutateAsync: depositFunds } = useDepositFunds();
 
   const handleDeposit = () => depositFunds({ data: { amount: 10 } });
-  const handleWithdrawal = () => withdrawFunds({ data: { amount: 10 } });
+  
+  const handleWithdrawal = () => {
+    withdrawFunds({ data: { amount: 10 } }).then((res) => {
+      console.log('withdrawResult:', res);
+    }).catch((err)=> {
+      console.log('error withdrawing money: ', err);
+      // show error to user
+    });
+  }
 
   if (loadingWallet) return <WalletPending />;
 
-  console.log(wallet);
+  //console.log(wallet);
   return (
     <Card>
       <CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />
