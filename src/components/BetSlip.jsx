@@ -16,7 +16,17 @@ export const BetSlip = () => {
   const { mutateAsync: createBets } = useCreateBets();
 
   const handlePlaceBets = () => {
-    createBets({ data: { bets: pendingBets } }).then(clearSlip);
+    createBets({ data: { bets: pendingBets } })
+    .then(clearSlip)
+    .catch((err) => {
+      if(err.message.includes("InsufficientFunds")){
+        console.log('uhoh! Insufficent funds!');
+        // TODO: Show funds error to user
+      }else{
+        console.log('There was a problem placing your bet')
+        // TODO: Show generic error to user
+      }
+    });
   };
 
   return (

@@ -44,7 +44,7 @@ interface Error {
   message: String!
 }
 
-type InsufficientFunds implements Error @aws_cognito_user_pools @aws_iam {
+type InsufficientFundsError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
@@ -60,16 +60,21 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
-union WalletResult = Wallet | InsufficientFunds | NotFoundError | InputError | UnknownError
+union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
-union BetsResult = BetList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
 }
 
 input WithdrawOrDepositInput {
+  amount: Float!
+}
+
+input DeductFundsInput {
+  userId: ID!
   amount: Float!
 }
 
@@ -104,6 +109,7 @@ type Mutation {
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  deductFunds(input: DeductFundsInput): WalletResult @aws_iam
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
 }
 
