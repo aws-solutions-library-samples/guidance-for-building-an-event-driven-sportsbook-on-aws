@@ -47,7 +47,13 @@ def withdraw_funds(input: dict) -> dict:
 
     try:
         item = _try_get_wallet(userId)
-        item['balance'] -= Decimal(input['amount'])
+        withdrawAmount = Decimal(input['amount'])
+        logger.info(f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
+        if ((item['balance'] - withdrawAmount) >= 0):
+            item['balance'] -= withdrawAmount
+        else:
+            logger.info(f'Insufficient funds for withdrawal request')
+            return wallet_error('InsufficientFundsError', 'Wallet contains insufficuient funds to withdraw') 
 
         table.update_item(
             Key={'userId': userId},
@@ -125,6 +131,40 @@ def create_wallet(input: dict) -> dict:
     }
     table.put_item(Item=item)
     return wallet_response(item)
+
+
+@app.resolver(type_name="Mutation", field_name="deductFunds")
+@tracer.capture_method
+def deduct_funds(input: dict) -> dict:
+    logger.info(app.current_event)
+    logger.info(input)
+
+    userId = input['userId']
+    amount = Decimal(input['amount'])
+
+    try:
+        item = _try_get_wallet(userId)
+        if ((item['balance'] - amount) >= 0):
+            item['balance'] -= amount
+        else:
+            logger.info(f'Insufficient funds to deduct')
+            return wallet_error('InsufficientFundsError', 'Wallet contains insufficient funds to deduct')
+        
+        table.update_item(
+            Key={'userId': userId},
+            UpdateExpression="set balance=:r",
+            ExpressionAttributeValues={
+                ':r': item['balance']
+            },
+            ReturnValues="UPDATED_NEW")
+
+        return wallet_response(item)
+    except KeyError:
+        logger.info(f'Failed to get wallet for user {userId}')
+        return wallet_error('NotFoundError', 'No wallet exists for user')
+    except Exception as e:
+        logger.info({'Unknown error', f'An unknown error occured:{e}'})
+        return wallet_error('UnknownError', 'An unknown error occured.')
 
 
 def _try_get_wallet(userId: str):

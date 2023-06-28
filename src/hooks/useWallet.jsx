@@ -33,13 +33,19 @@ export const useWithdrawFunds = (config = {}) => {
       API.graphql({
         query: mutations.withdrawFunds,
         variables: { input: data },
+      }).then((res)=> {
+        const wallet = res.data.withdrawFunds;
+        if (wallet["__typename"].includes("Error"))
+          throw new Error(wallet["message"]);
+        return wallet;
       }),
     {
       onSuccess: () => {
         return queryClient.invalidateQueries([CACHE_PATH]);
       },
       onError: (err, { id, dataType }) => {
-        console.error(err);
+        //TODO: Fix error raising so Wallet.jsx can gracefully handle insufficient funds error to user
+        return { err };
       },
       ...config,
     }

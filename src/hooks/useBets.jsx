@@ -36,14 +36,14 @@ export const useCreateBets = (config = {}) => {
       }).then((res) => {
         const bets = res.data.createBets;
         if (bets["__typename"].includes("Error"))
-          throw new Error(bets["message"]);
+          throw new Error(bets["__typename"]);
       }),
     {
       onSuccess: () => {
         return queryClient.invalidateQueries([CACHE_PATH]);
       },
-      onError: (err, { id, dataType }) => {
-        console.error(err);
+      onError: (err) => {
+        return err
       },
       ...config,
     }

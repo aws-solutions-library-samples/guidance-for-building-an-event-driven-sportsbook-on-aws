@@ -66,6 +66,8 @@ Resources:
                 - appsync:GraphQL
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Query/fields/getEvent
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/withdrawFunds
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/deductFunds
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
