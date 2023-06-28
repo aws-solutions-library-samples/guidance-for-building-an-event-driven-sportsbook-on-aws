@@ -17,11 +17,15 @@ import {
   Box,
   Stack,
   Collapse,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import SportsbookAppBar from "./components/SportsbookAppBar";
 import BetSlip from "./components/BetSlip";
 import { BetSlipProvider } from "./providers/BetSlipProvider";
+import { GlobalProvider } from "./providers/GlobalProvider";
 import { useBetSlip } from "./providers/BetSlipContext";
+import { useGlobal } from "./providers/GlobalContext";
 
 import {
   AWS_REGION,
@@ -57,11 +61,22 @@ const theme = createTheme({
 
 function App({ user, signOut }) {
   const { showHub, setShowHub } = useBetSlip();
+  const {
+    bShowSnackbar,
+    closeSnackbar,
+    snackbarMessage,
+    snackbarSeverity,
+  } = useGlobal();
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <SportsbookAppBar user={user} signOut={signOut} />
       <Container disableGutters={true} maxWidth="xxl">
+        <Snackbar open={bShowSnackbar} autoHideDuration={6000} onClose={closeSnackbar} anchorOrigin={{vertical: 'top', horizontal: 'center'}} >
+          <Alert onClose={closeSnackbar} severity={snackbarSeverity} sx={{width: '100%'}} >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
         <Stack
           direction={"row"}
           sx={{ position: "relative", height: "calc(100vh - 64px)" }}
@@ -145,11 +160,13 @@ export default function AuthenticatedApp() {
   const amplifyTheme = useAmplifyTheme();
   return (
     <AmplifyThemeProvider amplifyTheme={theme}>
-      <BetSlipProvider>
-        <Authenticator components={components} formFields={formFields}>
-          {({ signOut, user }) => <App signOut={signOut} user={user} />}
-        </Authenticator>
-      </BetSlipProvider>
+      <GlobalProvider>
+        <BetSlipProvider>
+          <Authenticator components={components} formFields={formFields}>
+            {({ signOut, user }) => <App signOut={signOut} user={user} />}
+          </Authenticator>
+        </BetSlipProvider>
+      </GlobalProvider>
     </AmplifyThemeProvider>
   );
 }

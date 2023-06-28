@@ -23,7 +23,6 @@ export function BetSlipProvider(props) {
   };
 
   const removeFromSlip = (bet) => {
-    console.log('removing bet from slip. bet: ', bet);
     let newPendingBets = [];
     pendingBets.forEach(b => {
       if (b != bet) newPendingBets.push(b)
@@ -37,7 +36,11 @@ export function BetSlipProvider(props) {
 
   return (
     <betSlipContext.Provider
-      value={{ showHub, setShowHub, pendingBets, addToSlip, removeFromSlip, clearSlip }}
+      value={{ 
+        showHub, setShowHub, 
+        pendingBets, 
+        addToSlip, removeFromSlip, clearSlip
+      }}
       {...props}
     />
   );

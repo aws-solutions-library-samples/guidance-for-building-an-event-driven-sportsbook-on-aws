@@ -44,7 +44,6 @@ export const useWithdrawFunds = (config = {}) => {
         return queryClient.invalidateQueries([CACHE_PATH]);
       },
       onError: (err, { id, dataType }) => {
-        //TODO: Fix error raising so Wallet.jsx can gracefully handle insufficient funds error to user
         return { err };
       },
       ...config,

@@ -15,19 +15,21 @@ import {
   useDepositFunds,
 } from "../hooks/useWallet";
 
+import { useGlobal } from "../providers/GlobalContext";
+
 export const Wallet = () => {
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { mutateAsync: withdrawFunds } = useWithdrawFunds();
   const { mutateAsync: depositFunds } = useDepositFunds();
+  const { showError, showSuccess } = useGlobal();
 
   const handleDeposit = () => depositFunds({ data: { amount: 10 } });
   
   const handleWithdrawal = () => {
     withdrawFunds({ data: { amount: 10 } }).then((res) => {
-      console.log('withdrawResult:', res);
+      showSuccess('Funds withdrawn successfully')
     }).catch((err)=> {
-      console.log('error withdrawing money: ', err);
-      // show error to user
+      showError('Insufficient funds to waithdraw')
     });
   }
 

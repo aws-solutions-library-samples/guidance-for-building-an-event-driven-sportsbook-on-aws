@@ -9,22 +9,30 @@ import {
 import BetSlipItem from "./BetSlipItem";
 
 import { useBetSlip } from "../providers/BetSlipContext";
+import { useGlobal } from "../providers/GlobalContext";
 import { useCreateBets } from "../hooks/useBets";
 
 export const BetSlip = () => {
-  const { pendingBets, clearSlip } = useBetSlip();
+  const {
+    showError,
+    showSuccess,
+  } = useGlobal();
+  const { 
+    pendingBets, clearSlip, 
+  } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
   const handlePlaceBets = () => {
     createBets({ data: { bets: pendingBets } })
-    .then(clearSlip)
+    .then(() => {
+      showSuccess("Bets placed. Good luck!")
+      clearSlip();
+    })
     .catch((err) => {
       if(err.message.includes("InsufficientFunds")){
-        console.log('uhoh! Insufficent funds!');
-        // TODO: Show funds error to user
-      }else{
-        console.log('There was a problem placing your bet')
-        // TODO: Show generic error to user
+        showError("Insufficient Funds")
+      }else{ 
+        showError("Unidentified Error")
       }
     });
   };
