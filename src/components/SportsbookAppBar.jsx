@@ -3,6 +3,10 @@ import logo from "../assets/logo.png";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import LogoutIcon from "@mui/icons-material/Logout";
+import CurrencyPoundIcon from '@mui/icons-material/CurrencyPound';
+import EuroIcon from '@mui/icons-material/Euro';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+
 import {
   AppBar,
   Box,
@@ -22,6 +26,7 @@ import {
   bindMenu,
 } from "material-ui-popup-state/hooks";
 import Wallet from "./Wallet";
+import { useGlobal } from "../providers/GlobalContext";
 
 import { Link, useLocation } from "react-router-dom";
 
@@ -29,6 +34,7 @@ const pages = ["about"];
 
 function SportsbookAppBar({ user, signOut }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
+  const { currencySymbol, toggleCurrency } = useGlobal();
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
 
   const location = useLocation();
@@ -163,6 +169,17 @@ function SportsbookAppBar({ user, signOut }) {
               <Wallet />
             </Box>
           </Popover>
+          <Button color="inherit" onClick={toggleCurrency}>
+            {currencySymbol == '£' &&
+              <CurrencyPoundIcon />
+            }
+            {currencySymbol == '€' &&
+              <EuroIcon />
+            }
+            {currencySymbol == '$' &&
+              <AttachMoneyIcon />
+            }
+          </Button>
           <Button color="inherit" onClick={signOut}>
             <LogoutIcon />
           </Button>

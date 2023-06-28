@@ -1,5 +1,6 @@
 import { Box, Typography, Card, CardContent, Button } from "@mui/material";
 import { useBetSlip } from "../providers/BetSlipContext";
+import { useGlobal } from "../providers/GlobalContext";
 
 const conditionMap = {
   homeWin: "Home Win",
@@ -9,6 +10,7 @@ const conditionMap = {
 
 export const BetSlipItem = ({ bet }) => {
   const { removeFromSlip } = useBetSlip();
+  const { currencySymbol } = useGlobal();
   return (
     <Card>
       <CardContent>
@@ -17,7 +19,7 @@ export const BetSlipItem = ({ bet }) => {
           <Typography variant={"subtitle2"}>
             Odds {bet.odds} - {conditionMap[bet.outcome]}
           </Typography>
-          <Typography variant={"caption"}>£{bet.amount}</Typography>
+          <Typography variant={"caption"}>{currencySymbol}{(bet.amount/100).toFixed(2)}</Typography>
           <Button onClick={() => removeFromSlip(bet)}>Remove</Button>
         </Box>
       </CardContent>

@@ -5,6 +5,7 @@ export function GlobalProvider(props) {
     const [bShowSnackbar, setShowSnackbar] = useState(false);
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const [snackbarMessage, setSnackbarMessage] = useState('undefined error');
+    const [currencySymbol, setCurrency] = useState('£');
 
     const closeSnackbar = () => {
         setSnackbarMessage();
@@ -29,6 +30,22 @@ export function GlobalProvider(props) {
         setShowSnackbar(true);
     }
 
+    const toggleCurrency = () => {
+        switch(currencySymbol){
+            case '£':
+                setCurrency('€');
+                return;
+            case '€':
+                setCurrency('$');
+                return;
+            case '$':
+                setCurrency('£');
+                return;
+            default:
+                setCurrency('£');
+        }
+    }
+
     return (
         <globalContext.Provider
             value={{
@@ -39,6 +56,8 @@ export function GlobalProvider(props) {
                 showSuccess,
                 snackbarMessage,
                 snackbarSeverity,
+                currencySymbol,
+                toggleCurrency,
             }}
             {...props}
         />

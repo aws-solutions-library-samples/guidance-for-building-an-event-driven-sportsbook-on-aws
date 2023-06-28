@@ -21,7 +21,7 @@ export const Wallet = () => {
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { mutateAsync: withdrawFunds } = useWithdrawFunds();
   const { mutateAsync: depositFunds } = useDepositFunds();
-  const { showError, showSuccess } = useGlobal();
+  const { showError, showSuccess, currencySymbol } = useGlobal();
 
   const handleDeposit = () => depositFunds({ data: { amount: 10 } });
   
@@ -44,7 +44,7 @@ export const Wallet = () => {
           Your Balance
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          £{wallet.balance.toFixed(2)}
+          {currencySymbol}{(wallet.balance/100).toFixed(2)}
         </Typography>
       </CardContent>
       <CardActions>
