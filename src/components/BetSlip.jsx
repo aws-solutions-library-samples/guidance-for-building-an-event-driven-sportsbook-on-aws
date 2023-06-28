@@ -15,6 +15,7 @@ import { useCreateBets } from "../hooks/useBets";
 export const BetSlip = () => {
   const {
     showError,
+    showSuccess,
   } = useGlobal();
   const { 
     pendingBets, clearSlip, 
@@ -23,7 +24,10 @@ export const BetSlip = () => {
 
   const handlePlaceBets = () => {
     createBets({ data: { bets: pendingBets } })
-    .then(clearSlip)
+    .then(() => {
+      showSuccess("Bets placed. Good luck!")
+      clearSlip();
+    })
     .catch((err) => {
       if(err.message.includes("InsufficientFunds")){
         showError("Insufficient Funds")

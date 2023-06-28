@@ -21,13 +21,13 @@ export const Wallet = () => {
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { mutateAsync: withdrawFunds } = useWithdrawFunds();
   const { mutateAsync: depositFunds } = useDepositFunds();
-  const { showError } = useGlobal();
+  const { showError, showSuccess } = useGlobal();
 
   const handleDeposit = () => depositFunds({ data: { amount: 10 } });
   
   const handleWithdrawal = () => {
     withdrawFunds({ data: { amount: 10 } }).then((res) => {
-      console.log('withdrawResult:', res);
+      showSuccess('Funds withdrawn successfully')
     }).catch((err)=> {
       showError('Insufficient funds to waithdraw')
     });
