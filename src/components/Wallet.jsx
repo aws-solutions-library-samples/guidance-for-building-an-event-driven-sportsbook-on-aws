@@ -23,12 +23,18 @@ export const Wallet = () => {
   const { mutateAsync: depositFunds } = useDepositFunds();
   const { showError, showSuccess, currencySymbol } = useGlobal();
 
-  const handleDeposit = () => depositFunds({ data: { amount: 10 } });
+  const handleDeposit = () => {
+    depositFunds({ data: { amount: 10 } }).then(() => {
+      showSuccess('Funds added successfully')
+    }).catch(()=> {
+      showError('Funds could not be added')
+    })
+  }
   
   const handleWithdrawal = () => {
-    withdrawFunds({ data: { amount: 10 } }).then((res) => {
+    withdrawFunds({ data: { amount: 10 } }).then(() => {
       showSuccess('Funds withdrawn successfully')
-    }).catch((err)=> {
+    }).catch(()=> {
       showError('Insufficient funds to waithdraw')
     });
   }

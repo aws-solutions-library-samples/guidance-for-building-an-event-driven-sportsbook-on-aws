@@ -133,7 +133,7 @@ const components = {
   Header() {
     return (
       <Typography textAlign={"center"} variant={"h4"} mb={2}>
-        Sportsbook
+        AWS Event Driven Sportsbook
       </Typography>
     );
   },
