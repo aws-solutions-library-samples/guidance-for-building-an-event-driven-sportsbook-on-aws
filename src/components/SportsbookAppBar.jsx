@@ -30,7 +30,7 @@ import { useGlobal } from "../providers/GlobalContext";
 
 import { Link, useLocation } from "react-router-dom";
 
-const pages = ["about"];
+const pages = ["About", "Admin"];
 
 function SportsbookAppBar({ user, signOut }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
