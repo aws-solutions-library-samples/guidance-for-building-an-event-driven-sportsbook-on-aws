@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  CircularProgress,
 } from "@mui/material";
 
 import BetSlipItem from "./BetSlipItem";
@@ -19,16 +20,20 @@ export const BetSlip = () => {
   } = useGlobal();
   const { 
     pendingBets, clearSlip, 
+    betInProgress, setInProgress,
   } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
   const handlePlaceBets = () => {
+    setInProgress(true);
     createBets({ data: { bets: pendingBets } })
     .then(() => {
+      setInProgress(false);
       showSuccess("Bets placed. Good luck!")
       clearSlip();
     })
     .catch((err) => {
+      setInProgress(false);
       if(err.message.includes("InsufficientFunds")){
         showError("Insufficient Funds")
       }else{ 
@@ -56,9 +61,9 @@ export const BetSlip = () => {
           onClick={handlePlaceBets}
           size="small"
           variant="contained"
-          disabled={!pendingBets.length}
+          disabled={betInProgress || !pendingBets.length}
         >
-          Place Bets
+          {betInProgress ? <CircularProgress /> : <Typography>Place Bets</Typography>}
         </Button>
       </CardActions>
     </Card>

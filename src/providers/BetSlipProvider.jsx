@@ -4,6 +4,7 @@ import { betSlipContext } from "./BetSlipContext.js";
 export function BetSlipProvider(props) {
   const [showHub, setShowHub] = useState(true);
   const [pendingBets, setPendingBets] = useState([]);
+  const [betInProgress, setInProgress] = useState(false);
 
   const outcomeMap = {
     homeOdds: "homeWin",
@@ -39,6 +40,7 @@ export function BetSlipProvider(props) {
       value={{ 
         showHub, setShowHub, 
         pendingBets, 
+        betInProgress, setInProgress,
         addToSlip, removeFromSlip, clearSlip
       }}
       {...props}
