@@ -1,11 +1,13 @@
 import {
   Button,
+  Box,
   Typography,
   Card,
   CardContent,
   CardActions,
   CircularProgress,
 } from "@mui/material";
+import { green } from '@mui/material/colors';
 
 import BetSlipItem from "./BetSlipItem";
 
@@ -23,6 +25,15 @@ export const BetSlip = () => {
     betInProgress, setInProgress,
   } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
+
+  const buttonSx = {
+    ...(pendingBets.length > 0 && {
+      bgcolor: green[500],
+      '&:hover': {
+        bgcolor: green[700],
+      },
+    }),
+  };
 
   const handlePlaceBets = () => {
     setInProgress(true);
@@ -57,14 +68,30 @@ export const BetSlip = () => {
         )}
       </CardContent>
       <CardActions>
-        <Button
-          onClick={handlePlaceBets}
-          size="small"
-          variant="contained"
-          disabled={betInProgress || !pendingBets.length}
-        >
-          {betInProgress ? <CircularProgress /> : <Typography>Place Bets</Typography>}
-        </Button>
+        <Box sx={{ m: 1, position: 'relative' }}>
+          <Button
+            onClick={handlePlaceBets}
+            size="small"
+            sx={buttonSx}
+            variant="contained"
+            disabled={betInProgress || !pendingBets.length}
+          >
+            Place Bets
+          </Button>
+          {betInProgress && (
+              <CircularProgress 
+              size={24}
+              sx={{
+                color: green[500],
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                marginTop: '-12px',
+                marginLeft: '-12px',
+              }}
+            />
+          )}
+        </Box>
       </CardActions>
     </Card>
   );
