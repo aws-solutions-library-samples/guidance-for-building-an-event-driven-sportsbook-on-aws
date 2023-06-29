@@ -13,6 +13,7 @@ type Event @aws_cognito_user_pools @aws_iam {
   start: AWSDateTime!
   end: AWSDateTime!
   updatedAt: AWSDateTime!
+  status: EventStatus!
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -38,6 +39,12 @@ type BetList @aws_cognito_user_pools @aws_iam {
     homeWin
     awayWin
     draw
+ }
+
+ enum EventStatus {
+    running
+    finished
+    settled
  }
 
 interface Error {
