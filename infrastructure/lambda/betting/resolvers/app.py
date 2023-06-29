@@ -84,6 +84,8 @@ def create_bets(input: dict) -> dict:
             bet['placedAt'] = placement_time
             processed_bets.append(bet)
 
+        # TODO - check market status (e.g., not Closed or Suspended)
+        
         # TODO - call a handlePayments mutation to deduct the amounts from the wallet
         walletResponse = handle_funds(userId, amount = 10.0)
         if 'InsufficientFundsError' in walletResponse['__typename']:
