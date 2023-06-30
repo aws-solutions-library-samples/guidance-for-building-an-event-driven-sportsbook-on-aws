@@ -148,6 +148,7 @@ function SportsbookAppBar({ user, signOut }) {
             sx={{
               ml: 2,
               mr: 2,
+              mb: 0.5,
               display: { xs: "none", md: "flex" },
               fontFamily: "monospace",
               fontWeight: 700,
@@ -156,7 +157,7 @@ function SportsbookAppBar({ user, signOut }) {
               textDecoration: "none",
             }}
           >
-            Sportsbook
+            AWS Event Driven Sportsbook
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
