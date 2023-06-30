@@ -1,24 +1,30 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
-import MenuIcon from "@mui/icons-material/Menu";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import LogoutIcon from "@mui/icons-material/Logout";
-import CurrencyPoundIcon from '@mui/icons-material/CurrencyPound';
+
 import EuroIcon from '@mui/icons-material/Euro';
+import CurrencyPoundIcon from '@mui/icons-material/CurrencyPound';
+import LogoutIcon from '@mui/icons-material/Logout'
+import Settings from '@mui/icons-material/Settings';
+import ListItemIcon from '@mui/material/ListItemIcon';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import MenuIcon from '@mui/icons-material/Menu';
 
 import {
   AppBar,
   Box,
+  Divider,
   Button,
   Container,
   IconButton,
-  Menu,
   MenuItem,
+  Menu,
   Toolbar,
   Typography,
   Stack,
   Popover,
+  Tooltip,
+  Avatar,
 } from "@mui/material";
 import {
   usePopupState,
@@ -36,6 +42,10 @@ function SportsbookAppBar({ user, signOut }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const { currencySymbol, toggleCurrency } = useGlobal();
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
+  const profileMenuState = usePopupState({ variant: "popover", popupId: "profile"});
+
+  // const [anchorElProfile, setAnchorElProfile] = useState(null);
+  // const profileMenuOpen = Boolean(anchorElProfile);
 
   const location = useLocation();
   useEffect(() => {
@@ -48,6 +58,82 @@ function SportsbookAppBar({ user, signOut }) {
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
+
+  const accountSettings = () => {
+    return (
+      <Box>
+        <Tooltip title="Account Settings">
+          <IconButton 
+           {...bindTrigger(profileMenuState)}
+          >
+            <Avatar />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          {...bindMenu(profileMenuState)}
+          PaperProps={{
+            elevation: 0,
+            sx: {
+              overflow: 'visible',
+              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              mt: 1.5,
+              '& .MuiAvatar-root': {
+                width: 32,
+                height: 32,
+                ml: -0.5,
+                mr: 1,
+              },
+              '&:before': {
+                content: '""',
+                display: 'block',
+                position: 'absolute',
+                top: 0,
+                right: 14,
+                width: 10,
+                height: 10,
+                bgcolor: 'background.paper',
+                transform: 'translateY(-50%) rotate(45deg)',
+                zIndex: 0,
+              },
+            },
+          }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        >
+          <MenuItem sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
+            <Avatar /> {user.attributes.email}
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={toggleCurrency}>
+            <ListItemIcon>
+              {currencySymbol == '£' &&
+                <CurrencyPoundIcon />
+              }
+              {currencySymbol == '€' &&
+                <EuroIcon />
+              }
+              {currencySymbol == '$' &&
+                <AttachMoneyIcon />
+              }
+            </ListItemIcon>
+            Switch currency
+          </MenuItem>
+          <MenuItem onClick={handleCloseNavMenu}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+          <MenuItem onClick={signOut}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
+        </Menu>
+      </Box>
+    );
+  }
 
   return (
     <AppBar position="sticky" color="primary">
@@ -148,9 +234,7 @@ function SportsbookAppBar({ user, signOut }) {
               </Button>
             ))}
           </Stack>
-          <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-            {user.attributes.email}
-          </Typography>
+
           <IconButton color="inherit" {...bindTrigger(popupState)}>
             <AccountBalanceIcon />
           </IconButton>
@@ -169,20 +253,9 @@ function SportsbookAppBar({ user, signOut }) {
               <Wallet />
             </Box>
           </Popover>
-          <Button color="inherit" onClick={toggleCurrency}>
-            {currencySymbol == '£' &&
-              <CurrencyPoundIcon />
-            }
-            {currencySymbol == '€' &&
-              <EuroIcon />
-            }
-            {currencySymbol == '$' &&
-              <AttachMoneyIcon />
-            }
-          </Button>
-          <Button color="inherit" onClick={signOut}>
-            <LogoutIcon />
-          </Button>
+          
+          {accountSettings()}
+
         </Toolbar>
       </Container>
     </AppBar>
