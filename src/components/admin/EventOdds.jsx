@@ -125,9 +125,6 @@ export const EventOdds = () => {
 
   return (
     <Card>
-      <Typography variant="h5" sx={{ padding: 2 }}>
-        Current Events
-      </Typography>
       <DataGrid
         rows={events}
         columns={columns}
