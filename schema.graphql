@@ -34,6 +34,12 @@ type BetList @aws_cognito_user_pools @aws_iam {
   nextToken: String
 }
 
+type SystemEvent @aws_cognito_user_pools @aws_iam {
+  source: String!
+  detailType: String
+  detail: String
+}
+
  enum EventOutcome {
     homeWin
     awayWin
@@ -64,6 +70,7 @@ union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputErro
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
 union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
@@ -96,6 +103,12 @@ input CreateBetsInput {
   bets: [BetRequest]!
 }
 
+input SystemEventInput {
+  source: String!
+  detailType: String
+  detail: String
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
@@ -111,10 +124,12 @@ type Mutation {
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   deductFunds(input: DeductFundsInput): WalletResult @aws_iam
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
 }
 
 schema {
