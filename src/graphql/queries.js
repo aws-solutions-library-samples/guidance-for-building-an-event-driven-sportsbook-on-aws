@@ -66,3 +66,25 @@ export const getWallet = /* GraphQL */ `
     }
   }
 `;
+export const getEvent = /* GraphQL */ `
+  query GetEvent($eventId: ID!) {
+    getEvent(eventId: $eventId) {
+      ... on Event {
+        __typename
+        away
+        awayOdds
+        drawOdds
+        end
+        eventId
+        home
+        homeOdds
+        start
+        updatedAt
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
