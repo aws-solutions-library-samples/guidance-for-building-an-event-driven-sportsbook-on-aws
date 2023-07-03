@@ -143,6 +143,11 @@ Resources:
         - 'email'
       UserPoolAddOns:
         AdvancedSecurityMode: !Ref CognitoAdvancedSecurity
+      Schema:
+        - Name: "isLocked"
+          AttributeDataType: String
+          Required: false
+          Mutable: true
       Policies:
         PasswordPolicy:
           MinimumLength: 8
