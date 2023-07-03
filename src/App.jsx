@@ -1,6 +1,10 @@
 import diceImage from "./assets/dice.jpeg";
 import { Outlet } from "react-router-dom";
 import { Amplify } from "aws-amplify";
+import { useEffect, useState } from "react";
+import { useUser } from "./hooks/useUser";
+
+
 import {
   Authenticator,
   ThemeProvider as AmplifyThemeProvider,
@@ -56,11 +60,14 @@ const theme = createTheme({
 });
 
 function App({ user, signOut }) {
+  
   const { showHub, setShowHub } = useBetSlip();
+  const isLocked = useUser(user);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SportsbookAppBar user={user} signOut={signOut} />
+      <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} />
       <Container disableGutters={true} maxWidth="xxl">
         <Stack
           direction={"row"}
@@ -86,7 +93,7 @@ function App({ user, signOut }) {
           >
             <Collapse orientation="horizontal" in={showHub}>
               <Box sx={{ width: "300px" }}>
-                <BetSlip />
+                <BetSlip isLocked={isLocked}/>
               </Box>
             </Collapse>
           </Box>
@@ -108,7 +115,7 @@ function App({ user, signOut }) {
         open={showHub}
         onClose={() => setShowHub(false)}
       >
-        <BetSlip />
+        <BetSlip isLocked={isLocked} />
       </Drawer>
     </ThemeProvider>
   );

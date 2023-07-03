@@ -3,6 +3,7 @@ import logo from "../assets/logo.png";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { Auth } from "aws-amplify";
 import {
   AppBar,
   Box,
@@ -24,11 +25,18 @@ import {
 import Wallet from "./Wallet";
 
 import { Link, useLocation } from "react-router-dom";
+import {
+  useLockUser
+} from "../hooks/useUser";
 
 const pages = ["about"];
 
-function SportsbookAppBar({ user, signOut }) {
+function SportsbookAppBar({ user, signOut, isLocked }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
+  
+  const { mutateAsync: lockUser } = useLockUser();
+  const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username  } });
+  
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
 
   const location = useLocation();
@@ -43,6 +51,12 @@ function SportsbookAppBar({ user, signOut }) {
     setAnchorElNav(null);
   };
 
+  //function that sets user "locked" attribute to provided boolean value
+  const handleLock = async (lockStatus) => {
+    handleLockUser(lockStatus);
+    console.log("User lock status:"+ lockStatus);
+  };
+  
   return (
     <AppBar position="sticky" color="primary">
       <Container maxWidth="xxl">
@@ -144,7 +158,16 @@ function SportsbookAppBar({ user, signOut }) {
           </Stack>
           <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
             {user.attributes.email}
+            {/*Output current user`s custom attribute "locked" to see if they are locked out*/}
           </Typography>
+          
+          {isLocked ? (
+              //render button with text "Unlock" if user is locked out
+              //on click, call function to unlock user
+              <Button color="inherit" onClick={() => handleLock(!isLocked)}>Unlock</Button>
+            ) : (
+              <Button color="inherit" onClick={() => handleLock(!isLocked)}>Lock</Button>
+            )}
           <IconButton color="inherit" {...bindTrigger(popupState)}>
             <AccountBalanceIcon />
           </IconButton>
@@ -160,7 +183,7 @@ function SportsbookAppBar({ user, signOut }) {
             }}
           >
             <Box width={300}>
-              <Wallet />
+              <Wallet isLocked={isLocked} />
             </Box>
           </Popover>
           <Button color="inherit" onClick={signOut}>

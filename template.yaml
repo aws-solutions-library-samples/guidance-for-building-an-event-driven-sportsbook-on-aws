@@ -248,6 +248,7 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+        UserPool: !Ref UserPool
 
   ThirdPartyServiceStack:
     Type: AWS::Serverless::Application

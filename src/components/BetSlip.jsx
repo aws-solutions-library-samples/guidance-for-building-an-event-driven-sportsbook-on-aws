@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import {
   Button,
   Typography,
@@ -11,7 +13,7 @@ import BetSlipItem from "./BetSlipItem";
 import { useBetSlip } from "../providers/BetSlipContext";
 import { useCreateBets } from "../hooks/useBets";
 
-export const BetSlip = () => {
+export const BetSlip = ({isLocked}) => {
   const { pendingBets, clearSlip } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
@@ -38,7 +40,7 @@ export const BetSlip = () => {
           onClick={handlePlaceBets}
           size="small"
           variant="contained"
-          disabled={!pendingBets.length}
+          disabled={!pendingBets.length || isLocked}
         >
           Place Bets
         </Button>

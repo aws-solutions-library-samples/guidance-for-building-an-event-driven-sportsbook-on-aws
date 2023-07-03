@@ -35,6 +35,11 @@ type BetList @aws_cognito_user_pools @aws_iam {
   nextToken: String
 }
 
+type User @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  isLocked: String!
+}
+
  enum EventOutcome {
     homeWin
     awayWin
@@ -67,6 +72,7 @@ union WalletResult = Wallet | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
 union BetsResult = BetList | NotFoundError | InputError | UnknownError
+union UserResult = User | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
@@ -94,6 +100,11 @@ input CreateBetsInput {
   bets: [BetRequest]!
 }
 
+input LockUserInput {
+  userId: ID!
+  isLocked: String!
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
@@ -108,10 +119,12 @@ type Mutation {
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
 }
 
 schema {
@@ -119,3 +132,5 @@ schema {
   mutation: Mutation
   subscription: Subscription
 }
+
+

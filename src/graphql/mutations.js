@@ -73,3 +73,19 @@ export const createBets = /* GraphQL */ `
     }
   }
 `;
+
+export const lockUser = /* GraphQL */ `
+  mutation LockUser($input: LockUserInput) {
+    lockUser(input: $input) {
+      ... on User {
+        __typename
+        userId
+        isLocked
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;

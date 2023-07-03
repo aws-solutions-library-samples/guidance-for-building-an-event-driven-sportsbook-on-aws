@@ -15,7 +15,7 @@ import {
   useDepositFunds,
 } from "../hooks/useWallet";
 
-export const Wallet = () => {
+export const Wallet = (isLocked) => {
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { mutateAsync: withdrawFunds } = useWithdrawFunds();
   const { mutateAsync: depositFunds } = useDepositFunds();
@@ -38,10 +38,11 @@ export const Wallet = () => {
         </Typography>
       </CardContent>
       <CardActions>
-        <Button size="small" variant="contained" onClick={handleDeposit}>
+        {/* TODO: I have no idea why is isLocked passed as an Object rather than boolean, thus this code is a bit dirty*/}
+        <Button size="small" variant="contained" onClick={handleDeposit} disabled={isLocked.isLocked}>
           Deposit
         </Button>
-        <Button size="small" variant="contained" onClick={handleWithdrawal}>
+        <Button size="small" variant="contained" onClick={handleWithdrawal} disabled={isLocked.isLocked}>
           Withdraw
         </Button>
       </CardActions>

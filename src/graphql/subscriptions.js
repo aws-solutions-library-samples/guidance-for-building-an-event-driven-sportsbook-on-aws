@@ -21,3 +21,17 @@ export const updatedEventOdds = /* GraphQL */ `
     }
   }
 `;
+
+export const updatedUserStatus = /* GraphQL */ `
+  subscription UpdatedUserStatus {
+    updatedUserStatus {
+      ... on User {
+        userId
+        isLocked
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
