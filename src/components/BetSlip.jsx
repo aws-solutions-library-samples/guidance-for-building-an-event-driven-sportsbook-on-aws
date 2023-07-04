@@ -3,32 +3,50 @@ import {
   Typography,
   Card,
   CardContent,
-  CardActions, Stack, IconButton,
+  CardActions,
+  Stack,
+  IconButton,
 } from "@mui/material";
 
 import BetSlipItem from "./BetSlipItem";
 
 import { useBetSlip } from "../providers/BetSlipContext";
 import { useCreateBets } from "../hooks/useBets";
-import {Close} from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 
 export const BetSlip = ({ onClose }) => {
   const { pendingBets, clearSlip, isValid, acceptCurrentOdds } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
   const handlePlaceBets = () => {
-    createBets({ data: { bets: pendingBets } }).then(clearSlip);
+    createBets({
+      data: {
+        bets: pendingBets.map((pb) => {
+          return {
+            eventId: pb.eventId,
+            outcome: pb.outcome,
+            odds: pb.selectedOdds,
+            amount: pb.amount,
+          };
+        }),
+      },
+    }).then(clearSlip);
   };
 
   return (
     <Card elevation={0} sx={{ backgroundColor: "transparent" }}>
       <CardContent>
-        <Stack mb={1} direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
+        <Stack
+          mb={1}
+          direction={"row"}
+          justifyContent={"space-between"}
+          alignItems={"center"}
+        >
           <Typography variant="h5" component="div">
             Your Betslip
           </Typography>
           <IconButton onClick={onClose}>
-            <Close/>
+            <Close />
           </IconButton>
         </Stack>
         <Stack spacing={1}>
