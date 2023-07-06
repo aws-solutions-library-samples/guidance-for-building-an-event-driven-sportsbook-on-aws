@@ -21,3 +21,18 @@ export const updatedEventOdds = /* GraphQL */ `
     }
   }
 `;
+
+export const updatedSystemEvents = /* GraphQL */ `
+  subscription UpdatedSystemEvents {
+    updatedSystemEvents {
+      ... on SystemEvent {
+        source
+        detailType
+        detail
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;

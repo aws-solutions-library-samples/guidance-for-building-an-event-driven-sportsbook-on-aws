@@ -35,7 +35,7 @@ export const Wallet = () => {
     withdrawFunds({ data: { amount: 10 } }).then(() => {
       showSuccess('Funds withdrawn successfully')
     }).catch(()=> {
-      showError('Insufficient funds to waithdraw')
+      showError('Insufficient funds to withdraw')
     });
   }
 
