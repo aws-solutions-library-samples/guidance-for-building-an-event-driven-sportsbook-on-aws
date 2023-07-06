@@ -8,10 +8,16 @@ export const SystemEvents = () => {
 
     const columns = [
         {
+            field: 'id',
+            headerName: 'ID',
+            sortable: true,
+            flex: 0.1,
+        },
+        {
             field: 'source',
             headerName: 'source',
             sortable: true,
-            flex: 1,
+            flex: 0.4,
             renderCell: ({row}) => {
                 <Typography>{row.source}</Typography>
             }
@@ -20,7 +26,7 @@ export const SystemEvents = () => {
             field: 'detailType',
             headerName: 'detailType',
             sortable: true,
-            flex: 1,
+            flex: 0.4,
             renderCell: ({row}) => {
                 <Typography>{row.detailType}</Typography>
             }
@@ -29,7 +35,7 @@ export const SystemEvents = () => {
             field: 'detail',
             headerName: 'detail',
             sortable: true,
-            flex: 1,
+            flex: 1.5,
             renderCell: ({row}) => {
                 <Typography>{row.detail}</Typography>
             }
@@ -40,8 +46,18 @@ export const SystemEvents = () => {
         <Card>
             <DataGrid
                 rows={systemEvents}
+                rowHeight={25}
                 columns={columns}
-                pageSizeOptions={[10]}
+                initialState={{
+                    pagination: {
+                      paginationModel: {
+                        pageSize: 10,
+                      },
+                    },
+                    sorting: {
+                        sortModel: [{field: 'id', sort: 'desc'}]
+                    }
+                  }}
             />
         </Card>
     )
