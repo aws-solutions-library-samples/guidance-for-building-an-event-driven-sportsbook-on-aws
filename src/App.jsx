@@ -95,35 +95,41 @@ function App({ user, signOut }) {
           <Box
             sx={{
               height: "100%",
+              paddingRight: showHub ? 11 : 0,
               display: { lg: "flex", xs: "none" },
               background: "#fafafa",
+              overflowY: showHub ? "scroll" : "hidden"
             }}
           >
             <Collapse orientation="horizontal" in={showHub}>
               <Box sx={{ width: "300px" }}>
-                <BetSlip />
+                <BetSlip onClose={() => setShowHub(false)} />
               </Box>
             </Collapse>
           </Box>
-          <Fab
-            color="primary"
-            variant="extended"
-            aria-label="add"
-            sx={{ width: 280, position: "absolute", bottom: 10, right: 10 }}
-            onClick={() => setShowHub(!showHub)}
-          >
-            {showHub ? "Close" : "Open"} Bet slip
-          </Fab>
+          {
+            !showHub &&
+            <Fab
+              color="primary"
+              variant="extended"
+              aria-label="add"
+              sx={{ width: 280, position: "absolute", bottom: 10, right: 10 }}
+              onClick={() => setShowHub(!showHub)}
+            >
+              Open Bet slip
+            </Fab>
+          }
         </Stack>
       </Container>
       <Drawer
         sx={{ display: { lg: "none", xs: "block" } }}
+        PaperProps={{sx: {width: 350}}}
         anchor="right"
         variant={"temporary"}
         open={showHub}
         onClose={() => setShowHub(false)}
       >
-        <BetSlip />
+        <BetSlip onClose={() => setShowHub(false)} />
       </Drawer>
     </ThemeProvider>
   );

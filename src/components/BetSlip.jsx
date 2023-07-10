@@ -16,6 +16,7 @@ import BetSlipItem from "./BetSlipItem";
 import { useBetSlip } from "../providers/BetSlipContext";
 import { useGlobal } from "../providers/GlobalContext";
 import { useCreateBets } from "../hooks/useBets";
+import { Close } from "@mui/icons-material";
 
 export const BetSlip = ({onClose}) => {
   const {
@@ -70,12 +71,24 @@ export const BetSlip = ({onClose}) => {
   return (
     <Card elevation={0} sx={{ backgroundColor: "transparent" }}>
       <CardContent>
-        <Typography gutterBottom variant="h5" component="div">
-          Your betslip
-        </Typography>
-        {pendingBets.map((bet) => (
-          <BetSlipItem key={bet.eventId + bet.outcome} bet={bet} />
-        ))}
+        <Stack
+          mb={1}
+          direction={"row"}
+          justifyContent={"space-between"}
+          alignItems={"center"}
+        >
+          <Typography variant="h5" component="div">
+            Your Betslip
+          </Typography>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </Stack>
+        <Stack spacing={1}>
+          {pendingBets.map((bet, idx) => (
+            <BetSlipItem key={idx} bet={bet} />
+          ))}
+        </Stack>
 
         {pendingBets.length === 0 && (
           <Typography>You have no bets added to your betslip</Typography>

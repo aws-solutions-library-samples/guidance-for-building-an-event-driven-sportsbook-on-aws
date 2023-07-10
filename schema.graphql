@@ -114,7 +114,7 @@ type Query {
   getWallet: WalletResult @aws_cognito_user_pools
   getBets(startKey: String): BetsResult @aws_cognito_user_pools
   getWalletByUserId(userId: ID!): WalletResult @aws_iam
-  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam
+  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools
 }
 
 type Mutation {

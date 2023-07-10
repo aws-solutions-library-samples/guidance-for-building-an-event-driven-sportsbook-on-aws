@@ -72,6 +72,9 @@ export const EventOdds = () => {
       headerAlign: "center",
       renderCell: renderOdds,
     },
+    {
+      field: "updatedAt",
+    },
   ];
 
   return (
@@ -90,6 +93,11 @@ export const EventOdds = () => {
           },
           sorting: {
             sortModel: [{ field: "updatedAt", sort: "desc" }],
+          },
+          columns: {
+            columnVisibilityModel: {
+              updatedAt: false,
+            },
           },
         }}
         getRowId={(row) => row?.eventId}

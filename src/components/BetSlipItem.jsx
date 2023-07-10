@@ -31,7 +31,7 @@ export const BetSlipItem = ({ bet }) => {
             </Typography>
           )}
           <Typography variant={"subtitle2"}>
-            Odds {bet.odds} - {conditionMap[bet.outcome]}
+            Current Odds {bet.currentOdds} - {conditionMap[bet.outcome]}
           </Typography>
           <Typography variant={"caption"}>{currencySymbol}{(bet.amount/100).toFixed(2)}</Typography>
           <IconButton 
