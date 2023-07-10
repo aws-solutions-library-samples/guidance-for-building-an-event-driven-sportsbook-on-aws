@@ -1,24 +1,46 @@
 import {
   Button,
+  Box,
   Typography,
   Card,
   CardContent,
   CardActions,
+  CircularProgress,
   Stack,
   IconButton,
 } from "@mui/material";
+import { green } from '@mui/material/colors';
 
 import BetSlipItem from "./BetSlipItem";
 
 import { useBetSlip } from "../providers/BetSlipContext";
+import { useGlobal } from "../providers/GlobalContext";
 import { useCreateBets } from "../hooks/useBets";
 import { Close } from "@mui/icons-material";
 
-export const BetSlip = ({ onClose }) => {
-  const { pendingBets, clearSlip, isValid, acceptCurrentOdds } = useBetSlip();
+export const BetSlip = ({onClose}) => {
+  const {
+    showError,
+    showSuccess,
+  } = useGlobal();
+  const { 
+    pendingBets, clearSlip, 
+    betInProgress, setInProgress,
+    isValid, acceptCurrentOdds,
+  } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
+  const buttonSx = {
+    ...(pendingBets.length > 0 && {
+      bgcolor: green[500],
+      '&:hover': {
+        bgcolor: green[700],
+      },
+    }),
+  };
+
   const handlePlaceBets = () => {
+    setInProgress(true);
     createBets({
       data: {
         bets: pendingBets.map((pb) => {
@@ -30,7 +52,20 @@ export const BetSlip = ({ onClose }) => {
           };
         }),
       },
-    }).then(clearSlip);
+    })
+    .then(() => {
+      setInProgress(false);
+      showSuccess("Bets placed. Good luck!")
+      clearSlip();
+    })
+    .catch((err) => {
+      setInProgress(false);
+      if(err.message.includes("InsufficientFunds")){
+        showError("Insufficient Funds")
+      }else{ 
+        showError("Unidentified Error")
+      }
+    });
   };
 
   return (
@@ -67,14 +102,30 @@ export const BetSlip = ({ onClose }) => {
         )}
       </CardActions>
       <CardActions>
-        <Button
-          onClick={handlePlaceBets}
-          size="small"
-          variant="contained"
-          disabled={!pendingBets.length || !isValid}
-        >
-          Place Bets
-        </Button>
+        <Box sx={{ m: 1, position: 'relative' }}>
+          <Button
+            onClick={handlePlaceBets}
+            size="small"
+            sx={buttonSx}
+            variant="contained"
+            disabled={ betInProgress || !pendingBets.length || !isValid }
+          >
+            Place Bets
+          </Button>
+          {betInProgress && (
+              <CircularProgress 
+              size={24}
+              sx={{
+                color: green[500],
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                marginTop: '-12px',
+                marginLeft: '-12px',
+              }}
+            />
+          )}
+        </Box>
       </CardActions>
     </Card>
   );

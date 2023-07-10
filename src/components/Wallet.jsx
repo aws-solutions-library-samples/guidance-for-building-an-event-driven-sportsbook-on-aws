@@ -15,17 +15,33 @@ import {
   useDepositFunds,
 } from "../hooks/useWallet";
 
+import { useGlobal } from "../providers/GlobalContext";
+
 export const Wallet = () => {
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { mutateAsync: withdrawFunds } = useWithdrawFunds();
   const { mutateAsync: depositFunds } = useDepositFunds();
+  const { showError, showSuccess, currencySymbol } = useGlobal();
 
-  const handleDeposit = () => depositFunds({ data: { amount: 10 } });
-  const handleWithdrawal = () => withdrawFunds({ data: { amount: 10 } });
+  const handleDeposit = () => {
+    depositFunds({ data: { amount: 10 } }).then(() => {
+      showSuccess('Funds added successfully')
+    }).catch(()=> {
+      showError('Funds could not be added')
+    })
+  }
+  
+  const handleWithdrawal = () => {
+    withdrawFunds({ data: { amount: 10 } }).then(() => {
+      showSuccess('Funds withdrawn successfully')
+    }).catch(()=> {
+      showError('Insufficient funds to withdraw')
+    });
+  }
 
   if (loadingWallet) return <WalletPending />;
 
-  console.log(wallet);
+  //console.log(wallet);
   return (
     <Card>
       <CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />
@@ -34,7 +50,7 @@ export const Wallet = () => {
           Your Balance
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          £{wallet.balance.toFixed(2)}
+          {currencySymbol}{(wallet.balance/100).toFixed(2)}
         </Typography>
       </CardContent>
       <CardActions>

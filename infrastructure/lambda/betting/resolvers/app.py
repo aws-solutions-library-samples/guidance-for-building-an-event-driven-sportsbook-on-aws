@@ -5,7 +5,8 @@ from os import getenv
 import json
 import boto3
 from gql_utils import get_client
-from queries import get_event
+from queries import get_event 
+from mutations import deduct_funds
 from gql import gql
 
 from botocore.exceptions import ClientError
@@ -71,6 +72,8 @@ def create_bets(input: dict) -> dict:
         processed_bets = []
         now = time.time()
         placement_time = scalar_types_utils.aws_datetime()
+        total_stakes = 0.0
+        
         for bet in input['bets']:
             event = get_live_market_event(bet['eventId'], now)
 
@@ -81,9 +84,17 @@ def create_bets(input: dict) -> dict:
             bet['betId'] = scalar_types_utils.make_id()
             bet['event'] = event
             bet['placedAt'] = placement_time
+            total_stakes += 10.0
             processed_bets.append(bet)
 
+        # TODO - check market status (e.g., not Closed or Suspended)
+        
         # TODO - call a handlePayments mutation to deduct the amounts from the wallet
+        walletResponse = handle_funds(userId, amount = total_stakes)
+        if 'InsufficientFundsError' in walletResponse['__typename']:
+            return betting_error('InsufficientFundsError','The wallet does not have enough funds to cover the bet')
+        elif 'Error' in walletResponse['__typename']:
+            return betting_error('Error','There was a problem deducting funds when placing the bet')
 
         # TODO - In future we could do a fraud check here
 
@@ -139,6 +150,12 @@ def get_live_market_event(eventId: str, timestamp: float = None) -> dict:
 
     response = gql_client.execute(gql(get_event), variable_values=gql_input)[
         'getEvent']
+    return response
+
+def handle_funds(userId: str, amount: float) -> dict:
+    gql_input = {'input':{'amount': amount, 'userId': userId}}
+    response = gql_client.execute(gql(deduct_funds), variable_values=gql_input)[
+        'deductFunds']
     return response
 
 

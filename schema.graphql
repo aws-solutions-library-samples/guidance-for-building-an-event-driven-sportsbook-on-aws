@@ -34,6 +34,12 @@ type BetList @aws_cognito_user_pools @aws_iam {
   nextToken: String
 }
 
+type SystemEvent @aws_cognito_user_pools @aws_iam {
+  source: String!
+  detailType: String
+  detail: String
+}
+
  enum EventOutcome {
     homeWin
     awayWin
@@ -41,6 +47,10 @@ type BetList @aws_cognito_user_pools @aws_iam {
  }
 
 interface Error {
+  message: String!
+}
+
+type InsufficientFundsError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
@@ -56,16 +66,22 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
-union WalletResult = Wallet | NotFoundError | InputError | UnknownError
+union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
-union BetsResult = BetList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
   userId: ID!
 }
 
 input WithdrawOrDepositInput {
+  amount: Float!
+}
+
+input DeductFundsInput {
+  userId: ID!
   amount: Float!
 }
 
@@ -87,6 +103,12 @@ input CreateBetsInput {
   bets: [BetRequest]!
 }
 
+input SystemEventInput {
+  source: String!
+  detailType: String
+  detail: String
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
@@ -100,11 +122,14 @@ type Mutation {
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  deductFunds(input: DeductFundsInput): WalletResult @aws_iam
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
 }
 
 schema {

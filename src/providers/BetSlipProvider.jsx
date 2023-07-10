@@ -13,6 +13,7 @@ export const oddsMap = {
 export function BetSlipProvider(props) {
   const [showHub, setShowHub] = useState(true);
   const [pendingBets, setPendingBets] = useState([]);
+  const [betInProgress, setInProgress] = useState(false);
 
   const eventQueries = useQueries({
     queries: pendingBets.map((b) => {
@@ -78,7 +79,6 @@ export function BetSlipProvider(props) {
   };
 
   const removeFromSlip = (bet) => {
-    console.log("Removing bet from slip. bet: ", bet);
     setPendingBets(
       pendingBets.filter(
         (i) => !(i.eventId == bet.eventId && i.outcome == bet.outcome)
@@ -92,12 +92,14 @@ export function BetSlipProvider(props) {
 
   return (
     <betSlipContext.Provider
-      value={{
-        showHub,
-        setShowHub,
-        pendingBets,
-        addToSlip,
-        removeFromSlip,
+      value={{ 
+        showHub, 
+        setShowHub, 
+        pendingBets, 
+        betInProgress, 
+        setInProgress,
+        addToSlip, 
+        removeFromSlip, 
         clearSlip,
         isValid,
         acceptCurrentOdds,
