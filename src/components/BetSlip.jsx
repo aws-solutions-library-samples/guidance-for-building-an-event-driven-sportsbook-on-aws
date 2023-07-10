@@ -6,6 +6,8 @@ import {
   CardContent,
   CardActions,
   CircularProgress,
+  Stack,
+  IconButton,
 } from "@mui/material";
 import { green } from '@mui/material/colors';
 
@@ -15,7 +17,7 @@ import { useBetSlip } from "../providers/BetSlipContext";
 import { useGlobal } from "../providers/GlobalContext";
 import { useCreateBets } from "../hooks/useBets";
 
-export const BetSlip = () => {
+export const BetSlip = ({onClose}) => {
   const {
     showError,
     showSuccess,
@@ -23,6 +25,7 @@ export const BetSlip = () => {
   const { 
     pendingBets, clearSlip, 
     betInProgress, setInProgress,
+    isValid, acceptCurrentOdds,
   } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
 
@@ -37,7 +40,18 @@ export const BetSlip = () => {
 
   const handlePlaceBets = () => {
     setInProgress(true);
-    createBets({ data: { bets: pendingBets } })
+    createBets({
+      data: {
+        bets: pendingBets.map((pb) => {
+          return {
+            eventId: pb.eventId,
+            outcome: pb.outcome,
+            odds: pb.selectedOdds,
+            amount: pb.amount,
+          };
+        }),
+      },
+    })
     .then(() => {
       setInProgress(false);
       showSuccess("Bets placed. Good luck!")
@@ -68,13 +82,20 @@ export const BetSlip = () => {
         )}
       </CardContent>
       <CardActions>
+        {!isValid && (
+          <Button onClick={acceptCurrentOdds} size="small" variant="contained">
+            Accept current odds
+          </Button>
+        )}
+      </CardActions>
+      <CardActions>
         <Box sx={{ m: 1, position: 'relative' }}>
           <Button
             onClick={handlePlaceBets}
             size="small"
             sx={buttonSx}
             variant="contained"
-            disabled={betInProgress || !pendingBets.length}
+            disabled={ betInProgress || !pendingBets.length || !isValid }
           >
             Place Bets
           </Button>
