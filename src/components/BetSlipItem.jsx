@@ -15,6 +15,9 @@ export const BetSlipItem = ({ bet }) => {
   const { currencySymbol } = useGlobal();
   const { data: event, isLoading } = useEvent(bet.eventId);
 
+  if (isLoading) return <Typography>Loading...</Typography>;
+  const oddsChanged = bet.selectedOdds !== bet.currentOdds;
+
   return (
     <Card>
       <CardContent>
