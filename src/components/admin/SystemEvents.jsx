@@ -1,9 +1,11 @@
-import { Typography, Card, Button, Box, ButtonGroup } from "@mui/material";
-import { useSystemEvents } from "../../hooks/useSystemEvents";
+import { Typography, Card, IconButton } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useSystemEvents, useClearHistory } from "../../hooks/useSystemEvents";
 import { DataGrid } from "@mui/x-data-grid";
 
 export const SystemEvents = () => {
-    const {data: systemEvents, isLoading: loadingSystemEvents} = useSystemEvents();
+    const {data: systemEvents, isLoading: loadingSystemEvents } = useSystemEvents();
+    const { mutateAsync: clearHistory } = useClearHistory();
     if(loadingSystemEvents) return <Typography>Loading...</Typography>
 
     const columns = [
@@ -44,10 +46,18 @@ export const SystemEvents = () => {
 
     return (
         <Card>
+          <IconButton 
+            color="error"
+            size="small"
+            onClick={clearHistory}>
+              Clear
+              <DeleteIcon />
+          </IconButton>
             <DataGrid
                 rows={systemEvents}
                 rowHeight={25}
                 columns={columns}
+                pageSizeOptions={[10]}
                 initialState={{
                     pagination: {
                       paginationModel: {

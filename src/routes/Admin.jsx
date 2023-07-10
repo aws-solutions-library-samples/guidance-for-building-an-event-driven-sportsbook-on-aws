@@ -5,13 +5,16 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    IconButton,
 } from "@mui/material"
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EventOdds from "../components/admin/EventOdds";
 import SystemEvents from "../components/admin/SystemEvents";
 
 export default function Home() {
   const [expanded, setExpanded] = React.useState(false);
+  // const {data: eventHistory, isLoading: clearningHistory} = useClearHistory(); 
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);

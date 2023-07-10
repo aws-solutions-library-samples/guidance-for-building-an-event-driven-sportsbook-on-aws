@@ -1,10 +1,22 @@
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { API, graphqlOperation } from "aws-amplify";
 import * as subscriptions from "../graphql/subscriptions.js";
 
 export const CACHE_PATH = "system-events";
 let idCount = 0;
+
+export const useClearHistory = () => {
+    const queryClient = useQueryClient();
+    return useMutation(
+        [CACHE_PATH],
+        () => {
+            console.log('clearing history');
+            queryClient.setQueryData([CACHE_PATH],[]);
+            idCount = 0;
+        },
+    )
+}
 
 export const useSystemEvents = (config = {}) => {
     const queryClient = useQueryClient();
@@ -36,7 +48,7 @@ export const useSystemEvents = (config = {}) => {
             let cachedData = queryClient.getQueryData([CACHE_PATH])
             if (cachedData == undefined){
                 console.log('creating initial blank data')
-                queryClient.setQueryData([CACHE_PATH], [{id: idCount, source: 'None', 'detailType': 'None', detail: 'None'}])
+                queryClient.setQueryData([CACHE_PATH], [{id: idCount, source: 'waiting...', 'detailType': '...', detail: '...'}])
             }
             return cachedData;
         },
@@ -51,6 +63,7 @@ export const useSystemEvents = (config = {}) => {
 
 const hooks = {
     useSystemEvents: useSystemEvents,
+    useClearHistory: useClearHistory,
 }
 
 export default hooks;
