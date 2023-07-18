@@ -36,3 +36,16 @@ export const updatedSystemEvents = /* GraphQL */ `
     }
   }
 `;
+export const updatedUserStatus = /* GraphQL */ `
+  subscription UpdatedUserStatus {
+    updatedUserStatus {
+      ... on User {
+        userId
+        isLocked
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;

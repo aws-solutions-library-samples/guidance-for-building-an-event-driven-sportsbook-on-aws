@@ -143,6 +143,11 @@ Resources:
         - 'email'
       UserPoolAddOns:
         AdvancedSecurityMode: !Ref CognitoAdvancedSecurity
+      Schema:
+        - Name: "isLocked"
+          AttributeDataType: String
+          Required: false
+          Mutable: true
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -248,6 +253,17 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+  
+  PamServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/pam-service.yaml
+      Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+        UserPool: !Ref UserPool
 
   ThirdPartyServiceStack:
     Type: AWS::Serverless::Application

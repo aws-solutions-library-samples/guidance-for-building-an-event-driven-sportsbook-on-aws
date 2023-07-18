@@ -25,6 +25,7 @@ Parameters:
 
   AppSyncLambdaLayer:
     Type: String
+  
 
 Resources:
 
@@ -117,7 +118,7 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: !GetAtt WalletResolverFunction.Arn
-
+  
   WalletLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -128,7 +129,7 @@ Resources:
       ServiceRoleArn: !GetAtt WalletAppSyncRole.Arn
       LambdaConfig:
         LambdaFunctionArn: !GetAtt WalletResolverFunction.Arn
-
+  
   GetWalletResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -167,7 +168,7 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: depositFunds
-      DataSourceName: !GetAtt WalletLambdaDataSource.Name
+      DataSourceName: !GetAtt WalletLambdaDataSource.Name  
 
   DeductFundsResolver:
     Type: AWS::AppSync::Resolver

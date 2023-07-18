@@ -50,6 +50,7 @@ Resources:
           - "com.wallet"
           - "com.betting"
           - "com.thirdparty"
+          - "com.pam"
       Targets:
         - Arn: !GetAtt SQSQueue.Arn
           Id: SQSqueue
