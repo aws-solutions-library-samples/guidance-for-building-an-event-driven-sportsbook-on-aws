@@ -1,6 +1,10 @@
 import diceImage from "./assets/dice.jpeg";
 import { Outlet } from "react-router-dom";
 import { Amplify } from "aws-amplify";
+import { useEffect, useState } from "react";
+import { useUser } from "./hooks/useUser";
+
+
 import {
   Authenticator,
   ThemeProvider as AmplifyThemeProvider,
@@ -60,6 +64,7 @@ const theme = createTheme({
 });
 
 function App({ user, signOut }) {
+  
   const { showHub, setShowHub } = useBetSlip();
   const {
     bShowSnackbar,
@@ -67,10 +72,12 @@ function App({ user, signOut }) {
     snackbarMessage,
     snackbarSeverity,
   } = useGlobal();
+  const isLocked = useUser(user);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SportsbookAppBar user={user} signOut={signOut} />
+      <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} />
       <Container disableGutters={true} maxWidth="xxl">
         <Snackbar open={bShowSnackbar} autoHideDuration={6000} onClose={closeSnackbar} anchorOrigin={{vertical: 'top', horizontal: 'center'}} >
           <Alert onClose={closeSnackbar} severity={snackbarSeverity} sx={{width: '100%'}} >
@@ -103,7 +110,7 @@ function App({ user, signOut }) {
           >
             <Collapse orientation="horizontal" in={showHub}>
               <Box sx={{ width: "300px" }}>
-                <BetSlip onClose={() => setShowHub(false)} />
+                <BetSlip onClose={() => setShowHub(false)} isLocked={isLocked}/>
               </Box>
             </Collapse>
           </Box>
@@ -129,7 +136,7 @@ function App({ user, signOut }) {
         open={showHub}
         onClose={() => setShowHub(false)}
       >
-        <BetSlip onClose={() => setShowHub(false)} />
+        <BetSlip onClose={() => setShowHub(false)} isLocked={isLocked} />
       </Drawer>
     </ThemeProvider>
   );

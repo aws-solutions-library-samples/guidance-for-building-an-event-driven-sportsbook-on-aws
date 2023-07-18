@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import {
   Button,
   Box,
@@ -18,7 +20,7 @@ import { useGlobal } from "../providers/GlobalContext";
 import { useCreateBets } from "../hooks/useBets";
 import { Close } from "@mui/icons-material";
 
-export const BetSlip = ({onClose}) => {
+export const BetSlip = ({onClose, isLocked}) => {
   const {
     showError,
     showSuccess,
@@ -95,7 +97,7 @@ export const BetSlip = ({onClose}) => {
         )}
       </CardContent>
       <CardActions>
-        {!isValid && (
+        {(!isValid || isLocked) && (
           <Button onClick={acceptCurrentOdds} size="small" variant="contained">
             Accept current odds
           </Button>
@@ -108,7 +110,7 @@ export const BetSlip = ({onClose}) => {
             size="small"
             sx={buttonSx}
             variant="contained"
-            disabled={ betInProgress || !pendingBets.length || !isValid }
+            disabled={ betInProgress || !pendingBets.length || !isValid || isLocked}
           >
             Place Bets
           </Button>
