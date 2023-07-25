@@ -147,31 +147,6 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt WalletResolverFunction.Arn
   
-<<<<<<< HEAD
-  UserAppSyncRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - appsync.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt UserResolverFunction.Arn
-
-=======
->>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   WalletLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -183,20 +158,6 @@ Resources:
       LambdaConfig:
         LambdaFunctionArn: !GetAtt WalletResolverFunction.Arn
   
-<<<<<<< HEAD
-  UserLambdaDataSource:
-    Type: AWS::AppSync::DataSource
-    Properties:
-      ApiId: !Ref AppSyncApiId
-      Name: User_Lambda_Source
-      Description: User Lambda AppSync Data Source
-      Type: AWS_LAMBDA
-      ServiceRoleArn: !GetAtt UserAppSyncRole.Arn
-      LambdaConfig:
-        LambdaFunctionArn: !GetAtt UserResolverFunction.Arn
-
-=======
->>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   GetWalletResolver:
     Type: AWS::AppSync::Resolver
     Properties:
