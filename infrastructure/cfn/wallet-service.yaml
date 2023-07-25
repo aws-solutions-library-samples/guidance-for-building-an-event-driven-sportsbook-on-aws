@@ -25,6 +25,7 @@ Parameters:
 
   AppSyncLambdaLayer:
     Type: String
+  
 
   UserPool:
     Type: String
@@ -146,6 +147,7 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt WalletResolverFunction.Arn
   
+<<<<<<< HEAD
   UserAppSyncRole:
     Type: AWS::IAM::Role
     Properties:
@@ -168,6 +170,8 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt UserResolverFunction.Arn
 
+=======
+>>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   WalletLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -179,6 +183,7 @@ Resources:
       LambdaConfig:
         LambdaFunctionArn: !GetAtt WalletResolverFunction.Arn
   
+<<<<<<< HEAD
   UserLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -190,6 +195,8 @@ Resources:
       LambdaConfig:
         LambdaFunctionArn: !GetAtt UserResolverFunction.Arn
 
+=======
+>>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   GetWalletResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -228,6 +235,14 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: depositFunds
+      DataSourceName: !GetAtt WalletLambdaDataSource.Name  
+
+  DeductFundsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: deductFunds
       DataSourceName: !GetAtt WalletLambdaDataSource.Name
   
   LockUserResolver:

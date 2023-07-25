@@ -253,6 +253,16 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+  
+  PamServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/pam-service.yaml
+      Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
         UserPool: !Ref UserPool
 
   ThirdPartyServiceStack:
@@ -283,6 +293,16 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: infrastructure/cfn/betting-service.yaml
+      Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+
+  SystemEventServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/systemevents-service.yaml
       Parameters:
         AppSyncApiId: !GetAtt AppSyncApi.ApiId
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl

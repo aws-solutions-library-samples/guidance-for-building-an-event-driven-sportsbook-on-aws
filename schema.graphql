@@ -40,6 +40,12 @@ type User @aws_cognito_user_pools @aws_iam {
   isLocked: String!
 }
 
+type SystemEvent @aws_cognito_user_pools @aws_iam {
+  source: String!
+  detailType: String
+  detail: String
+}
+
  enum EventOutcome {
     homeWin
     awayWin
@@ -56,6 +62,10 @@ interface Error {
   message: String!
 }
 
+type InsufficientFundsError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
 type NotFoundError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
@@ -68,10 +78,11 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
   message: String!
 }
 
-union WalletResult = Wallet | NotFoundError | InputError | UnknownError
+union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
-union BetsResult = BetList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
 union UserResult = User | NotFoundError | InputError | UnknownError
 
 input CreateWalletInput {
@@ -79,6 +90,11 @@ input CreateWalletInput {
 }
 
 input WithdrawOrDepositInput {
+  amount: Float!
+}
+
+input DeductFundsInput {
+  userId: ID!
   amount: Float!
 }
 
@@ -96,6 +112,12 @@ input BetRequest {
   amount: Float!
 }
 
+input SystemEventInput {
+  source: String!
+  detailType: String
+  detail: String
+}
+
 input CreateBetsInput {
   bets: [BetRequest]!
 }
@@ -110,7 +132,7 @@ type Query {
   getWallet: WalletResult @aws_cognito_user_pools
   getBets(startKey: String): BetsResult @aws_cognito_user_pools
   getWalletByUserId(userId: ID!): WalletResult @aws_iam
-  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam
+  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools
 }
 
 type Mutation {
@@ -118,12 +140,15 @@ type Mutation {
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  deductFunds(input: DeductFundsInput): WalletResult @aws_iam
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
   lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
   updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
 }
 

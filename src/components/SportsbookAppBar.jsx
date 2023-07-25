@@ -1,21 +1,31 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
-import MenuIcon from "@mui/icons-material/Menu";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import LogoutIcon from "@mui/icons-material/Logout";
+
+import EuroIcon from '@mui/icons-material/Euro';
+import CurrencyPoundIcon from '@mui/icons-material/CurrencyPound';
+import LogoutIcon from '@mui/icons-material/Logout'
+import Settings from '@mui/icons-material/Settings';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import MenuIcon from '@mui/icons-material/Menu';
+
 import { Auth } from "aws-amplify";
 import {
   AppBar,
   Box,
+  Divider,
   Button,
   Container,
   IconButton,
-  Menu,
   MenuItem,
+  Menu,
   Toolbar,
   Typography,
   Stack,
   Popover,
+  Tooltip,
+  Avatar,
 } from "@mui/material";
 import {
   usePopupState,
@@ -23,21 +33,27 @@ import {
   bindMenu,
 } from "material-ui-popup-state/hooks";
 import Wallet from "./Wallet";
+import { useGlobal } from "../providers/GlobalContext";
 
 import { Link, useLocation } from "react-router-dom";
 import {
   useLockUser
 } from "../hooks/useUser";
 
-const pages = ["about"];
+const pages = ["About", "Admin"];
 
 function SportsbookAppBar({ user, signOut, isLocked }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
+  const { currencySymbol, toggleCurrency } = useGlobal();
   
   const { mutateAsync: lockUser } = useLockUser();
   const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username  } });
   
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
+  const profileMenuState = usePopupState({ variant: "popover", popupId: "profile"});
+
+  // const [anchorElProfile, setAnchorElProfile] = useState(null);
+  // const profileMenuOpen = Boolean(anchorElProfile);
 
   const location = useLocation();
   useEffect(() => {
@@ -50,6 +66,82 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
+
+  const accountSettings = () => {
+    return (
+      <Box>
+        <Tooltip title="Account Settings">
+          <IconButton 
+           {...bindTrigger(profileMenuState)}
+          >
+            <Avatar />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          {...bindMenu(profileMenuState)}
+          PaperProps={{
+            elevation: 0,
+            sx: {
+              overflow: 'visible',
+              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              mt: 1.5,
+              '& .MuiAvatar-root': {
+                width: 32,
+                height: 32,
+                ml: -0.5,
+                mr: 1,
+              },
+              '&:before': {
+                content: '""',
+                display: 'block',
+                position: 'absolute',
+                top: 0,
+                right: 14,
+                width: 10,
+                height: 10,
+                bgcolor: 'background.paper',
+                transform: 'translateY(-50%) rotate(45deg)',
+                zIndex: 0,
+              },
+            },
+          }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        >
+          <MenuItem sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
+            <Avatar /> {user.attributes.email}
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={toggleCurrency}>
+            <ListItemIcon>
+              {currencySymbol == '£' &&
+                <CurrencyPoundIcon />
+              }
+              {currencySymbol == '€' &&
+                <EuroIcon />
+              }
+              {currencySymbol == '$' &&
+                <AttachMoneyIcon />
+              }
+            </ListItemIcon>
+            Switch currency
+          </MenuItem>
+          <MenuItem onClick={handleCloseNavMenu}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+          <MenuItem onClick={signOut}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
+        </Menu>
+      </Box>
+    );
+  }
 
   //function that sets user "locked" attribute to provided boolean value
   const handleLock = async (lockStatus) => {
@@ -70,6 +162,7 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
             sx={{
               ml: 2,
               mr: 2,
+              mb: 0.5,
               display: { xs: "none", md: "flex" },
               fontFamily: "monospace",
               fontWeight: 700,
@@ -78,7 +171,7 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
               textDecoration: "none",
             }}
           >
-            Sportsbook
+            AWS Event Driven Sportsbook
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -186,9 +279,9 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
               <Wallet isLocked={isLocked} />
             </Box>
           </Popover>
-          <Button color="inherit" onClick={signOut}>
-            <LogoutIcon />
-          </Button>
+          
+          {accountSettings()}
+
         </Toolbar>
       </Container>
     </AppBar>

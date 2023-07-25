@@ -1,7 +1,7 @@
-import { Typography, Card, Button, Box } from "@mui/material";
+import { Typography, Card, Button, Box, ButtonGroup } from "@mui/material";
+import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid } from "@mui/x-data-grid";
-import { useEvents } from "../hooks/useEvents";
-import { useBetSlip } from "../providers/BetSlipContext";
+import { useEvents } from "../../hooks/useEvents";
 
 const dateOptions = {
   year: "numeric",
@@ -12,19 +12,54 @@ const dateOptions = {
 };
 
 const renderOdds = (params) => {
-  const { addToSlip } = useBetSlip();
 
   return (
-    <Button
-      variant="outlined"
-      size="small"
-      tabIndex={params.hasFocus ? 0 : -1}
-      onClick={() => addToSlip(params.row, params.field)}
-    >
-      {params.value}
-    </Button>
+    <ButtonGroup>
+        <Button
+        variant="outlined"
+        size="small"
+        onClick={() => {
+            suspendMarket({ event: params.row.eventId, market: params.field });
+        }}
+        >
+            Suspend
+        </Button>
+        <Button         
+        variant="outlined"
+        size="small"
+        color="error"
+        onClick={() => {
+            closeMarket({ event: params.row.eventId, market: params.field });
+        }}>
+            Close
+        </Button>
+    </ButtonGroup>
   );
 };
+
+const renderActions = (params) => {
+    return (
+        <ButtonGroup>
+            <Button
+            size="small"
+            startIcon={<CancelIcon />}
+            onClick={() => {
+                console.log('closing event', params.row.eventId)
+            }}>
+                End Event
+            </Button>
+        </ButtonGroup>
+    )
+}
+
+const suspendMarket = ({ event, market}) => {
+    // call suspend event service
+    console.log(`suspending market '${market}' (${event})`);
+}
+
+const closeMarket = ({ event, market}) => {
+    console.log(`closing market '${market}' (${event})`);
+}
 
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
@@ -51,6 +86,7 @@ export const EventOdds = () => {
     {
       field: "homeOdds",
       headerName: "Home Win",
+      flex: 1,
       sortable: false,
       align: "center",
       headerAlign: "center",
@@ -59,6 +95,7 @@ export const EventOdds = () => {
     {
       field: "awayOdds",
       headerName: "Away Win",
+      flex: 1,
       sortable: false,
       align: "center",
       headerAlign: "center",
@@ -67,21 +104,27 @@ export const EventOdds = () => {
     {
       field: "drawOdds",
       headerName: "Draw",
+      flex: 1,
       sortable: false,
       align: "center",
       headerAlign: "center",
       renderCell: renderOdds,
     },
     {
-      field: "updatedAt",
-    },
+        field: "eventActions",
+        headerName: "Actions",
+        flex: 1,
+        align: "center",
+        sortable: false,
+        headerAlign: "center",
+        renderCell: renderActions,
+    }
   ];
+
+
 
   return (
     <Card>
-      <Typography variant="h5" sx={{ padding: 2 }}>
-        Latest Odds
-      </Typography>
       <DataGrid
         rows={events}
         columns={columns}
@@ -93,11 +136,6 @@ export const EventOdds = () => {
           },
           sorting: {
             sortModel: [{ field: "updatedAt", sort: "desc" }],
-          },
-          columns: {
-            columnVisibilityModel: {
-              updatedAt: false,
-            },
           },
         }}
         getRowId={(row) => row?.eventId}
