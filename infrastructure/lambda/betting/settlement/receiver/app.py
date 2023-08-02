@@ -8,8 +8,6 @@ from aws_lambda_powertools.utilities.batch import BatchProcessor, EventType
 from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
 from botocore.exceptions import ClientError
 from gql_utils import get_client
-from mutations import lock_bets_for_event
-from gql import gql
 
 processor = BatchProcessor(event_type=EventType.SQS)
 tracer = Tracer()
@@ -40,14 +38,14 @@ def handle_thirdparty_event(event: dict, context: LambdaContext) -> dict:
 def handle_updated_odds(item: dict) -> dict:
     # Here we effectively just re-raise the event under the trading namespace
     # In a real world scenario the odds would be assessed by this service to produce new odds
-    return form_event('com.trading', 'UpdatedOdds', item['detail'])
+    return form_event('UpdatedOdds', item['detail'])
 
 
-def form_event(source, detailType, detail):
+def form_event(detailType, detail):
     return {
-        'Source': source,
+        'Source': 'com.trading',
         'DetailType': detailType,
-        'Detail': json.dumps(detail),
+        'Detail': json.dumps(detail, default=str),
         'EventBusName': event_bus_name
     }
 
@@ -59,51 +57,26 @@ def record_handler(record: SQSRecord):
     payload = record.body
     if payload:
         item = json.loads(payload)
-        if item['source'] == 'com.thirdparty':
-            if item['detail-type'] == 'UpdatedOdds':
-                return handle_updated_odds(item)
-        if item['source'] == 'com.livemarket':
-            if item['detail-type'] == 'EventClosed':
-                return handle_event_closed(item)
+        if item['source'] == 'com.betting':
+            if item['detail-type'] == 'BetLocked':
+                return handle_bet_settlement(item)
 
     logger.info({"message": "Unknown record type", "record": item})
     return None
 
-def handle_event_closed(item: dict) -> dict:
-    update_info = {
-        'eventId': item['detail']['eventId']
-    }
-    gql_input = {
-        'input': update_info
-    }
-    response = gql_client.execute(gql(lock_bets_for_event), variable_values=gql_input)[
-        'lockBetsForEvent']
-
-    update_info['bets'] = response['items']
-
-    #iterate through all response['items'] form an event
-    for bet in response['items']:
-        betresponse = events.put_events(
-            Entries=[
-                form_event('com.betting', 'BetLocked', bet)
-            ]
+def handle_bet_settlement(item: dict) -> dict:
+    bet = item['detail']
+    logger.info(f"Starting step function for bet")
+    step_function = boto3.client('stepfunctions')
+    result = step_function.start_execution(
+        stateMachineArn=getenv('STEP_FUNCTION_ARN'),
+        input=json.dumps(item['detail'], default=str)
         )
-        print(betresponse)
+    print(result)
+    bet['result'] = result
 
-    if response['__typename'] == 'BetList':
-        logger.info("Bets are closed. Beginning to settle the bets")
-        return form_event('com.betting', 'SettlementStarted', update_info)
-    elif 'Error' in response['__typename']:
-        logger.exception("Failed to update odds")
-        raise ValueError(
-            f"updateEventOdds failed: {response['message']}")
-    
-def raise_bet_event(formevent) -> dict:
-    return events.put_events(
-        Entries=[
-            formevent
-        ]
-    )
+    return form_event('SettlementProcessBegan', bet)
+
 
 def bet_list_response(data: dict) -> dict:
     return {**{'__typename': 'BetList'}, **data}

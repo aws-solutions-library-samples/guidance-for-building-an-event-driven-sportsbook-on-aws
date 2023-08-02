@@ -13,7 +13,8 @@ type Event @aws_cognito_user_pools @aws_iam {
   start: AWSDateTime!
   end: AWSDateTime!
   updatedAt: AWSDateTime!
-  status: EventStatus!
+  eventStatus: EventStatus!
+  outcome: String
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -28,6 +29,8 @@ type Bet @aws_cognito_user_pools @aws_iam {
   odds: String!
   amount: Float!
   placedAt: AWSDateTime!
+  userId: ID!
+  betStatus: String!
 }
 
 type BetList @aws_cognito_user_pools @aws_iam {
@@ -105,6 +108,12 @@ input UpdateEventOddsInput {
   drawOdds: String!
 }
 
+input FinishEventInput {
+  eventId: ID!
+  eventStatus: String!
+  outcome: String!
+}
+
 input BetRequest {
   eventId: ID!
   outcome: EventOutcome
@@ -127,6 +136,10 @@ input LockUserInput {
   isLocked: String!
 }
 
+input LockBetsForEventInput {
+  eventId: ID!
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
@@ -137,17 +150,21 @@ type Query {
 
 type Mutation {
   createWallet(input: CreateWalletInput): WalletResult @aws_iam
-  depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
-  withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools
+  finishEvent(input: FinishEventInput): EventResult @aws_iam
+  triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
+  withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
   deductFunds(input: DeductFundsInput): WalletResult @aws_iam
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
   addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
   lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
+  lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
   updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
   updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
 }

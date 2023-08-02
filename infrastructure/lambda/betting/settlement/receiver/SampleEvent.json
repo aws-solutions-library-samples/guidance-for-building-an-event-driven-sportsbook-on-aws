@@ -1,0 +1,21 @@
+{
+    "Records": [
+        {
+            "messageId": "f240518b-d500-498d-a24f-655a578a7faa",
+            "receiptHandle": "AQEBYxg/xjv7V7C1GVRQdAeuq2ogpJGKOOdtfW7G7lfbezxNjOrVHoaqPviBTySK331J9ilXLTCmlilZeZJiF2fi4l5SMMJ+tjHho3obxcdfNXweZICojOOp4DDGk9K8GvtDQ4MQa3PbHV668F3X59DPxSdXo5oJQ/Y1F+RyhfAi/yzWzDYfnxOo4sTCWqu/9FngvxFpEPPTq/NwVMdF3Yb95JzdpK/4gA/fsT+bBfkPuH7iuxIl+ZI5Maf+lQwVRmbf6y7txr6s55vLEKvyNOXFY+nkjELny3msXMOlcWLvFFML5hGpRwB6TWNHSEuyP9tdXHiE2VKUXyEl1nsrW+SoIxXekEcN96qpnBO2oeioveoxrKJ3uFRw2FgpaPq4NwBeu7tKeMfPtvFw4frd+/f+1Hj3ToApv8WrtsIInFaRqDolDluOxGc1vhVHlMc9uth2pXxdIoE9YUWieA4uQsb8bg==",
+            "body": "{\"version\":\"0\",\"id\":\"60cd1b6f-f8b6-d281-862b-8a14d53ea6b9\",\"detail-type\":\"BetLocked\",\"source\":\"com.betting\",\"account\":\"967057312161\",\"time\":\"2023-07-27T22:14:27Z\",\"region\":\"eu-west-1\",\"resources\":[],\"detail\":{\"amount\":10.0,\"betId\":\"4a5ac34a-d7a2-449c-8f6d-7d77742cb18d\",\"odds\":\"5/3\",\"placedAt\":\"2023-07-27T19:03:51.031Z\",\"outcome\":\"homeWin\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "AWSTraceHeader": "Root=1-64c2ec43-25d5711e1a6e6dba1ba706c5;Parent=8112cee91e33459f;Sampled=1;Lineage=e5266fb8:0",
+                "SentTimestamp": "1690496068058",
+                "SenderId": "AIDAJ2E4ZHTZPIG4AM4I6",
+                "ApproximateFirstReceiveTimestamp": "1690496068059"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "804f3b79ca213762cda44f576b7578e9",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:967057312161:sportsbook-BettingServiceStack-13VJ4HUHH5G4R-SQSQueue-DDMfVbrqiCTR",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

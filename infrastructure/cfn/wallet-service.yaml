@@ -27,10 +27,6 @@ Parameters:
     Type: String
   
 
-  UserPool:
-    Type: String
-  
-
 Resources:
 
   WalletDataStore:
@@ -101,30 +97,6 @@ Resources:
           ACCOUNT_ID: !Ref AWS::AccountId
           APPSYNC_API_ID: !Ref AppSyncApiId
 
-  UserResolverFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: app.lambda_handler
-      CodeUri: ../lambda/user/resolvers/
-      Description: Lambda for Appsync resolvers
-      Timeout: 10
-      MemorySize: 256
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref WalletDataStore
-        - Statement:
-            - Effect: Allow
-              Action:
-                - cognito-idp:AdminUpdateUserAttributes
-              Resource:
-                - !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPool}'
-      Environment:
-        Variables:
-          DB_TABLE: !Ref WalletDataStore
-          ACCOUNT_ID: !Ref AWS::AccountId
-          APPSYNC_API_ID: !Ref AppSyncApiId
-          USER_POOL_ID: !Ref UserPool
-
   WalletAppSyncRole:
     Type: AWS::IAM::Role
     Properties:
@@ -147,31 +119,6 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt WalletResolverFunction.Arn
   
-<<<<<<< HEAD
-  UserAppSyncRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - appsync.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt UserResolverFunction.Arn
-
-=======
->>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   WalletLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -183,20 +130,6 @@ Resources:
       LambdaConfig:
         LambdaFunctionArn: !GetAtt WalletResolverFunction.Arn
   
-<<<<<<< HEAD
-  UserLambdaDataSource:
-    Type: AWS::AppSync::DataSource
-    Properties:
-      ApiId: !Ref AppSyncApiId
-      Name: User_Lambda_Source
-      Description: User Lambda AppSync Data Source
-      Type: AWS_LAMBDA
-      ServiceRoleArn: !GetAtt UserAppSyncRole.Arn
-      LambdaConfig:
-        LambdaFunctionArn: !GetAtt UserResolverFunction.Arn
-
-=======
->>>>>>> 7cdb3c6fab6f1508e6046740f7e728bae591c580
   GetWalletResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -244,11 +177,3 @@ Resources:
       TypeName: Mutation
       FieldName: deductFunds
       DataSourceName: !GetAtt WalletLambdaDataSource.Name
-  
-  LockUserResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !Ref AppSyncApiId
-      TypeName: Mutation
-      FieldName: lockUser
-      DataSourceName: !GetAtt UserLambdaDataSource.Name

@@ -1,7 +1,10 @@
 import { Typography, Card, Button, Box, ButtonGroup } from "@mui/material";
 import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid } from "@mui/x-data-grid";
-import { useEvents } from "../../hooks/useEvents";
+import { useEvents, useFinishEvent } from "../../hooks/useEvents";
+
+  
+
 
 const dateOptions = {
   year: "numeric",
@@ -44,12 +47,13 @@ const renderActions = (params) => {
             size="small"
             startIcon={<CancelIcon />}
             onClick={() => {
-                console.log('closing event', params.row.eventId)
+              EventOdds.handleFinishEvent(params.row.eventId, 'homeWin')
             }}>
                 End Event
             </Button>
         </ButtonGroup>
     )
+    
 }
 
 const suspendMarket = ({ event, market}) => {
@@ -61,9 +65,21 @@ const closeMarket = ({ event, market}) => {
     console.log(`closing market '${market}' (${event})`);
 }
 
+
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
-
+  const { mutateAsync: triggerFinishEvent } = useFinishEvent();
+  const handleTriggerFinishEvent = (eventId, outcome) => triggerFinishEvent(
+    { data: { eventId: eventId, outcome: outcome, eventStatus: 'finished'  } }
+  );
+  const handleFinishEvent = async (eventId, outcome) => {
+    console.log('closing event', {'eventId': eventId, 'outcome': outcome})
+    handleTriggerFinishEvent(eventId, outcome);
+    console.log("Event finished. Good luck settling!");
+  };
+  
+  
+    
   if (loadingEvents) return <Typography>Loading...</Typography>;
 
   const columns = [
@@ -117,11 +133,24 @@ export const EventOdds = () => {
         align: "center",
         sortable: false,
         headerAlign: "center",
-        renderCell: renderActions,
+        renderCell: (params) => {
+          return (
+            <ButtonGroup>
+                <Button
+                size="small"
+                startIcon={<CancelIcon />}
+                onClick={() => {
+                  handleFinishEvent(params.row.eventId, 'homeWin')
+                }}>
+                    End Event
+                </Button>
+            </ButtonGroup>
+        )
+       }
     }
   ];
 
-
+  
 
   return (
     <Card>

@@ -25,6 +25,8 @@ session = boto3.Session()
 dynamodb = session.resource('dynamodb')
 table = dynamodb.Table(table_name)
 history_table = dynamodb.Table(history_table_name)
+event_bus_name = getenv('EVENT_BUS')
+events = session.client('events')
 
 
 @app.resolver(type_name="Query", field_name="getEvents")
@@ -131,6 +133,72 @@ def update_event_odds(input: dict) -> dict:
         logger.exception({'UnknownError': e})
         return events_error('UnknownError', 'An unknown error occured.')
 
+
+@app.resolver(type_name="Mutation", field_name="finishEvent")
+@tracer.capture_method
+def finish_event(input: dict) -> dict:
+    try:
+        now = scalar_types_utils.aws_datetime()
+        response = table.update_item(
+            Key={'eventId': input['eventId']},
+            UpdateExpression="set eventStatus=:d, updatedAt=:u, outcome=:o",
+            ConditionExpression="attribute_exists(eventId)",
+            ExpressionAttributeValues={
+                ':d': input['eventStatus'],
+                ':u': now,
+                ':o': input['outcome']
+            },
+            ReturnValues="ALL_NEW")
+        current_event = response['Attributes']
+
+        # Write the current state to the history log to persist for the configured time
+        epoch = Decimal(time.time())
+        history_entry = {**current_event, **
+                         {'timestamp': epoch, 'expiry': epoch + history_retention_seconds}}
+        history_table.put_item(Item=history_entry)
+
+        return event_response(current_event)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="triggerFinishEvent")
+@tracer.capture_method
+def trigger_finish_event(input: dict) -> dict:
+    try:
+        #effectively just raising event back to event bridge
+        current_event = get_event(input['eventId'])
+        current_event["outcome"] = input["outcome"]
+        send_event(current_event)
+        print(current_event)
+        return event_response(current_event)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+def form_event(userResponse):
+    return {
+        'Source': 'com.thirdparty',
+        'DetailType': 'EventClosed',
+        'Detail': json.dumps(userResponse),
+        'EventBusName': event_bus_name
+    }
+
+def send_event(userResponse):
+    data = form_event(userResponse)
+    response = events.put_events(Entries=[data])
+    return response
 
 def events_error(errorType: str, error_msg: str) -> dict:
     return {'__typename': errorType, 'message': error_msg}

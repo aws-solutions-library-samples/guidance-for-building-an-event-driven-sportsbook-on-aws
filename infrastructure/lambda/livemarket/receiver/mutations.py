@@ -20,3 +20,26 @@ mutation MyMutation ($input: UpdateEventOddsInput!) {
   }
 }
 """
+
+finish_event = """
+mutation FinishEvent ($input: FinishEventInput!) {
+  finishEvent(input: $input) {
+    ... on Event {
+      __typename
+      start
+      homeOdds
+      awayOdds
+      drawOdds
+      home
+      eventId
+      end
+      away,
+      updatedAt
+    }
+    ... on Error {
+      __typename
+      message
+    }
+  }
+}
+"""
