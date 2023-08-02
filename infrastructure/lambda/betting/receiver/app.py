@@ -21,6 +21,7 @@ events = session.client('events')
 
 table_name = getenv('DB_TABLE')
 region = getenv("REGION")
+step_function = boto3.client('stepfunctions')
 
 session = boto3.Session()
 dynamodb = session.resource('dynamodb')
@@ -47,7 +48,7 @@ def form_event(source, detailType, detail):
     return {
         'Source': source,
         'DetailType': detailType,
-        'Detail': json.dumps(detail),
+        'Detail': json.dumps(detail, default=str),
         'EventBusName': event_bus_name
     }
 
@@ -69,6 +70,7 @@ def record_handler(record: SQSRecord):
     logger.info({"message": "Unknown record type", "record": item})
     return None
 
+@tracer.capture_method
 def handle_event_closed(item: dict) -> dict:
     update_info = {
         'eventId': item['detail']['eventId']
@@ -82,13 +84,22 @@ def handle_event_closed(item: dict) -> dict:
     update_info['bets'] = response['items']
 
     #iterate through all response['items'] form an event
-    for bet in response['items']:
-        betresponse = events.put_events(
-            Entries=[
-                form_event('com.betting', 'BetLocked', bet)
-            ]
-        )
-        print(betresponse)
+    for bet in update_info['bets']:
+        logger.info(f"Starting step function for bet")
+        result = step_function.start_execution(
+            stateMachineArn=getenv('STEP_FUNCTION_ARN'),
+            input=json.dumps(bet, default=str)
+            )
+        bet['result'] = result
+        
+        #betresponse = events.put_events(
+        #    Entries=[
+        #        form_event('com.betting', 'BetLocked', bet)
+        #    ]
+        #)
+
+
+        #print(betresponse)
 
     if response['__typename'] == 'BetList':
         logger.info("Bets are closed. Beginning to settle the bets")

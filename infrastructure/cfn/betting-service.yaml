@@ -120,6 +120,14 @@ Resources:
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BettingDataStore
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource:
+                - !GetAtt BettingSettlementStateMachine.Arn
         - Statement:
             - Effect: Allow
               Action:
@@ -134,6 +142,7 @@ Resources:
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
           EVENT_BUS: !Ref EventBus
+          STEP_FUNCTION_ARN: !GetAtt BettingSettlementStateMachine.Arn
 
   BettingSettlementFunction:
     Type: AWS::Serverless::Function
@@ -165,45 +174,6 @@ Resources:
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
   
-  BettingSettlementReceiverFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: app.lambda_handler
-      CodeUri: ../lambda/betting/settlement/receiver/
-      Description: Lambda for receiver for settlement
-      Timeout: 10
-      MemorySize: 256
-      Events:
-        SQSEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt SQSQueue.Arn
-            BatchSize: 10
-            FunctionResponseTypes:
-              - ReportBatchItemFailures
-      Layers:
-        - !Ref AppSyncLambdaLayer
-      Policies:
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref EventBus
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BettingDataStore
-        - Statement:
-            - Effect: Allow
-              Action:
-                - states:StartExecution
-              Resource:
-                - !GetAtt BettingSettlementStateMachine.Arn
-      Environment:
-        Variables:
-          DB_TABLE: !Ref BettingDataStore
-          ACCOUNT_ID: !Ref AWS::AccountId
-          APPSYNC_API_ID: !Ref AppSyncApiId
-          APPSYNC_URL: !Ref AppSyncApiUrl
-          REGION: !Ref AWS::Region
-          STEP_FUNCTION_ARN: !GetAtt BettingSettlementStateMachine.Arn
-          EVENT_BUS: !Ref EventBus
-  
   StatesExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -233,7 +203,7 @@ Resources:
         !Sub
           - |-
             {
-              "Comment": "BetSettlement function with only one steep for now",
+              "Comment": "BetSettlement function with only one step for now",
               "StartAt": "SettleAndPay",
               "States": {
                 "SettleAndPay": {

@@ -57,13 +57,14 @@ def record_handler(record: SQSRecord):
     payload = record.body
     if payload:
         item = json.loads(payload)
-        if item['source'] == 'com.betting':
-            if item['detail-type'] == 'BetLocked':
-                return handle_bet_settlement(item)
+        #if item['source'] == 'com.betting':
+        #    if item['detail-type'] == 'BetLocked':
+        #        return handle_bet_settlement(item)
 
     logger.info({"message": "Unknown record type", "record": item})
     return None
 
+@tracer.capture_method
 def handle_bet_settlement(item: dict) -> dict:
     bet = item['detail']
     logger.info(f"Starting step function for bet")

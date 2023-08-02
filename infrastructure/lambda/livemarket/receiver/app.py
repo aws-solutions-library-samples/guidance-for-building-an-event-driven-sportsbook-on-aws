@@ -2,7 +2,7 @@ from os import getenv
 import json
 import boto3
 from gql_utils import get_client
-from mutations import update_event_odds, finish_event
+from mutations import update_event_odds, finish_event, lock_bets_for_event
 from gql import gql
 
 from aws_lambda_powertools import Logger, Tracer
@@ -58,18 +58,6 @@ def handle_event_finished(item: dict) -> dict:
     }
     response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
         'finishEvent']
-    event = {
-            'Source': 'com.livemarket',
-            'DetailType': 'EventClosed',
-            'Detail': json.dumps(update_info)
-        }
-
-    #response = sqsqueue.send_message(
-    #        QueueUrl=queue_url,
-    #        DelaySeconds=10,
-    #        MessageBody=event
-    #    )
-    #print(response['MessageId'])
     
     if response['__typename'] == 'Event':
         logger.info("Event closed")

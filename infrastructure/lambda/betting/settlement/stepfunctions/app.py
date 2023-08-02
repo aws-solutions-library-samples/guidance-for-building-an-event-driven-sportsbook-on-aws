@@ -58,7 +58,7 @@ def calculate_event_outcome(eventOutcome, betOutcome, odds, betAmount):
     if eventOutcome == betOutcome:
         return decimalOdds * betAmount
     else:
-        return (decimalOdds * betAmount)*-1
+        return 0
 
 def settle_bet(betId, userId):
     table.update_item(

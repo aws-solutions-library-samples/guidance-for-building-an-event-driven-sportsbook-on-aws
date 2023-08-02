@@ -43,3 +43,40 @@ mutation FinishEvent ($input: FinishEventInput!) {
   }
 }
 """
+
+lock_bets_for_event = """
+mutation MyMutation ($input: LockBetsForEventInput!){
+  lockBetsForEvent (input: $input){
+    ... on BetList {
+      __typename
+      nextToken
+      items {
+        amount
+        userId
+        betId
+        odds
+        outcome
+        event{
+          eventId
+        }
+      }
+    }
+    ... on UnknownError {
+      __typename
+      message
+    }
+    ... on InputError {
+      __typename
+      message
+    }
+    ... on NotFoundError {
+      __typename
+      message
+    }
+    ... on InsufficientFundsError {
+      __typename
+      message
+    }
+  }
+}
+"""
