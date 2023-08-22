@@ -9,6 +9,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import MenuIcon from '@mui/icons-material/Menu';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 
 import { Auth } from "aws-amplify";
 import {
@@ -112,6 +114,14 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
             <Avatar /> {user.attributes.email}
           </MenuItem>
           <Divider />
+          <MenuItem onClick={handleLock}>
+            <ListItemIcon>
+              {isLocked ?
+                <LockIcon /> : <LockOpenIcon />
+              }
+            </ListItemIcon>
+            {isLocked ? "Unlock Account" : "Lock Account"}
+          </MenuItem>
           <MenuItem onClick={toggleCurrency}>
             <ListItemIcon>
               {currencySymbol == '£' &&
@@ -144,9 +154,9 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
   }
 
   //function that sets user "locked" attribute to provided boolean value
-  const handleLock = async (lockStatus) => {
-    handleLockUser(lockStatus);
-    console.log("User lock status:"+ lockStatus);
+  const handleLock = async () => {
+    handleLockUser(!isLocked);
+    console.log("User lock status:"+ !isLocked);
   };
   
   return (
@@ -251,16 +261,8 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
           </Stack>
           <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
             {user.attributes.email}
-            {/*Output current user`s custom attribute "locked" to see if they are locked out*/}
           </Typography>
           
-          {isLocked ? (
-              //render button with text "Unlock" if user is locked out
-              //on click, call function to unlock user
-              <Button color="inherit" onClick={() => handleLock(!isLocked)}>Unlock</Button>
-            ) : (
-              <Button color="inherit" onClick={() => handleLock(!isLocked)}>Lock</Button>
-            )}
           <IconButton color="inherit" {...bindTrigger(popupState)}>
             <AccountBalanceIcon />
           </IconButton>
