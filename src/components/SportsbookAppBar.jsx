@@ -117,7 +117,7 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
           <MenuItem onClick={handleLock}>
             <ListItemIcon>
               {isLocked ?
-                <LockIcon /> : <LockOpenIcon />
+                <LockOpenIcon /> : <LockIcon />
               }
             </ListItemIcon>
             {isLocked ? "Unlock Account" : "Lock Account"}
