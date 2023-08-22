@@ -44,7 +44,7 @@ export const Wallet = (isLocked) => {
   //console.log(wallet);
   return (
     <Card>
-      <CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />
+      {/*<CardMedia sx={{ height: 200 }} image={walletLogo} title="Wallet Image" />*/}
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
           Your Balance
