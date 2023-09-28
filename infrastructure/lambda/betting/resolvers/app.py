@@ -129,7 +129,7 @@ def create_bets(input: dict) -> dict:
 @app.resolver(type_name="Mutation", field_name="lockBetsForEvent")
 @tracer.capture_method
 def lock_bets_for_event(input: dict) -> dict:
-    bets = get_bets_by_event_id(input['eventId'])
+    bets = get_open_bets_by_event_id(input['eventId'])
     #iterate through all bets and update the "status" field to "finalized"
     for bet in bets['items']:  
         bet['event'] = {'eventId': input['eventId']}
@@ -145,13 +145,13 @@ def lock_bets_for_event(input: dict) -> dict:
 
 
 @tracer.capture_method
-def get_bets_by_event_id(eventId: str = "") -> dict:
+def get_open_bets_by_event_id(eventId: str = "") -> dict:
     try:
         args = {}
         
-        args['KeyConditionExpression'] = 'eventId = :u'
-        args['ExpressionAttributeValues'] = {':u': eventId}
-        args['IndexName'] = 'eventId-userId-index'
+        args['KeyConditionExpression'] = 'eventId = :u AND betStatus = :s'
+        args['ExpressionAttributeValues'] = {':u': eventId, ':s': 'placed'}
+        args['IndexName'] = 'eventId-betStatus-index'
 
         response = table.query(**args)
         result = {'items': response.get('Items', [])}

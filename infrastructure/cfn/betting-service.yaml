@@ -82,6 +82,8 @@ Resources:
           AttributeType: S
         - AttributeName: eventId
           AttributeType: S
+        - AttributeName: betStatus
+          AttributeType: S
       KeySchema:
         - AttributeName: userId
           KeyType: HASH
@@ -95,6 +97,15 @@ Resources:
             - AttributeName: eventId
               KeyType: HASH
             - AttributeName: userId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        -
+          IndexName: eventId-betStatus-index
+          KeySchema:
+            - AttributeName: eventId
+              KeyType: HASH
+            - AttributeName: betStatus
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

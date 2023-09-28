@@ -91,6 +91,9 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
     gql_input = {
         'input': update_info
     }
+
+    logger.info("The bet is settled. Event outcome is: %s, bet outcome: %s, amount: %s", eventOutcome, betOutcome, amount)
+
     response = gql_client.execute(gql(deduct_funds), variable_values=gql_input)[
         'deductFunds']
     
