@@ -51,6 +51,7 @@ export const createBets = /* GraphQL */ `
         nextToken
         items {
           betId
+          amount
           outcome
           odds
           event {
@@ -81,6 +82,22 @@ export const lockUser = /* GraphQL */ `
         __typename
         userId
         isLocked
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const triggerFinishEvent = /* GraphQL */ `
+  mutation TriggerFinishEvent($input: FinishEventInput) {
+    triggerFinishEvent(input: $input) {
+      ... on Event {
+        __typename
+        eventId
+        eventStatus
       }
       ... on Error {
         __typename

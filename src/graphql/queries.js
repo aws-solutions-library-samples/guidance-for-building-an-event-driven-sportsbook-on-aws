@@ -31,6 +31,7 @@ export const getBets = /* GraphQL */ `
           odds
           outcome
           placedAt
+          betStatus
           event {
             away
             awayOdds

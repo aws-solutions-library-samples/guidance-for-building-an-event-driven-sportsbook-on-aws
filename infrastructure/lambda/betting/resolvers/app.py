@@ -43,7 +43,6 @@ def get_bets(startKey: str = "") -> dict:
         args = {}
         if startKey:
             args['ExclusiveStartKey'] = {'userId': userId, 'betId': startKey}
-
         args['KeyConditionExpression'] = 'userId = :u'
         args['ExpressionAttributeValues'] = {':u': userId}
 
@@ -84,6 +83,8 @@ def create_bets(input: dict) -> dict:
             bet['betId'] = scalar_types_utils.make_id()
             bet['event'] = event
             bet['placedAt'] = placement_time
+            bet['amount'] = Decimal(bet['amount'])
+            bet['betStatus'] = 'placed'
             total_stakes += 10.0
             processed_bets.append(bet)
 
@@ -107,7 +108,9 @@ def create_bets(input: dict) -> dict:
                     'eventId': bet['event']['eventId'],
                     'odds': bet['odds'],
                     'placedAt': bet['placedAt'],
-                    'outcome': bet['outcome']
+                    'outcome': bet['outcome'],
+                    'betStatus': bet['betStatus'],
+                    'amount': bet['amount']
                 }
                 batch.put_item(Item=item)
 
@@ -122,6 +125,46 @@ def create_bets(input: dict) -> dict:
     except Exception as e:
         logger.exception({'UnknownError': e})
         return betting_error('UnknownError', 'An unknown error occured.')
+
+@app.resolver(type_name="Mutation", field_name="lockBetsForEvent")
+@tracer.capture_method
+def lock_bets_for_event(input: dict) -> dict:
+    bets = get_open_bets_by_event_id(input['eventId'])
+    #iterate through all bets and update the "status" field to "finalized"
+    for bet in bets['items']:  
+        bet['event'] = {'eventId': input['eventId']}
+        table.update_item(
+            Key={'userId': bet['userId'], 'betId': bet['betId']},
+            UpdateExpression="set betStatus=:r",
+            ExpressionAttributeValues={
+                ':r': 'resulted'
+            },
+            ReturnValues="UPDATED_NEW")
+
+    return bet_list_response(bets)
+
+
+@tracer.capture_method
+def get_open_bets_by_event_id(eventId: str = "") -> dict:
+    try:
+        args = {}
+        
+        args['KeyConditionExpression'] = 'eventId = :u AND betStatus = :s'
+        args['ExpressionAttributeValues'] = {':u': eventId, ':s': 'placed'}
+        args['IndexName'] = 'eventId-betStatus-index'
+
+        response = table.query(**args)
+        result = {'items': response.get('Items', [])}
+        if response.get('LastEvaluatedKey'):
+            result['nextToken'] = response['LastEvaluatedKey']['betId']
+
+        return bet_list_response(result)
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return betting_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.info({'UnknownError': e})
+        return betting_error('Unknown error', 'An unknown error occured.')
 
 
 def event_matches_bet(event, bet):

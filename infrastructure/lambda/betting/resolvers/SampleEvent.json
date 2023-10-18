@@ -1,0 +1,63 @@
+{
+    "arguments": {
+        "input": {
+            "eventId": "a0ed26b1-626e-4e30-8111-cc2b8e0293d7"
+        }
+    },
+    "identity": {
+        "accountId": "967057312161",
+        "cognitoIdentityAuthProvider": null,
+        "cognitoIdentityAuthType": null,
+        "cognitoIdentityId": null,
+        "cognitoIdentityPoolId": null,
+        "sourceIp": [
+            "34.254.146.58"
+        ],
+        "userArn": "arn:aws:sts::967057312161:assumed-role/sportsbook-BettingService-BettingBatchFunctionRole-KPATIAEVH8WG/sportsbook-BettingServiceStac-BettingBatchFunction-7sd2n8nhbJP1",
+        "username": "AROA6CKI3RGQ5HORO5ZED:sportsbook-BettingServiceStac-BettingBatchFunction-7sd2n8nhbJP1"
+    },
+    "source": null,
+    "request": {
+        "headers": {
+            "x-forwarded-for": "34.254.146.58, 130.176.209.44",
+            "cloudfront-viewer-country": "IE",
+            "cloudfront-is-tablet-viewer": "false",
+            "x-amzn-requestid": "b41f43ed-5807-45b9-bfc8-0623532eb4be",
+            "via": "1.1 a2df4ad642d78d6dac65038e06ad10d2.cloudfront.net (CloudFront)",
+            "cloudfront-forwarded-proto": "https",
+            "x-amz-content-sha256": "32a02a3729076d2f87ebb4a1b0e8453208c147ca4cb713d69725e6b478d996cd",
+            "content-length": "830",
+            "host": "yp6cbeanx5gqrcyway4ebmvjgu.appsync-api.eu-west-1.amazonaws.com",
+            "x-forwarded-proto": "https",
+            "user-agent": "python-requests/2.29.0",
+            "cloudfront-is-mobile-viewer": "false",
+            "accept": "application/json",
+            "x-amz-date": "20230727T200706Z",
+            "cloudfront-viewer-asn": "16509",
+            "cloudfront-is-smarttv-viewer": "false",
+            "x-amzn-appsync-is-vpce-request": "false",
+            "accept-encoding": "gzip, deflate",
+            "x-amz-security-token": "IQoJb3JpZ2luX2VjEMz//////////wEaCWV1LXdlc3QtMSJHMEUCIQCndVQPl7CWsP8P9WnO+PS6K4FHHgJs/6tVo2+QInowgwIgcHYPVAM0vDALUIbC4kYduw9TANHSk0xjzXpd4TNy/Koq0wMIZRADGgw5NjcwNTczMTIxNjEiDAxiFtrwOI7logi3wiqwAxSF3yTXQDU3JT+RRiB+kmrh2tRzqs9NdX0D+3CQfUKQfVyyzDjxKWtx+RmrvV7WLRywxKEyQJ5OU8NsaXJar/eSn/q5t2/xRdoaWrdSoBWbtevGGLNUTYYbB/3Zqkzd5DuFzZL6fdgjoTdZoVZuooInpcgMnG5M5YM5QMnW1nFMIvRiCjDw7BLBtLHKIxtdbgFheARqQttmrHRj6nocGHU06cu2xvGqeDx1aIZlu6P/QJimrmvn+n4hs6/rVUevU0FGVMMp+7iUe2r8cjwuuGriTl4zdRTkj56TOY3Sva7CxohsEF6sfpnXaVsFZU57ehgoBp6VKIsiTXPZmjjhJg0Oe9HfnHE4ELCfuD6yTRmxDuHBVQgINwKumW3ZjWgAN/ikxcKkpcQDQLkVZN1bfVIc5nL3R+0VNn9m3O8r5X1eEuATLxIOjC4FK6ZUAns2kYaQf9oM1ERy8ic59lZWfsgkW3q4GBRIRLD4TQWUNvfpmfMEgXBtuSM2Js/Oy6E6FFQ8qGGL3exLYW2pmiv261ri3i0Vm7qbu1j79fyrRw0X2wUgNQCtyqERYMUfjeYpLTD2m4umBjqeATdM561WII8GtIapcKibgUA7g8U61AYrBgcVn2GSN/y/kavMwYMe44EMla0bwW9YkPeqKTm+SNErXRGn1QWu5iOHUen9yIye2iUHNRAgrdXA+1o92dFgioQXFjJDvgEqqgJL8z/44J7hrVpnhOj/cMbdZ4HpfPwlqTs8ptSEutlGgJ0DebcE+PiZnkKk7uwm/9Ay5evI2GV7R7irG+OU",
+            "content-type": "application/json",
+            "x-amz-cf-id": "SH_b5KTFQXWyLXaFfrPRW9Prqw8Oi69t0Z16qCIqigrBjJcR9cAgcQ==",
+            "x-amzn-trace-id": "Self=1-64c2ce6a-429696627f8982bc55a59377;Root=1-64c2ce6a-336b11b40002915c3f82168b;Parent=5b364c0f5cbe6071;Sampled=1;Lineage=e5266fb8:0",
+            "authorization": "AWS4-HMAC-SHA256 Credential=ASIA6CKI3RGQ6O5J73JY/20230727/eu-west-1/appsync/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=0dab24d0ae045d2e1bc0d911fb6ee67b2e01070b113cd7944d5dc61da6907351",
+            "cloudfront-is-desktop-viewer": "true",
+            "x-forwarded-port": "443"
+        },
+        "domainName": null
+    },
+    "prev": null,
+    "info": {
+        "fieldName": "lockBetsForEvent",
+        "selectionSetList": [],
+        "selectionSetGraphQL": "{\n  ... on BetList {\n    nextToken\n    items {\n      amount\n      betId\n      event {\n        away\n        awayOdds\n        drawOdds\n        end\n        eventId\n        eventStatus\n        home\n        homeOdds\n        start\n        updatedAt\n      }\n      odds\n      placedAt\n      outcome\n    }\n  }\n  ... on UnknownError {\n    __typename\n    message\n  }\n  ... on InputError {\n    __typename\n    message\n  }\n  ... on NotFoundError {\n    __typename\n    message\n  }\n  ... on InsufficientFundsError {\n    __typename\n    message\n  }\n}",
+        "parentTypeName": "Mutation",
+        "variables": {
+            "input": {
+                "eventId": "a0ed26b1-626e-4e30-8111-cc2b8e0293d7"
+            }
+        }
+    },
+    "stash": {}
+}

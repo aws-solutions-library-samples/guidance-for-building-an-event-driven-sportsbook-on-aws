@@ -27,10 +27,6 @@ Parameters:
     Type: String
   
 
-  UserPool:
-    Type: String
-  
-
 Resources:
 
   WalletDataStore:
@@ -100,30 +96,6 @@ Resources:
           DB_TABLE: !Ref WalletDataStore
           ACCOUNT_ID: !Ref AWS::AccountId
           APPSYNC_API_ID: !Ref AppSyncApiId
-
-  UserResolverFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: app.lambda_handler
-      CodeUri: ../lambda/user/resolvers/
-      Description: Lambda for Appsync resolvers
-      Timeout: 10
-      MemorySize: 256
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref WalletDataStore
-        - Statement:
-            - Effect: Allow
-              Action:
-                - cognito-idp:AdminUpdateUserAttributes
-              Resource:
-                - !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPool}'
-      Environment:
-        Variables:
-          DB_TABLE: !Ref WalletDataStore
-          ACCOUNT_ID: !Ref AWS::AccountId
-          APPSYNC_API_ID: !Ref AppSyncApiId
-          USER_POOL_ID: !Ref UserPool
 
   WalletAppSyncRole:
     Type: AWS::IAM::Role
@@ -205,11 +177,3 @@ Resources:
       TypeName: Mutation
       FieldName: deductFunds
       DataSourceName: !GetAtt WalletLambdaDataSource.Name
-  
-  LockUserResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !Ref AppSyncApiId
-      TypeName: Mutation
-      FieldName: lockUser
-      DataSourceName: !GetAtt UserLambdaDataSource.Name

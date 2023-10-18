@@ -1,7 +1,10 @@
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, graphqlOperation } from "aws-amplify";
+import { Auth } from "aws-amplify";
+
 import * as queries from "../graphql/queries.js";
+import * as mutations from "../graphql/mutations.js";
 import * as subscriptions from "../graphql/subscriptions.js";
 
 export const CACHE_PATH = "events";
@@ -46,6 +49,26 @@ export const useEvents = (config = {}) => {
   );
 };
 
+export const useFinishEvent = (config = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ data }) =>
+      API.graphql({
+        query: mutations.triggerFinishEvent,
+        variables: { input: data },
+      }),
+    {
+      onSuccess: () => {
+        return queryClient.invalidateQueries([CACHE_PATH]);
+      },
+      onError: (err, { id, dataType }) => {
+        console.error(err);
+      },
+      ...config,
+    }
+  );
+};
+
 const deserializeEvent = (dateKeys) => (event) => {
   return Object.fromEntries(
     Object.entries(event).map(([k, v]) =>
@@ -56,6 +79,7 @@ const deserializeEvent = (dateKeys) => (event) => {
 
 const hooks = {
   useEvents: useEvents,
+  useFinishEvent: useFinishEvent
 };
 
 export default hooks;
