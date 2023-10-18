@@ -3,6 +3,10 @@ type Wallet @aws_cognito_user_pools @aws_iam {
   balance: Float!
 }
 
+type ChatbotResponse @aws_cognito_user_pools @aws_iam {
+  completion: String!
+}
+
 type Event @aws_cognito_user_pools @aws_iam {
   eventId: ID!
   homeOdds: String!
@@ -87,6 +91,8 @@ union EventsResult = EventList | NotFoundError | InputError | UnknownError
 union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
 union UserResult = User | NotFoundError | InputError | UnknownError
+union ChatbotResult = ChatbotResponse | NotFoundError | InputError | UnknownError
+
 
 input CreateWalletInput {
   userId: ID!
@@ -140,6 +146,10 @@ input LockBetsForEventInput {
   eventId: ID!
 }
 
+input ChatbotMessageInput {
+  prompt: String!
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
@@ -151,6 +161,7 @@ type Query {
 type Mutation {
   createWallet(input: CreateWalletInput): WalletResult @aws_iam
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  sendChatbotMessage(input: ChatbotMessageInput): ChatbotResult @aws_cognito_user_pools @aws_iam
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   # finishEvent is a synchronous method to update event in data storage
   # Currently not used

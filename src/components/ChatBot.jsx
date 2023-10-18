@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "../css/internalStyles.css";
 import axios from 'axios';
+import {
+    useSendChatbotMessage,
+  } from "../hooks/useChatbot";
 
-const Chatbot = () => {
+export const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sessionId, setSessionId] = useState(localStorage.getItem('chatbotSessionId') || '');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const { mutateAsync: sendChatbotMessage } = useSendChatbotMessage();
   const chatbotInputRef = useRef(null);
   const isChatbotOpenRef = useRef(isChatbotOpen);
   const chatbotButtonInputRef = useRef(null);
@@ -39,6 +43,21 @@ const Chatbot = () => {
     };
   }, [sessionId]);
 
+  const sendMessageLocalImplementation = () => {
+    if (inputText.trim() === '') return;
+    var messageToSend = {
+        "prompt": inputText.trim()
+      }
+    setMessages([...messages, { text: inputText, isUser: true }, {text: "...", isUser: false}]);
+    sendChatbotMessage( { data: messageToSend }).then((response) => {
+        const botReply = response.data.sendChatbotMessage.completion;
+        setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
+        setInputText('');
+      }).catch(()=> {
+        console.error('Error sending message:', error);
+      })
+  }
+
   const sendMessage = () => {
     const headers = {
         Authorization: 'Bearer 1234567890',
@@ -46,14 +65,27 @@ const Chatbot = () => {
       };
     if (inputText.trim() === '') return;
     var messageToSend = {
-        "input": inputText,
-        "schema": ""
-    }
+        "modelId": "anthropic.claude-v2",
+        "contentType": "application/json",
+        "accept": "*/*",
+        "body": {
+          "prompt": "\n\nHuman: Hello world\n\nAssistant:",
+          "max_tokens_to_sample": 300,
+          "temperature": 0.5,
+          "top_k": 250,
+          "top_p": 1,
+          "stop_sequences": [
+            "\\n\\nHuman:"
+          ],
+          "anthropic_version": "bedrock-2023-05-31"
+        }
+      }
     // Send the user's message to the backend
-    axios.post('https://em69k83ho9.execute-api.us-east-1.amazonaws.com/prod/', {
+    axios.post('https://dierzujvnjyb5j6ngi4wo6swy40nierp.lambda-url.eu-west-1.on.aws/', {
       sessionId,
       message: messageToSend,
-    }, headers)
+      headers: headers
+    })
     .then(response => {
       const botReply = response.data.query;
       setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
@@ -112,7 +144,7 @@ const Chatbot = () => {
             onChange={(e) => setInputText(e.target.value)}
             ref={chatbotInputRef}
           />
-          <button ref={chatbotButtonInputRef} onClick={sendMessage}>Send</button>
+          <button ref={chatbotButtonInputRef} onClick={sendMessageLocalImplementation}>Send</button>
         </div>
       </div>
     </div>
