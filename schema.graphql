@@ -152,7 +152,11 @@ type Mutation {
   createWallet(input: CreateWalletInput): WalletResult @aws_iam
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
+  # finishEvent is a synchronous method to update event in data storage
+  # Currently not used
   finishEvent(input: FinishEventInput): EventResult @aws_iam
+  # triggerFinishEvent is an asynchronous method
+  # used only to re-raise event into service bus.
   triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
   deductFunds(input: DeductFundsInput): WalletResult @aws_iam

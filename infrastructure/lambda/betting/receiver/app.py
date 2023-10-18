@@ -30,20 +30,6 @@ table = dynamodb.Table(table_name)
 appsync_url = getenv("APPSYNC_URL")
 gql_client = get_client(region, appsync_url)
 
-
-@tracer.capture_method
-def handle_thirdparty_event(event: dict, context: LambdaContext) -> dict:
-    if event['detail-type'] == 'UpdatedOdds':
-        handle_updated_odds(event)
-
-
-@tracer.capture_method
-def handle_updated_odds(item: dict) -> dict:
-    # Here we effectively just re-raise the event under the trading namespace
-    # In a real world scenario the odds would be assessed by this service to produce new odds
-    return form_event('com.trading', 'UpdatedOdds', item['detail'])
-
-
 def form_event(source, detailType, detail):
     return {
         'Source': source,
@@ -52,7 +38,6 @@ def form_event(source, detailType, detail):
         'EventBusName': event_bus_name
     }
 
-
 @tracer.capture_method
 def record_handler(record: SQSRecord):
     # This function processes a record from SQS
@@ -60,9 +45,6 @@ def record_handler(record: SQSRecord):
     payload = record.body
     if payload:
         item = json.loads(payload)
-        if item['source'] == 'com.thirdparty':
-            if item['detail-type'] == 'UpdatedOdds':
-                return handle_updated_odds(item)
         if item['source'] == 'com.livemarket':
             if item['detail-type'] == 'EventClosed':
                 return handle_event_closed(item)
@@ -91,15 +73,6 @@ def handle_event_closed(item: dict) -> dict:
             input=json.dumps(bet, default=str)
             )
         bet['result'] = result
-        
-        #betresponse = events.put_events(
-        #    Entries=[
-        #        form_event('com.betting', 'BetLocked', bet)
-        #    ]
-        #)
-
-
-        #print(betresponse)
 
     if response['__typename'] == 'BetList':
         logger.info("Bets are closed. Beginning to settle the bets")
