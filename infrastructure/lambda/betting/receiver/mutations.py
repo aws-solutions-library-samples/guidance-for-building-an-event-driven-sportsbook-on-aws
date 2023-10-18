@@ -1,6 +1,6 @@
 update_event_odds = """
 mutation MyMutation ($input: UpdateEventOddsInput!) {
-  updateEventOdds(input: $input) {
+  updateEventStatus(input: $input) {
     ... on Event {
       __typename
       start
@@ -11,30 +11,8 @@ mutation MyMutation ($input: UpdateEventOddsInput!) {
       eventId
       end
       away,
-      updatedAt
-    }
-    ... on Error {
-      __typename
-      message
-    }
-  }
-}
-"""
-
-finish_event = """
-mutation FinishEvent ($input: FinishEventInput!) {
-  finishEvent(input: $input) {
-    ... on Event {
-      __typename
-      start
-      homeOdds
-      awayOdds
-      drawOdds
-      home
-      eventId
-      end
-      away,
-      updatedAt
+      updatedAt,
+      status
     }
     ... on Error {
       __typename

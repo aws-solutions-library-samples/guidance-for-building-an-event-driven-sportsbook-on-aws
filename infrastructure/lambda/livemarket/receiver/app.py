@@ -2,7 +2,7 @@ from os import getenv
 import json
 import boto3
 from gql_utils import get_client
-from mutations import update_event_odds
+from mutations import update_event_odds, finish_event, lock_bets_for_event
 from gql import gql
 
 from aws_lambda_powertools import Logger, Tracer
@@ -20,6 +20,8 @@ event_bus_name = getenv('EVENT_BUS')
 gql_client = get_client(region, appsync_url)
 session = boto3.Session()
 events = session.client('events')
+sqsqueue = session.client('sqs')
+queue_url = getenv('QUEUE')
 
 
 @tracer.capture_method
@@ -38,21 +40,41 @@ def handle_updated_odds(item: dict) -> dict:
 
     if response['__typename'] == 'Event':
         logger.info("Odds updated")
-        return form_event('UpdatedOdds', update_info)
+        return form_event('com.livemarket', 'UpdatedOdds', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to update odds")
         raise ValueError(
             f"updateEventOdds failed: {response['message']}")
 
+@tracer.capture_method
+def handle_event_finished(item: dict) -> dict:
+    update_info = {
+        'eventId': item['detail']['eventId'],
+        'eventStatus': 'finished',
+        'outcome': item['detail']['outcome']
+    }
+    gql_input = {
+        'input': update_info
+    }
+    response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
+        'finishEvent']
+    
+    if response['__typename'] == 'Event':
+        logger.info("Event closed")
+        return form_event('com.livemarket', 'EventClosed', update_info)
+    elif 'Error' in response['__typename']:
+        logger.exception("Failed to update odds")
+        raise ValueError(
+            f"finish_event failed: {response['message']}")
 
-def form_event(detailType, detail):
+
+def form_event(source, detailType, detail):
     return {
-        'Source': 'com.livemarket',
+        'Source': source,
         'DetailType': detailType,
         'Detail': json.dumps(detail),
         'EventBusName': event_bus_name
     }
-
 
 @tracer.capture_method
 def record_handler(record: SQSRecord):
@@ -64,7 +86,9 @@ def record_handler(record: SQSRecord):
         if item['source'] == 'com.trading':
             if item['detail-type'] == 'UpdatedOdds':
                 return handle_updated_odds(item)
-
+        if item['source'] == 'com.thirdparty':
+            if item['detail-type'] == 'EventClosed':
+                return handle_event_finished(item)
     logger.warning({"message": "Unknown record type", "record": item})
     return None
 

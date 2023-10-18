@@ -32,6 +32,7 @@ def create(event, context):
     with table.batch_writer() as batch:
         for event_item in events:
             event_item['updatedAt'] = now
+            event_item['eventStatus'] = 'running'
             batch.put_item(Item=event_item)
 
     logger.info('Event seed complete')

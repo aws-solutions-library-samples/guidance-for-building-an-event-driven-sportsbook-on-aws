@@ -104,6 +104,7 @@ Resources:
       EventPattern:
         source:
           - "com.trading"
+          - "com.thirdparty"
       Targets:
         - Arn: !GetAtt SQSQueue.Arn
           Id: SQSqueue
@@ -151,6 +152,7 @@ Resources:
                 - appsync:GraphQL
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/updateEventOdds
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/finishEvent
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -166,6 +168,8 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
         - DynamoDBCrudPolicy:
             TableName: !Ref LiveMarketDataStore
         - DynamoDBCrudPolicy:
@@ -177,6 +181,7 @@ Resources:
           ACCOUNT_ID: !Ref AWS::AccountId
           APPSYNC_API_ID: !Ref AppSyncApiId
           DB_HISTORY_RETENTION: 3600
+          EVENT_BUS: !Ref EventBus
 
   LiveMarketAppSyncRole:
     Type: AWS::IAM::Role
@@ -233,6 +238,22 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: updateEventOdds
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  FinishEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: finishEvent
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+  
+  TriggereFinishEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: triggerFinishEvent
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
 
 Outputs:

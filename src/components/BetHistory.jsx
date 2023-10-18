@@ -17,6 +17,12 @@ const conditionFormat = {
   draw: "Draw",
 };
 
+const betStatusFormat = {
+  placed: "Placed",
+  resulted: "Resulted",
+  settled: "Settled",
+};
+
 export const BetHistory = () => {
   const { data: bets, isLoading: loadingBets } = useBets();
   if (loadingBets) return <Typography>Loading Bets...</Typography>;
@@ -49,6 +55,12 @@ export const BetHistory = () => {
       valueFormatter: ({ value }) =>
         new Date(value).toLocaleString("en-GB", dateOptions),
     },
+    {
+      field: "betStatus",
+      headerName: "Bet status",
+      sortable: false,
+      valueFormatter: ({ value }) => betStatusFormat[value],
+    }
   ];
 
   return (
