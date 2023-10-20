@@ -63,6 +63,7 @@
     margin: 5px;
     padding: 10px;
     border-radius: 5px;
+    font-size: 12px;
   }
   
   .message.user {

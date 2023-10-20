@@ -65,7 +65,7 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/thirdparty/chatbot/
       Description: Lambda for chatbot interaction
-      Timeout: 30
+      Timeout: 60
       MemorySize: 256
       Layers:
         - !Ref BedrockLambdaLayer
@@ -74,6 +74,12 @@ Resources:
             - Effect: Allow
               Action:
                 - bedrock:*
+              Resource:
+                - "*"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kendra:*
               Resource:
                 - "*"
 

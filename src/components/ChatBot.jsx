@@ -52,6 +52,7 @@ export const Chatbot = () => {
     sendChatbotMessage( { data: messageToSend }).then((response) => {
         const botReply = response.data.sendChatbotMessage.completion;
         setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
+        div.current.scrollIntoView({ behavior: "smooth", block: "end" });
         setInputText('');
       }).catch(()=> {
         console.error('Error sending message:', error);
