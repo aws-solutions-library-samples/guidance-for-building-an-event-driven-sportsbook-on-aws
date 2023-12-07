@@ -309,6 +309,11 @@ Resources:
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
+  EventsServiceStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: infrastructure/cfn/events-service.yaml
+
 Outputs:
   Region:
     Description: Deployment region
