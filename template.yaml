@@ -312,7 +312,7 @@ Resources:
   EventsServiceStack:
     Type: AWS::Serverless::Application
     Properties:
-      Location: infrastructure/cfn/events-service.yaml
+      Location: infrastructure/cfn/sportingevents-service.yaml
 
 Outputs:
   Region:

@@ -1,18 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-Description: Events Service - Amazon API Gateway to AWS Lambda to Amazon DynamoDB to store event from events producers
+Description: Sporting Events Service - Amazon API Gateway to AWS Lambda to Amazon DynamoDB to store sporting events from events producers
 
 Globals:
 
   Function:
-    Runtime: python3.11
+    Runtime: python3.9
     Tracing: Active
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: events
+        POWERTOOLS_SERVICE_NAME: sportingevents
 
 Resources:
   LambdaFunction:
@@ -21,9 +21,9 @@ Resources:
     Properties:
       FunctionName:
       Handler: app.lambda_handler
-      CodeUri: ../lambda/events/receiver/
-      Description: Lambda for receiving betting events
-      Runtime: python3.11
+      CodeUri: ../lambda/sportingevents/receiver/
+      Description: Lambda for receiving sporting events
+      Runtime: python3.9
       Timeout: 10
       MemorySize: 256
       Policies:
