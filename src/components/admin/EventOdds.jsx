@@ -46,6 +46,7 @@ const renderActions = (params) => {
             <Button
             size="small"
             startIcon={<CancelIcon />}
+            variant="contained"
             onClick={() => {
               EventOdds.handleFinishEvent(params.row.eventId, 'homeWin')
             }}>
@@ -57,7 +58,6 @@ const renderActions = (params) => {
 }
 
 const suspendMarket = ({ event, market}) => {
-    // call suspend event service
     console.log(`suspending market '${market}' (${event})`);
 }
 
@@ -138,6 +138,7 @@ export const EventOdds = () => {
             <ButtonGroup>
                 <Button
                 size="small"
+                variant="contained"
                 startIcon={<CancelIcon />}
                 onClick={() => {
                   handleFinishEvent(params.row.eventId, 'homeWin')
@@ -153,7 +154,7 @@ export const EventOdds = () => {
   
 
   return (
-    <Card>
+    <Card style={{ "maxWidth": '1600px'}}>
       <DataGrid
         rows={events}
         columns={columns}

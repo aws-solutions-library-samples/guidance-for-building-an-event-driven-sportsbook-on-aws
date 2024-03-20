@@ -1,9 +1,10 @@
 import diceImage from "./assets/dice.jpeg";
+import bgImage from "./assets/background.jpg";
+import headerImage from "./assets/header.jpg";
 import { Outlet } from "react-router-dom";
 import { Amplify } from "aws-amplify";
 import { useEffect, useState } from "react";
 import { useUser } from "./hooks/useUser";
-
 
 import {
   Authenticator,
@@ -25,6 +26,7 @@ import {
   Alert,
 } from "@mui/material";
 import SportsbookAppBar from "./components/SportsbookAppBar";
+import SystemEvents from "./components/admin/SystemEvents";
 import BetSlip from "./components/BetSlip";
 import { BetSlipProvider } from "./providers/BetSlipProvider";
 import { GlobalProvider } from "./providers/GlobalProvider";
@@ -50,7 +52,32 @@ Amplify.configure({
   aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
 });
 
+const primaryColor = "rgb(25, 118, 80)";
+const secondaryColor = "#e53935";
+
+const styles = {
+  root: {
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    backgroundImage: `url(${bgImage})`,
+    color: "#ffffff", // Light text color
+  },
+};
+
 const theme = createTheme({
+  palette: {
+    mode: "light", // Set the theme to dark mode
+    primary: {
+      main: primaryColor,
+    },
+    secondary: {
+      main: secondaryColor,
+    },
+  },
   breakpoints: {
     values: {
       xs: 0,
@@ -64,7 +91,6 @@ const theme = createTheme({
 });
 
 function App({ user, signOut }) {
-  
   const { showHub, setShowHub } = useBetSlip();
   const {
     bShowSnackbar,
@@ -77,60 +103,108 @@ function App({ user, signOut }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} />
-      <Container disableGutters={true} maxWidth="xxl">
-        <Snackbar open={bShowSnackbar} autoHideDuration={6000} onClose={closeSnackbar} anchorOrigin={{vertical: 'top', horizontal: 'center'}} >
-          <Alert onClose={closeSnackbar} severity={snackbarSeverity} sx={{width: '100%'}} >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-        <Stack
-          direction={"row"}
-          sx={{ position: "relative", height: "calc(100vh - 64px)" }}
-        >
-          <Box
-            sx={{
-              height: "100%",
-              paddingBottom: "50px",
-              position: "relative",
-              overflowY: "scroll",
-            }}
+      <Box sx={styles.root}>
+        <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} />
+        <Container disableGutters={true} maxWidth="xxl">
+          <Snackbar
+            open={bShowSnackbar}
+            autoHideDuration={6000}
+            onClose={closeSnackbar}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
           >
-            <img src={diceImage} alt="dice" width="100%" />
-            <Outlet />
-          </Box>
-          <Box
-            sx={{
-              height: "100%",
-              paddingRight: showHub ? 11 : 0,
-              display: { lg: "flex", xs: "none" },
-              background: "#fafafa",
-              overflowY: showHub ? "scroll" : "hidden"
-            }}
-          >
-            <Collapse orientation="horizontal" in={showHub}>
-              <Box sx={{ width: "300px" }}>
-                <BetSlip onClose={() => setShowHub(false)} isLocked={isLocked}/>
-              </Box>
-            </Collapse>
-          </Box>
-          {
-            !showHub &&
-            <Fab
-              color="primary"
-              variant="extended"
-              aria-label="add"
-              sx={{ width: 280, position: "absolute", bottom: 10, right: 10 }}
-              onClick={() => setShowHub(!showHub)}
+            <Alert
+              onClose={closeSnackbar}
+              severity={snackbarSeverity}
+              sx={{ width: "100%" }}
             >
-              Open Bet slip
-            </Fab>
-          }
-        </Stack>
-      </Container>
+              {snackbarMessage}
+            </Alert>
+          </Snackbar>
+          <Stack
+            direction={"row"}
+            sx={{ position: "relative", height: "calc(100vh - 64px)" }}
+          >
+            <Box
+              sx={{
+                height: "100%",
+                paddingBottom: "50px",
+                position: "relative",
+                overflowY: "scroll",
+                backgroundColor: "#eee", // Darker background color
+              }}
+            >
+              <img src={headerImage} alt="dice" style={{
+                width: "100%",
+                height: "300px",
+                objectFit: "cover",
+                objectPosition: "center",
+              }}/>
+              <Outlet />
+            </Box>
+            <Box
+              sx={{
+                height: "100%",
+                paddingRight: showHub ? 11 : 0,
+                display: { lg: "flex", xs: "none" },
+                backgroundColor: "#eee", // Darker background color
+                overflowY: showHub ? "scroll" : "hidden",
+              }}
+            >
+              <Collapse orientation="horizontal" in={showHub}>
+                <Box
+                  sx={{
+                    width: "300px",
+                    pr: "5px",
+                    pl: "5px",
+                    backgroundColor: "#eee", // Darker background color
+                  }}
+                >
+                  <Box
+                    sx={{
+                      pt: "5px",
+                      backgroundColor: "#eee", // Darker background color
+                    }}
+                  >
+                    <BetSlip
+                      onClose={() => setShowHub(false)}
+                      isLocked={isLocked}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      pt: "5px",
+                      backgroundColor: "#eee", // Darker background color
+                    }}
+                  >
+                    <SystemEvents />
+                  </Box>
+                </Box>
+              </Collapse>
+            </Box>
+            {!showHub && (
+              <Fab
+                color="primary"
+                variant="extended"
+                aria-label="add"
+                sx={{
+                  width: 280,
+                  position: "absolute",
+                  bottom: 10,
+                  right: 10,
+                  backgroundColor: "#424242", // Darker background color
+                  color: "#ffffff", // Light text color
+                }}
+                onClick={() => setShowHub(!showHub)}
+              >
+                Open Bet slip
+              </Fab>
+            )}
+          </Stack>
+        </Container>
+      </Box>
       <Drawer
         sx={{ display: { lg: "none", xs: "block" } }}
-        PaperProps={{sx: {width: 350}}}
+        PaperProps={{ sx: { width: 350, backgroundColor: "#333333" } }} // Darker drawer background
         anchor="right"
         variant={"temporary"}
         open={showHub}

@@ -89,3 +89,21 @@ export const getEvent = /* GraphQL */ `
     }
   }
 `;
+
+export const getPingInfo = /* GraphQL */ `
+  query GetPingInfo {
+    getPingInfo {
+      ... on PingInfo {
+        __typename
+        items {
+          pingLocation
+          pingLatency
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;

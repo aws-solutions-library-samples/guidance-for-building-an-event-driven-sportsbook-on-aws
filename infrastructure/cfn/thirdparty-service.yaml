@@ -105,11 +105,52 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt ChatBotResolverFunction.Arn
 
-  WalletLambdaDataSource:
+  PingInfoResolverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/thirdparty/pinginfo/
+      Description: Lambda for pinginfo interaction
+      Timeout: 60
+      MemorySize: 256
+      Layers:
+        - !Ref BedrockLambdaLayer
+
+  PingInfoAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt PingInfoResolverFunction.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PingPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeRegions
+                Resource: '*'
+        
+  ChatbotMessageLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
       ApiId: !Ref AppSyncApiId
-      Name: Chatbot_Lambda_Source
+      Name: Chatbot_Lambda_Source_Upd
       Description: Chatbot Lambda AppSync Data Source
       Type: AWS_LAMBDA
       ServiceRoleArn: !GetAtt ChatbotAppSyncRole.Arn
@@ -122,5 +163,23 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: sendChatbotMessage
-      DataSourceName: !GetAtt WalletLambdaDataSource.Name  
+      DataSourceName: !GetAtt ChatbotMessageLambdaDataSource.Name  
 
+  PingInfoDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      Name: PingInfo_Lambda_Source
+      Description: PingInfo Lambda AppSync Data Source
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt PingInfoAppSyncRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt PingInfoResolverFunction.Arn
+
+  PingInfoResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getPingInfo
+      DataSourceName: !GetAtt PingInfoDataSource.Name  

@@ -86,6 +86,17 @@ export function BetSlipProvider(props) {
     );
   };
 
+  const updateInSlip = (bet) => {
+    setPendingBets(
+      (pendingBet) => {
+        if (pendingBet.eventId == bet.eventId) {
+          return { ...pendingBet, amount: bet.amount };
+        }
+        return pendingBet;
+      }
+    );
+  };
+
   const clearSlip = () => {
     setPendingBets([]);
   };
@@ -100,6 +111,7 @@ export function BetSlipProvider(props) {
         setInProgress,
         addToSlip, 
         removeFromSlip, 
+        updateInSlip,
         clearSlip,
         isValid,
         acceptCurrentOdds,

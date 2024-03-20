@@ -3,6 +3,15 @@ type Wallet @aws_cognito_user_pools @aws_iam {
   balance: Float!
 }
 
+type PingInfo @aws_cognito_user_pools @aws_iam {
+  items: [PingInfoItem]!
+}
+
+type PingInfoItem @aws_cognito_user_pools @aws_iam {
+  pingLocation: String!
+  pingLatency: Float!
+}
+
 type ChatbotResponse @aws_cognito_user_pools @aws_iam {
   completion: String!
 }
@@ -86,6 +95,7 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
 }
 
 union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union PingInfoResult = PingInfo | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
 union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
@@ -153,6 +163,7 @@ input ChatbotMessageInput {
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
+  getPingInfo: PingInfoResult @aws_cognito_user_pools
   getBets(startKey: String): BetsResult @aws_cognito_user_pools
   getWalletByUserId(userId: ID!): WalletResult @aws_iam
   getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools

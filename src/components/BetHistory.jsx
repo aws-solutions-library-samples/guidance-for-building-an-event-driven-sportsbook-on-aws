@@ -1,6 +1,5 @@
 import { Typography, Card } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-
 import { useBets } from "../hooks/useBets";
 
 const dateOptions = {
@@ -64,9 +63,10 @@ export const BetHistory = () => {
   ];
 
   return (
+
     <Card>
       <Typography variant="h5" sx={{ padding: 2 }}>
-        Your bets
+        Recent trades
       </Typography>
       <DataGrid
         rows={bets}
@@ -74,7 +74,7 @@ export const BetHistory = () => {
         initialState={{
           pagination: {
             paginationModel: {
-              pageSize: 10,
+              pageSize: 5,
             },
           },
           sorting: {

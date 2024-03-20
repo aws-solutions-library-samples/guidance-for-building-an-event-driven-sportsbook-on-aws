@@ -1,0 +1,1570 @@
+You are a full stack web developer. You need to make a change for the existing solution. This solution is a betting application built using AWS. It uses reactjs for frontend and graphql to connect to backend. The backend is built using Appsync that is connected to lambda functions that process queries and mutations. Lambda functions emit messages to Amazon EventBridge which are being populated to SQS and picked up by other lambda functions later on. The solution is built using AWS SAM and contains CloudFormation templates for all of its components. Lambda functions are also covered by Amazon X-Ray. 
+I will provide you a code for all key parts for one of components - Live Market service. This service updates the events on a website. These events are not re-generated, but just updated via this service to change the odds for same events in DynamoDB table. 
+Frontend component for this service renders a table with set of buttons: 1/ "Suspend" and "Close" for each outcome 2/ "End Event" for the whole event. 
+"End event" button is currently operational, however "suspend" and "close" - not. "Suspend" should put the event to suspended state, however it should be possible to unsuspend the event. What should happen when "suspend" is clicked on frontend:
+1. Button should change its text to "unsuspend"
+2. Event outcome should be marked as "suspended" in dynamoDB table.
+3. Event should have additional subitem "marketstatus" in dynamodb. This subitem should have following schema: "marketstatus": { "name": "",  "status": ""}. 
+Example schema for a single event:
+{
+    "eventid": "xxxx",
+    ... rest of the fields
+    "marketstatus": [{
+        "name": "Home",
+        "status": "Suspended"
+    },
+    {
+        "name": "Draw",
+        "status": "Active"
+    },
+    {
+        "name": "Away",
+        "status": "Close"
+    }
+    ]
+}
+4. When button "suspend" is clicked on frontend, it should trigger update to corresponding market so that it changes the status to "suspended".
+5. When button "unsuspend" is clicked on frontend, it should trigger update to corresponding market so that it changes the status to "active".
+6. When button "close" is clicked on frontend, it should trigger update to corresponding market so that it changes the status to "closed".
+
+<code filename="EventOdds.jsx" description="renders events and odds on frontend">
+import { Typography, Card, Button, Box } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { useEvents } from "../hooks/useEvents";
+import { useBetSlip } from "../providers/BetSlipContext";
+import Zoom from "@mui/material/Zoom";
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import Slider from "react-slick";
+
+const dateOptions = {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+};
+
+const renderOdds = (params) => {
+  const { addToSlip } = useBetSlip();
+
+  return (
+    <Button
+      variant="outlined"
+      size="small"
+      tabIndex={params.hasFocus ? 0 : -1}
+      onClick={() => addToSlip(params.row, params.field)}
+    >
+      {params.value}
+    </Button>
+  );
+};
+
+export const EventOdds = () => {
+  const { addToSlip } = useBetSlip();
+  const { data: events, isLoading: loadingEvents } = useEvents();
+
+  if (loadingEvents) return <Typography>Loading...</Typography>;
+
+  const settings = {
+    className: "center",
+    infinite: true,
+    centerPadding: "60px",
+    slidesToShow: 5,
+    swipeToSlide: true,
+    variableWidth: true,
+    afterChange: function(index) {
+      console.log(
+        `Slider Changed to: ${index + 1}, background: #222; color: #bada55`
+      );
+    }
+  };
+
+  return (
+
+    <Card style={{ "maxWidth": '1600px', 'height': '220px' }}>
+      <Typography variant="h5" sx={{ padding: 2 }}>
+        In Soccer Today
+      </Typography>
+      <Slider {...settings}  >
+  {events.map((event) => (
+    <div key={event.eventId} style={{ padding: '10px' }}>
+      <Card style={{ margin: '10px' }}>
+        <Box sx={{ padding: 2 }}>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {event.home} vs {event.away}
+          </Typography>
+          <Typography variant="caption">
+            Starts at {new Date(event.start).toLocaleString('en-GB', dateOptions)}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-around', marginTop: 1 }}>
+            <Zoom in={true} timeout={500}>
+              <Button variant="outlined" size="small" onClick={() => addToSlip(event, 'homeOdds')} style={{ margin: '2px' }}>
+                {event.homeOdds}
+              </Button>
+            </Zoom>
+            <Zoom in={true} timeout={500}>
+              <Button variant="outlined" size="small" onClick={() => addToSlip(event, 'drawOdds')} style={{ margin: '2px' }}>
+                {event.drawOdds}
+              </Button>
+            </Zoom>
+            <Zoom in={true} timeout={500}>
+              <Button variant="outlined" size="small" onClick={() => addToSlip(event, 'awayOdds')} style={{ margin: '2px' }}>
+                {event.awayOdds}
+              </Button>
+            </Zoom>
+          </Box>
+        </Box>
+      </Card>
+    </div>
+  ))}
+</Slider>
+    </Card>
+  );
+};
+
+export default EventOdds;
+</code>
+
+<code filename="hooks/useEvents.jsx">
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { API, graphqlOperation } from "aws-amplify";
+import { Auth } from "aws-amplify";
+
+import * as queries from "../graphql/queries.js";
+import * as mutations from "../graphql/mutations.js";
+import * as subscriptions from "../graphql/subscriptions.js";
+
+export const CACHE_PATH = "events";
+
+export const useEvents = (config = {}) => {
+  const queryClient = useQueryClient();
+  const dateKeys = ["start", "end", "updatedAt"];
+  const deserializer = deserializeEvent([dateKeys]);
+  useEffect(() => {
+    const sub = API.graphql(
+      graphqlOperation(subscriptions.updatedEventOdds)
+    ).subscribe({
+      next: ({ provider, value }) => {
+        queryClient.setQueryData([CACHE_PATH], (oldData) => {
+          const newEvent = deserializer(value.data.updatedEventOdds);
+          const newItems = oldData.filter(
+            (e) => e.eventId !== newEvent.eventId
+          );
+          newItems.push(newEvent);
+          return newItems;
+        });
+      },
+      error: (error) => console.warn(error),
+    });
+
+    return () => sub.unsubscribe();
+  }, []);
+
+  return useQuery(
+    [CACHE_PATH],
+    () =>
+      API.graphql({ query: queries.getEvents }).then((res) => {
+        const result = res?.data?.getEvents?.items ?? [];
+        return result.map(deserializer);
+      }),
+    {
+      refetchInterval: 0,
+      useErrorBoundary: false,
+      enabled: true,
+      ...config,
+    }
+  );
+};
+
+export const useFinishEvent = (config = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ data }) =>
+      API.graphql({
+        query: mutations.triggerFinishEvent,
+        variables: { input: data },
+      }),
+    {
+      onSuccess: () => {
+        return queryClient.invalidateQueries([CACHE_PATH]);
+      },
+      onError: (err, { id, dataType }) => {
+        console.error(err);
+      },
+      ...config,
+    }
+  );
+};
+
+const deserializeEvent = (dateKeys) => (event) => {
+  return Object.fromEntries(
+    Object.entries(event).map(([k, v]) =>
+      dateKeys.includes(k) ? [k, new Date(v)] : [k, v]
+    )
+  );
+};
+
+const hooks = {
+  useEvents: useEvents,
+  useFinishEvent: useFinishEvent
+};
+
+export default hooks;
+</code>
+
+<code filename="providers/BetSlipContext">
+import { useContext, createContext } from "react";
+
+export const betSlipContext = createContext([false, () => {}]);
+
+export const useBetSlip = () => {
+  return useContext(betSlipContext);
+};
+
+export default {
+  useBetSlip,
+  betSlipContext,
+};
+</code>
+
+<code filename="graphql/queries.js">
+export const getEvents = /* GraphQL */ `
+  query GetEvents($startKey: String) {
+    getEvents(startKey: $startKey) {
+      ... on EventList {
+        items {
+          eventId
+          homeOdds
+          awayOdds
+          drawOdds
+          home
+          away
+          start
+          end
+          updatedAt
+        }
+        nextToken
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+export const getBets = /* GraphQL */ `
+  query GetEvents($startKey: String) {
+    getBets(startKey: $startKey) {
+      ... on BetList {
+        __typename
+        items {
+          betId
+          odds
+          outcome
+          placedAt
+          betStatus
+          event {
+            away
+            awayOdds
+            drawOdds
+            end
+            eventId
+            home
+            homeOdds
+            start
+            updatedAt
+          }
+        }
+        nextToken
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+export const getWallet = /* GraphQL */ `
+  query GetWallet {
+    getWallet {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+export const getEvent = /* GraphQL */ `
+  query GetEvent($eventId: ID!) {
+    getEvent(eventId: $eventId) {
+      ... on Event {
+        __typename
+        away
+        awayOdds
+        drawOdds
+        end
+        eventId
+        home
+        homeOdds
+        start
+        updatedAt
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const getPingInfo = /* GraphQL */ `
+  query GetPingInfo {
+    getPingInfo {
+      ... on PingInfo {
+        __typename
+        items {
+          pingLocation
+          pingLatency
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+</code>
+
+<code filename="graphql/mutations.js">
+export const createWallet = /* GraphQL */ `
+  mutation CreateWallet($input: CreateWalletInput) {
+    createWallet(input: $input) {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+export const withdrawFunds = /* GraphQL */ `
+  mutation WithdrawFunds($input: WithdrawOrDepositInput) {
+    withdrawFunds(input: $input) {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+export const depositFunds = /* GraphQL */ `
+  mutation DepositFunds($input: WithdrawOrDepositInput) {
+    depositFunds(input: $input) {
+      ... on Wallet {
+        __typename
+        userId
+        balance
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+export const createBets = /* GraphQL */ `
+  mutation CreateBets($input: CreateBetsInput) {
+    createBets(input: $input) {
+      ... on BetList {
+        __typename
+        nextToken
+        items {
+          betId
+          amount
+          outcome
+          odds
+          event {
+            away
+            awayOdds
+            drawOdds
+            end
+            eventId
+            home
+            homeOdds
+            start
+            updatedAt
+          }
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const lockUser = /* GraphQL */ `
+  mutation LockUser($input: LockUserInput) {
+    lockUser(input: $input) {
+      ... on User {
+        __typename
+        userId
+        isLocked
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const triggerFinishEvent = /* GraphQL */ `
+  mutation TriggerFinishEvent($input: FinishEventInput) {
+    triggerFinishEvent(input: $input) {
+      ... on Event {
+        __typename
+        eventId
+        eventStatus
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const sendChatbotMessage = /* GraphQL */ `
+  mutation SendChatbotMessage($input: ChatbotMessageInput) {
+    sendChatbotMessage(input: $input) {
+      ... on ChatbotResponse {
+        __typename
+        completion
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+</code>
+<code filename="graphql/subscriptions.js">
+/* eslint-disable */
+// this is an auto generated file. This will be overwritten
+
+export const updatedEventOdds = /* GraphQL */ `
+  subscription UpdatedEventOdds {
+    updatedEventOdds {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const updatedSystemEvents = /* GraphQL */ `
+  subscription UpdatedSystemEvents {
+    updatedSystemEvents {
+      ... on SystemEvent {
+        source
+        detailType
+        detail
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+export const updatedUserStatus = /* GraphQL */ `
+  subscription UpdatedUserStatus {
+    updatedUserStatus {
+      ... on User {
+        userId
+        isLocked
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+</code>
+<code filename="schema.graphql">
+type Wallet @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  balance: Float!
+}
+
+type PingInfo @aws_cognito_user_pools @aws_iam {
+  items: [PingInfoItem]!
+}
+
+type PingInfoItem @aws_cognito_user_pools @aws_iam {
+  pingLocation: String!
+  pingLatency: Float!
+}
+
+type ChatbotResponse @aws_cognito_user_pools @aws_iam {
+  completion: String!
+}
+
+type Event @aws_cognito_user_pools @aws_iam {
+  eventId: ID!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  home: String!
+  away: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  eventStatus: EventStatus!
+  outcome: String
+}
+
+type EventList @aws_cognito_user_pools @aws_iam {
+  items: [Event]!
+  nextToken: String
+}
+
+type Bet @aws_cognito_user_pools @aws_iam {
+  betId: ID!
+  event: Event!
+  outcome: EventOutcome!
+  odds: String!
+  amount: Float!
+  placedAt: AWSDateTime!
+  userId: ID!
+  betStatus: String!
+}
+
+type BetList @aws_cognito_user_pools @aws_iam {
+  items: [Bet]!
+  nextToken: String
+}
+
+type User @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  isLocked: String!
+}
+
+type SystemEvent @aws_cognito_user_pools @aws_iam {
+  source: String!
+  detailType: String
+  detail: String
+}
+
+ enum EventOutcome {
+    homeWin
+    awayWin
+    draw
+ }
+
+ enum EventStatus {
+    running
+    finished
+    settled
+ }
+
+interface Error {
+  message: String!
+}
+
+type InsufficientFundsError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type NotFoundError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type InputError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union PingInfoResult = PingInfo | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union EventResult = Event | NotFoundError | InputError | UnknownError
+union EventsResult = EventList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
+union UserResult = User | NotFoundError | InputError | UnknownError
+union ChatbotResult = ChatbotResponse | NotFoundError | InputError | UnknownError
+
+
+input CreateWalletInput {
+  userId: ID!
+}
+
+input WithdrawOrDepositInput {
+  amount: Float!
+}
+
+input DeductFundsInput {
+  userId: ID!
+  amount: Float!
+}
+
+input UpdateEventOddsInput {
+  eventId: ID!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+}
+
+input FinishEventInput {
+  eventId: ID!
+  eventStatus: String!
+  outcome: String!
+}
+
+input BetRequest {
+  eventId: ID!
+  outcome: EventOutcome
+  odds: String!
+  amount: Float!
+}
+
+input SystemEventInput {
+  source: String!
+  detailType: String
+  detail: String
+}
+
+input CreateBetsInput {
+  bets: [BetRequest]!
+}
+
+input LockUserInput {
+  userId: ID!
+  isLocked: String!
+}
+
+input LockBetsForEventInput {
+  eventId: ID!
+}
+
+input ChatbotMessageInput {
+  prompt: String!
+}
+
+type Query {
+  getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
+  getWallet: WalletResult @aws_cognito_user_pools
+  getPingInfo: PingInfoResult @aws_cognito_user_pools
+  getBets(startKey: String): BetsResult @aws_cognito_user_pools
+  getWalletByUserId(userId: ID!): WalletResult @aws_iam
+  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools
+}
+
+type Mutation {
+  createWallet(input: CreateWalletInput): WalletResult @aws_iam
+  depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  sendChatbotMessage(input: ChatbotMessageInput): ChatbotResult @aws_cognito_user_pools @aws_iam
+  updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
+  # finishEvent is a synchronous method to update event in data storage
+  # Currently not used
+  finishEvent(input: FinishEventInput): EventResult @aws_iam
+  # triggerFinishEvent is an asynchronous method
+  # used only to re-raise event into service bus.
+  triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
+  withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  deductFunds(input: DeductFundsInput): WalletResult @aws_iam
+  createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
+  lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
+  lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam
+}
+
+type Subscription {
+  updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
+  updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
+  updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+</code>
+<code filename="livemarket-service.yaml">
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+
+  Function:
+    Runtime: python3.9
+    Tracing: Active
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: livemarket
+
+Parameters:
+
+  AppSyncApiId:
+    Type: String
+
+  AppSyncApiUrl:
+    Type: String
+
+  EventBus:
+    Type: String
+
+  AppSyncLambdaLayer:
+    Type: String
+
+Resources:
+
+  LiveMarketDataStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  LiveMarketHistoryStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expiry
+        Enabled: true
+
+  SeedLambda:
+    Type: AWS::Serverless::Function
+    Description: Custom resource for seeding dynamo
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/livemarket/seed/
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketDataStore
+      Environment:
+        Variables:
+          DB_TABLE: !Ref LiveMarketDataStore
+
+  # This populates some initial data in our events table
+  LiveMarketDataSeed:
+    Type: Custom::Seed
+    Properties:
+      ServiceToken: !GetAtt SeedLambda.Arn
+
+  SQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        maxReceiveCount: 2
+        deadLetterTargetArn: !GetAtt DLQ.Arn
+
+  DLQ:
+    Type: AWS::SQS::Queue
+
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Live market receiver for trading events"
+      EventBusName: !Ref EventBus
+      EventPattern:
+        source:
+          - "com.trading"
+          - "com.thirdparty"
+      Targets:
+        - Arn: !GetAtt SQSQueue.Arn
+          Id: SQSqueue
+
+  EventBridgeToToSqsPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: events.amazonaws.com
+          Action: sqs:SendMessage
+          Resource:  !GetAtt SQSQueue.Arn
+          Condition:
+            StringEqualsIfExists:
+              aws:SourceAccount: !Ref AWS::AccountId
+      Queues:
+        - Ref: SQSQueue
+
+  LiveMarketBatchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/livemarket/receiver/
+      Description: Lambda for receiving events for this service
+      Timeout: 10
+      MemorySize: 256
+      Layers:
+        - !Ref AppSyncLambdaLayer
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SQSQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+        - Statement:
+            - Effect: Allow
+              Action:
+                - appsync:GraphQL
+              Resource:
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/updateEventOdds
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/finishEvent
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          APPSYNC_URL: !Ref AppSyncApiUrl
+          EVENT_BUS: !Ref EventBus
+
+  LiveMarketResolverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/livemarket/resolvers/
+      Description: Lambda for AppSync resolvers
+      Timeout: 10
+      MemorySize: 256
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketDataStore
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketHistoryStore
+      Environment:
+        Variables:
+          DB_TABLE: !Ref LiveMarketDataStore
+          DB_HISTORY_TABLE: !Ref LiveMarketHistoryStore
+          ACCOUNT_ID: !Ref AWS::AccountId
+          APPSYNC_API_ID: !Ref AppSyncApiId
+          DB_HISTORY_RETENTION: 3600
+          EVENT_BUS: !Ref EventBus
+
+  LiveMarketAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt LiveMarketResolverFunction.Arn
+
+  LiveMarketLambdaDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      Name: LiveMarket_Lambda_Source
+      Description: Live Market Lambda AppSync Data Source
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt LiveMarketAppSyncRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt LiveMarketResolverFunction.Arn
+
+  GetEventsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getEvents
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  GetEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getEvent
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  UpdateEventOddsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: updateEventOdds
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  FinishEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: finishEvent
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+  
+  TriggereFinishEventResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: triggerFinishEvent
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+Outputs:
+  QueueName:
+    Description: SNS queue name
+    Value: !GetAtt SQSQueue.QueueName
+
+  QueueARN:
+    Description: SQS queue ARN
+    Value: !GetAtt SQSQueue.Arn
+
+  QueueURL:
+    Description: SQS queue URL
+    Value: !Ref SQSQueue
+</code>
+<code filename="livemarket/receiver/app.py">
+from os import getenv
+import json
+import boto3
+from gql_utils import get_client
+from mutations import update_event_odds, finish_event, lock_bets_for_event
+from gql import gql
+
+from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.batch import BatchProcessor, EventType
+from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
+
+processor = BatchProcessor(event_type=EventType.SQS)
+tracer = Tracer()
+logger = Logger()
+
+appsync_url = getenv("APPSYNC_URL")
+region = getenv("REGION")
+event_bus_name = getenv('EVENT_BUS')
+gql_client = get_client(region, appsync_url)
+session = boto3.Session()
+events = session.client('events')
+sqsqueue = session.client('sqs')
+queue_url = getenv('QUEUE')
+
+
+@tracer.capture_method
+def handle_updated_odds(item: dict) -> dict:
+    update_info = {
+        'eventId': item['detail']['eventId'],
+        'homeOdds': item['detail']['homeOdds'],
+        'awayOdds': item['detail']['awayOdds'],
+        'drawOdds': item['detail']['drawOdds']
+    }
+    gql_input = {
+        'input': update_info
+    }
+    response = gql_client.execute(gql(update_event_odds), variable_values=gql_input)[
+        'updateEventOdds']
+
+    if response['__typename'] == 'Event':
+        logger.info("Odds updated")
+        return form_event('com.livemarket', 'UpdatedOdds', update_info)
+    elif 'Error' in response['__typename']:
+        logger.exception("Failed to update odds")
+        raise ValueError(
+            f"updateEventOdds failed: {response['message']}")
+
+@tracer.capture_method
+def handle_event_finished(item: dict) -> dict:
+    update_info = {
+        'eventId': item['detail']['eventId'],
+        'eventStatus': 'finished',
+        'outcome': item['detail']['outcome']
+    }
+    gql_input = {
+        'input': update_info
+    }
+    response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
+        'finishEvent']
+    
+    if response['__typename'] == 'Event':
+        logger.info("Event closed")
+        return form_event('com.livemarket', 'EventClosed', update_info)
+    elif 'Error' in response['__typename']:
+        logger.exception("Failed to update odds")
+        raise ValueError(
+            f"finish_event failed: {response['message']}")
+
+
+def form_event(source, detailType, detail):
+    return {
+        'Source': source,
+        'DetailType': detailType,
+        'Detail': json.dumps(detail),
+        'EventBusName': event_bus_name
+    }
+
+@tracer.capture_method
+def record_handler(record: SQSRecord):
+    # This function processes a record from SQS
+    # Optionally return a dict which will be raised as a new event
+    payload = record.body
+    if payload:
+        item = json.loads(payload)
+        if item['source'] == 'com.trading':
+            if item['detail-type'] == 'UpdatedOdds':
+                return handle_updated_odds(item)
+        if item['source'] == 'com.thirdparty':
+            if item['detail-type'] == 'EventClosed':
+                return handle_event_finished(item)
+    logger.warning({"message": "Unknown record type", "record": item})
+    return None
+
+
+@logger.inject_lambda_context(log_event=True)
+@tracer.capture_lambda_handler
+def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    batch = event["Records"]
+    with processor(records=batch, handler=record_handler):
+        processed_messages = processor.process()
+        logger.info(processed_messages)
+
+    output_events = [x[1]
+                     for x in processed_messages if x[0] == "success" and x[1] is not None]
+    if output_events:
+        events.put_events(Entries=output_events)
+
+    return processor.response()
+</code>
+<code filename="livemarket/receiver/mutations.py">
+update_event_odds = """
+mutation MyMutation ($input: UpdateEventOddsInput!) {
+  updateEventOdds(input: $input) {
+    ... on Event {
+      __typename
+      start
+      homeOdds
+      awayOdds
+      drawOdds
+      home
+      eventId
+      end
+      away,
+      updatedAt
+    }
+    ... on Error {
+      __typename
+      message
+    }
+  }
+}
+"""
+
+finish_event = """
+mutation FinishEvent ($input: FinishEventInput!) {
+  finishEvent(input: $input) {
+    ... on Event {
+      __typename
+      start
+      homeOdds
+      awayOdds
+      drawOdds
+      home
+      eventId
+      end
+      away,
+      updatedAt
+    }
+    ... on Error {
+      __typename
+      message
+    }
+  }
+}
+"""
+
+lock_bets_for_event = """
+mutation MyMutation ($input: LockBetsForEventInput!){
+  lockBetsForEvent (input: $input){
+    ... on BetList {
+      __typename
+      nextToken
+      items {
+        amount
+        userId
+        betId
+        odds
+        outcome
+        event{
+          eventId
+        }
+      }
+    }
+    ... on UnknownError {
+      __typename
+      message
+    }
+    ... on InputError {
+      __typename
+      message
+    }
+    ... on NotFoundError {
+      __typename
+      message
+    }
+    ... on InsufficientFundsError {
+      __typename
+      message
+    }
+  }
+}
+"""
+</code>
+<code filename="livemarket/resolvers/app.py">
+import time
+from datetime import datetime
+from decimal import Decimal
+from os import getenv
+import json
+import boto3
+
+from botocore.exceptions import ClientError
+
+from aws_lambda_powertools.utilities.data_classes import AppSyncResolverEvent
+from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools.event_handler import AppSyncResolver
+from aws_lambda_powertools.logging import correlation_paths
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.data_classes.appsync import scalar_types_utils
+
+tracer = Tracer()
+logger = Logger()
+app = AppSyncResolver()
+
+table_name = getenv('DB_TABLE')
+history_table_name = getenv('DB_HISTORY_TABLE')
+history_retention_seconds = int(getenv('DB_HISTORY_RETENTION'))
+session = boto3.Session()
+dynamodb = session.resource('dynamodb')
+table = dynamodb.Table(table_name)
+history_table = dynamodb.Table(history_table_name)
+event_bus_name = getenv('EVENT_BUS')
+events = session.client('events')
+
+
+@app.resolver(type_name="Query", field_name="getEvents")
+@tracer.capture_method
+def get_events(startKey: str = "") -> dict:
+    try:
+        args = {}
+        if startKey:
+            args['ExclusiveStartKey'] = {'eventId': startKey}
+
+        response = table.scan(**args)
+        result = {
+            'items': response.get('Items', [])
+        }
+        if response.get('LastEvaluatedKey'):
+            result['nextToken'] = response['LastEvaluatedKey']['eventId']
+
+        return event_list_response(result)
+
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Query", field_name="getEvent")
+@tracer.capture_method
+def get_event(eventId: str, timestamp: float = None) -> dict:
+    try:
+        current_event = table.get_item(Key={'eventId': eventId})['Item']
+
+        if timestamp is None:
+            return event_response(current_event)
+
+        current_event_ts = datetime.fromisoformat(
+            current_event['updatedAt'][0:-1])
+        requested_ts = datetime.fromtimestamp(timestamp)
+
+        if current_event_ts < requested_ts:
+            return event_response(current_event)
+
+        # get the first entry from history that is older than the request
+        matched_events = history_table.query(
+            KeyConditionExpression='eventId = :e AND #t < :t',
+            ExpressionAttributeValues={
+                ':e': eventId,
+                ':t': Decimal(requested_ts.timestamp())
+            },
+            ExpressionAttributeNames={
+                '#t': 'timestamp'
+            },
+            Limit=1,
+            ScanIndexForward=False
+        )['Items']
+
+        # We won't have matched events if the timestamp is further back than our history retention
+        if not matched_events:
+            return events_error('InputError', 'The history for this event is not queryable for the requested timestamp')
+
+        return event_response(matched_events[0])
+    except dynamodb.meta.client.exceptions.ResourceNotFoundException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="updateEventOdds")
+@tracer.capture_method
+def update_event_odds(input: dict) -> dict:
+    try:
+        now = scalar_types_utils.aws_datetime()
+        response = table.update_item(
+            Key={'eventId': input['eventId']},
+            UpdateExpression="set homeOdds=:h, awayOdds=:a, drawOdds=:d, updatedAt=:u",
+            ConditionExpression="attribute_exists(eventId)",
+            ExpressionAttributeValues={
+                ':h': input['homeOdds'],
+                ':a': input['awayOdds'],
+                ':d': input['drawOdds'],
+                ':u': now
+            },
+            ReturnValues="ALL_NEW")
+        current_event = response['Attributes']
+
+        # Write the current state to the history log to persist for the configured time
+        epoch = Decimal(time.time())
+        history_entry = {**current_event, **
+                         {'timestamp': epoch, 'expiry': epoch + history_retention_seconds}}
+        history_table.put_item(Item=history_entry)
+
+        return event_response(current_event)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="finishEvent")
+@tracer.capture_method
+def finish_event(input: dict) -> dict:
+    try:
+        now = scalar_types_utils.aws_datetime()
+        response = table.update_item(
+            Key={'eventId': input['eventId']},
+            UpdateExpression="set eventStatus=:d, updatedAt=:u, outcome=:o",
+            ConditionExpression="attribute_exists(eventId)",
+            ExpressionAttributeValues={
+                ':d': input['eventStatus'],
+                ':u': now,
+                ':o': input['outcome']
+            },
+            ReturnValues="ALL_NEW")
+        current_event = response['Attributes']
+
+        # Write the current state to the history log to persist for the configured time
+        epoch = Decimal(time.time())
+        history_entry = {**current_event, **
+                         {'timestamp': epoch, 'expiry': epoch + history_retention_seconds}}
+        history_table.put_item(Item=history_entry)
+
+        return event_response(current_event)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+
+@app.resolver(type_name="Mutation", field_name="triggerFinishEvent")
+@tracer.capture_method
+def trigger_finish_event(input: dict) -> dict:
+    try:
+        #effectively just raising event back to event bridge
+        current_event = get_event(input['eventId'])
+        current_event["outcome"] = input["outcome"]
+        send_event(current_event)
+        print(current_event)
+        return event_response(current_event)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event does not exist')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+    except Exception as e:
+        logger.exception({'UnknownError': e})
+        return events_error('UnknownError', 'An unknown error occured.')
+
+def form_event(userResponse):
+    return {
+        'Source': 'com.thirdparty',
+        'DetailType': 'EventClosed',
+        'Detail': json.dumps(userResponse),
+        'EventBusName': event_bus_name
+    }
+
+def send_event(userResponse):
+    data = form_event(userResponse)
+    response = events.put_events(Entries=[data])
+    return response
+
+def events_error(errorType: str, error_msg: str) -> dict:
+    return {'__typename': errorType, 'message': error_msg}
+
+
+def event_response(data: dict) -> dict:
+    return {**{'__typename': 'Event'}, **data}
+
+
+def event_list_response(data: dict) -> dict:
+    return {**{'__typename': 'EventList'}, **data}
+
+
+@logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
+@tracer.capture_lambda_handler
+def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    return app.resolve(event, context)
+</code>
+<code filename="livemarket/seed/app.py">
+from os import getenv
+import boto3
+import json
+
+from crhelper import CfnResource
+
+from aws_lambda_powertools import Logger
+from aws_lambda_powertools.utilities.data_classes.appsync import scalar_types_utils
+
+logger = Logger()
+
+helper = CfnResource(json_logging=False, log_level='DEBUG',
+                     boto_level='CRITICAL')
+
+try:
+    # Init clients and env vars here
+    table_name = getenv('DB_TABLE')
+    session = boto3.Session()
+    dynamodb = session.resource('dynamodb')
+    table = dynamodb.Table(table_name)
+except Exception as e:
+    helper.init_failure(e)
+
+
+@helper.create
+def create(event, context):
+    with open('data.json', 'r') as f:
+        events = json.load(f)
+
+    logger.info(events)
+    now = scalar_types_utils.aws_datetime()
+    with table.batch_writer() as batch:
+        for event_item in events:
+            event_item['updatedAt'] = now
+            event_item['eventStatus'] = 'running'
+            batch.put_item(Item=event_item)
+
+    logger.info('Event seed complete')
+
+    return True
+
+
+
+def lambda_handler(event, context):
+    # This function is triggered by a CloudFormation custom resource.
+    # It seeds a dynamodb table with some event data
+    logger.info(event)
+    helper(event, context)
+</code>
+<code filename="livemarket/seed/data.json">
+[
+  {
+    "away": "Team 1",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "e46436a8-a916-4143-a05c-99d120eabfdb",
+    "home": "Team 2",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 3",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "9a3d7a1f-4cf8-4db8-a13d-421ee9c35703",
+    "home": "Team 4",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 5",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "0f66c58b-81eb-42c8-a058-62e54bba6493",
+    "home": "Team 6",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 7",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "a613af9f-c76d-4384-ac43-96fcae0db562",
+    "home": "Team 8",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 9",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "53837eee-4ba4-49f2-87be-76969b8ee68d",
+    "home": "Team 10",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 11",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "ec1fec4d-2cdb-4c54-bb43-a7f89f73107d",
+    "home": "Team 12",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 13",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "250a3a85-324f-4f4b-ae8d-f0419e4a20a6",
+    "home": "Team 14",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 15",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "a0ed26b1-626e-4e30-8111-cc2b8e0293d7",
+    "home": "Team 16",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 17",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "8badd072-b6e2-41fe-9c55-6d719b4af546",
+    "home": "Team 18",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  },
+  {
+    "away": "Team 19",
+    "awayOdds": "N/A",
+    "drawOdds": "N/A",
+    "end": "2024-01-01T16:45:00Z",
+    "eventId": "ceac8915-fa87-4e08-93a7-e17c9a509fae",
+    "home": "Team 20",
+    "homeOdds": "N/A",
+    "start": "2024-01-01T15:00:00Z"
+  }
+]
+</code>
+
+<code filename="livemarket/seed/requirements.txt">
+crhelper==2.0.11
+</code>

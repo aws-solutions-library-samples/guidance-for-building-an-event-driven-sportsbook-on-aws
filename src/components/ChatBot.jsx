@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "../css/internalStyles.css";
-import axios from 'axios';
 import {
     useSendChatbotMessage,
   } from "../hooks/useChatbot";
@@ -24,15 +23,6 @@ export const Chatbot = () => {
     isChatbotOpenRef.current = isChatbotOpen;
     // Initialize or retrieve the session ID from local storage
     if (!sessionId) {
-      /*axios.post('/api/startSession') // Replace with your backend API endpoint
-        .then(response => {
-          const newSessionId = response.data.sessionId;
-          setSessionId(newSessionId);
-          localStorage.setItem('chatbotSessionId', newSessionId);
-        })
-        .catch(error => {
-          console.error('Error starting session:', error);
-        });*/
         setSessionId('1');
     }
     document.addEventListener('keydown', handleKeyPress);
@@ -81,20 +71,6 @@ export const Chatbot = () => {
           "anthropic_version": "bedrock-2023-05-31"
         }
       }
-    // Send the user's message to the backend
-    axios.post('https://dierzujvnjyb5j6ngi4wo6swy40nierp.lambda-url.eu-west-1.on.aws/', {
-      sessionId,
-      message: messageToSend,
-      headers: headers
-    })
-    .then(response => {
-      const botReply = response.data.query;
-      setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
-      setInputText('');
-    })
-    .catch(error => {
-      console.error('Error sending message:', error);
-    });
   };
 
   const handleKeyPress = (event) => {
