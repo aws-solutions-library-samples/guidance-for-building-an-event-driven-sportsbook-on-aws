@@ -12,6 +12,10 @@ export const getEvents = /* GraphQL */ `
           start
           end
           updatedAt
+          marketstatus {
+            name
+            status
+          }
         }
         nextToken
       }

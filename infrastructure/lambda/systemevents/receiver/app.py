@@ -56,7 +56,7 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
         logger.info(processed_messages)
 
     output_events = [x[1]
-                     for x in processed_messages if x[0] == "success" and x[1] is not None]
+                    for x in processed_messages if x[0] == "success" and x[1] is not None]
     if output_events:
         events.put_events(Entries=output_events)
 

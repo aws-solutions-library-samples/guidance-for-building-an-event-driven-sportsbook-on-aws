@@ -22,8 +22,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import StartIcon from "@mui/icons-material/Start";
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
-import Button from "@mui/material/Button";
-
+import PauseIcon from "@mui/icons-material/Pause";
+import RestartAltIcon from '@mui/icons-material/RestartAlt';import Button from "@mui/material/Button";
 import { Unstable_Popup as BasePopup } from "@mui/base/Unstable_Popup";
 
 const ChatContainer = styled(Box)(({ theme }) => ({
@@ -97,11 +97,7 @@ const PopupBody = styled('div')(
     const { mutateAsync: clearHistory } = useClearHistory();
     const containerRef = useRef(null);
   
-    useEffect(() => {
-      if (containerRef.current) {
-        containerRef.current.scrollTop = containerRef.current.scrollHeight;
-      }
-    }, [systemEvents]);
+
   
     const handleScroll = () => {
       // Close the popup when scrolling the timeline
@@ -121,19 +117,33 @@ const PopupBody = styled('div')(
           return <StartIcon color="primary" />;
         case "BetsPlaced":
           return <ThumbUpOffAltIcon color="success" />;
+        case "MarketSuspended":
+          return <PauseIcon color="info" />;
+        case "MarketUnsuspended":
+          return <RestartAltIcon color="success" />;
         default:
           return null;
       }
     };
     const getEventName = (eventName) => {
       switch (eventName) {
-        case "com.trading.UpdatedOdds":
         case "com.livemarket.UpdatedOdds":
+            return "Updated Odds handled";
+        case "com.trading.UpdatedOdds":
         case "com.thirdparty.UpdatedOdds":
           return "Updated Odds";
         case "com.livemarket.EventClosed":
+          return "Live market Event Closed";
         case "com.thirdparty.EventClosed":
           return "Event Closed";
+        case "com.livemarket.MarketSuspended":
+            return "Market Suspended handled";
+        case "com.thirdparty.MarketSuspended":
+          return "Market Suspended";
+        case "com.thirdparty.MarketUnsuspended":
+          return "Market Unsuspended";
+        case "com.livemarket.MarketUnsuspended":
+            return "Market Unsuspended handled";
         case "com.betting.settlement.BetSettlementComplete":
           return "Bet Settlement Complete";
         case "com.betting.SettlementStarted":
@@ -147,7 +157,7 @@ const PopupBody = styled('div')(
   
     if (loadingSystemEvents) return <Typography>Loading...</Typography>;
   
-    const events = systemEvents.slice(-20); // Retain only the last 20 events
+    const events = systemEvents.slice(-6); // Retain only the last 20 events
   
     return (
         <Card style={{maxWidth: '100%'}}>

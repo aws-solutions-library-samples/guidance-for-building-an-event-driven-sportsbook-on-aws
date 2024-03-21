@@ -106,6 +106,59 @@ export const triggerFinishEvent = /* GraphQL */ `
     }
   }
 `;
+export const suspendMarketMutation = /* GraphQL */ `
+  mutation SuspendMarket($input: SuspendMarketInput!) {
+    suspendMarket(input: $input) {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const unsuspendMarketMutation = /* GraphQL */ `
+  mutation UnsuspendMarket($input: UnsuspendMarketInput!) {
+    unsuspendMarket(input: $input) {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const closeMarketMutation = /* GraphQL */ `
+  mutation CloseMarket($input: CloseMarketInput!) {
+    closeMarket(input: $input) {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
 
 export const sendChatbotMessage = /* GraphQL */ `
   mutation SendChatbotMessage($input: ChatbotMessageInput) {
@@ -121,3 +174,40 @@ export const sendChatbotMessage = /* GraphQL */ `
     }
   }
 `;
+
+export const triggerSuspendMarketMutation = /* GraphQL */ `
+  mutation TriggerSuspendMarket($input: SuspendMarketInput!) {
+    triggerSuspendMarket(input: $input) {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const triggerUnsuspendMarketMutation = /* GraphQL */ `
+  mutation TriggerUnsuspendMarket($input: UnsuspendMarketInput!) {
+    triggerUnsuspendMarket(input: $input) {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+

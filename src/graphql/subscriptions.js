@@ -49,3 +49,20 @@ export const updatedUserStatus = /* GraphQL */ `
     }
   }
 `;
+
+export const marketStatusUpdated = /* GraphQL */ `
+  subscription MarketStatusUpdated {
+    marketStatusUpdated {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
