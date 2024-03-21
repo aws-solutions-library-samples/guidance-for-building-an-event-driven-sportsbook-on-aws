@@ -55,19 +55,17 @@ const renderButton = (event, eventType, eventValue, label="") => {
 
 
 export const EventOdds = () => {
-  const { addToSlip } = useBetSlip();
   const { data: events, isLoading: loadingEvents } = useEvents();
   const suspendedMarkets = useMarket();
-  const [marketStatus, setMarketStatus] = useState('');
 
-  useEffect(() => {
+  
     if(events!==undefined && suspendedMarkets.find!==undefined){
     events.map((event) => {
       const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
       event.marketstatus = internalEvent?.marketstatus;
     })
   }
-  });
+  
   
   if (loadingEvents) return <Typography>Loading...</Typography>;
   const settings = {

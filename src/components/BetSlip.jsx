@@ -10,6 +10,7 @@ import {
   Stack,
   IconButton,
 } from "@mui/material";
+import { useMarket } from "../hooks/useEvents";
 import { green } from '@mui/material/colors';
 import Slide from "@mui/material/Slide";
 
@@ -21,6 +22,11 @@ import { useCreateBets } from "../hooks/useBets";
 import { Close } from "@mui/icons-material";
 
 export const BetSlip = ({ onClose, isLocked }) => {
+  const suspendedMarkets = useMarket();
+  
+      //iterate through pendingBets, find market that has same name as pendingBet.outcome and update the bet by adding market state 
+      
+ 
   const {
     showError,
     showSuccess,
@@ -32,6 +38,21 @@ export const BetSlip = ({ onClose, isLocked }) => {
   } = useBetSlip();
   const { mutateAsync: createBets } = useCreateBets();
   
+  for(var pendingbet in pendingBets) {
+    const market = suspendedMarkets.find((market) => market.eventId === pendingBets[pendingbet].eventId)
+
+    //Disgusting, but i dont have much time
+    const marketstatus = market.marketstatus.find((ms)=>{
+      if(pendingBets[pendingbet].outcome === "homeWin" && ms.name === "homeOdds")
+        return true;
+      if(pendingBets[pendingbet].outcome === "awayWin" && ms.name === "awayOdds")
+        return true;
+      if(pendingBets[pendingbet].outcome === "draw" && ms.name === "drawOdds")
+        return true;
+    });
+    
+    pendingBets[pendingbet].marketstatus = marketstatus;
+  }
 
   const buttonSx = {
     ...(pendingBets.length > 0 && {
@@ -43,6 +64,10 @@ export const BetSlip = ({ onClose, isLocked }) => {
   };
 
   const handlePlaceBets = () => {
+    if(pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined){
+      showError("One or more markets are suspended");
+      return;
+    }
     setInProgress(true);
     createBets({
       data: {
@@ -128,10 +153,14 @@ export const BetSlip = ({ onClose, isLocked }) => {
             size="small"
             sx={buttonSx}
             variant="contained"
-            disabled={betInProgress || !pendingBets.length || !isValid || isLocked}
+            disabled={betInProgress || !pendingBets.length || !isValid || isLocked || pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined}
           >
             Place Bets
           </Button>
+          {(pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined) && (
+          <Typography>One or more markets are suspended</Typography>
+        )}
+
           {betInProgress && (
             <CircularProgress
               size={24}

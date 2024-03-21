@@ -39,8 +39,8 @@ export const BetSlipItem = ({ bet, updateBetAmount }) => {
   return (
     <Card>
       <CardContent>
-        <Box>
-          <Typography variant={"subtitle1"}>
+        <Box sx={bet.marketstatus?.status==='Suspended'?{ color: 'error.main' }:{ color: 'text.primary' }}>
+          <Typography variant={"subtitle1"} sx={{fontColor: "red"}}>
             {event.home} vs {event.away}
           </Typography>
           {oddsChanged && (
