@@ -24,6 +24,7 @@ import {
   Collapse,
   Snackbar,
   Alert,
+  useTheme,
 } from "@mui/material";
 import SportsbookAppBar from "./components/SportsbookAppBar";
 import SystemEvents from "./components/admin/SystemEvents";
@@ -52,8 +53,6 @@ Amplify.configure({
   aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
 });
 
-const primaryColor = "rgb(25, 118, 80)";
-const secondaryColor = "#e53935";
 
 const styles = {
   root: {
@@ -68,27 +67,43 @@ const styles = {
   },
 };
 
-const theme = createTheme({
-  palette: {
-    mode: "light", // Set the theme to dark mode
-    primary: {
-      main: primaryColor,
+const primaryColor = "rgb(25, 118, 80)";
+const secondaryColor = "#e53935";
+
+const getTheme = (isDarkMode) =>
+  createTheme({
+    palette: {
+      mode: isDarkMode ? "dark" : "light",
+      primary: {
+        main: primaryColor,
+      },
+      secondary: {
+        main: secondaryColor,
+      },
     },
-    secondary: {
-      main: secondaryColor,
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            color: isDarkMode ? "#fff" : primaryColor, // Set the default button text color for dark mode
+            //also change border color of a button
+            border: "1px solid "+(isDarkMode ? "#fff" : primaryColor),
+          },
+        },
+      },
     },
-  },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 900,
-      lg: 1200,
-      xl: 1536,
-      xxl: 1800,
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 600,
+        md: 900,
+        lg: 1200,
+        xl: 1536,
+        xxl: 1800,
+      },
+      
     },
-  },
-});
+  });
 
 function App({ user, signOut }) {
   const { showHub, setShowHub } = useBetSlip();
@@ -99,12 +114,20 @@ function App({ user, signOut }) {
     snackbarSeverity,
   } = useGlobal();
   const isLocked = useUser(user);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const handleThemeChange = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const theme = getTheme(isDarkMode);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={styles.root}>
-        <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} />
+        <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} handleThemeChange={handleThemeChange}
+          isDarkMode={isDarkMode}/>
         <Container disableGutters={true} maxWidth="xxl">
           <Snackbar
             open={bShowSnackbar}
@@ -130,7 +153,7 @@ function App({ user, signOut }) {
                 paddingBottom: "50px",
                 position: "relative",
                 overflowY: "scroll",
-                backgroundColor: "#eee", // Darker background color
+                backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
               }}
             >
               <img src={headerImage} alt="dice" style={{
@@ -146,7 +169,7 @@ function App({ user, signOut }) {
                 height: "100%",
                 paddingRight: showHub ? 11 : 0,
                 display: { lg: "flex", xs: "none" },
-                backgroundColor: "#eee", // Darker background color
+                backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                 overflowY: showHub ? "scroll" : "hidden",
               }}
             >
@@ -156,13 +179,13 @@ function App({ user, signOut }) {
                     width: "300px",
                     pr: "5px",
                     pl: "5px",
-                    backgroundColor: "#eee", // Darker background color
+                    backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                   }}
                 >
                   <Box
                     sx={{
                       pt: "5px",
-                      backgroundColor: "#eee", // Darker background color
+                      backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                     }}
                   >
                     <BetSlip
@@ -173,7 +196,7 @@ function App({ user, signOut }) {
                   <Box
                     sx={{
                       pt: "5px",
-                      backgroundColor: "#eee", // Darker background color
+                      backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                     }}
                   >
                     <SystemEvents />
@@ -246,7 +269,7 @@ const formFields = {
 export default function AuthenticatedApp() {
   const amplifyTheme = useAmplifyTheme();
   return (
-    <AmplifyThemeProvider amplifyTheme={theme}>
+    <AmplifyThemeProvider amplifyTheme={amplifyTheme}>
       <GlobalProvider>
         <BetSlipProvider>
           <Authenticator components={components} formFields={formFields}>
