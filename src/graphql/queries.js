@@ -35,6 +35,7 @@ export const getBets = /* GraphQL */ `
           odds
           outcome
           placedAt
+          amount
           betStatus
           event {
             away
@@ -46,6 +47,7 @@ export const getBets = /* GraphQL */ `
             homeOdds
             start
             updatedAt
+            outcome
           }
         }
         nextToken
