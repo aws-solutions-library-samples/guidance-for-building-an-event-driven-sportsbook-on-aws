@@ -85,7 +85,7 @@ const getTheme = (isDarkMode) =>
       MuiButton: {
         styleOverrides: {
           root: {
-            color: isDarkMode ? "#fff" : primaryColor, // Set the default button text color for dark mode
+            color: isDarkMode ? "#fff" : "000", // Set the default button text color for dark mode
             //also change border color of a button
             border: "1px solid "+(isDarkMode ? "#fff" : primaryColor),
           },
