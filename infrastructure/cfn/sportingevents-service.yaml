@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Description: Sporting Events Service - Amazon API Gateway to AWS Lambda to Amazon DynamoDB to store sporting events from events producers
-
 Globals:
 
   Function:
@@ -13,6 +12,18 @@ Globals:
     Environment:
       Variables:
         POWERTOOLS_SERVICE_NAME: sportingevents
+
+Parameters:
+  LiveMarketStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking  
+      resources, such as the subnet and security group, that will be used in  
+      this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: LiveMarketStackName
 
 Resources:
   LambdaFunction:
@@ -27,18 +38,20 @@ Resources:
       Timeout: 10
       MemorySize: 256
       Policies:
-        DynamoDBCrudPolicy:
-          TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::ImportValue: 'LiveMarketDataStore'
       Events:
         ApiEvent:
           Type: Api
           Properties:
             Path: /
             Method: POST
-  DynamoDBTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      TableName: BettingEvents
+      Environment:
+        Variables:
+          DB_TABLE:
+            Fn::ImportValue: 'LiveMarketDataStore'
+
 Outputs:
   EndpointUrl:
     Description: 'HTTP REST endpoint URL'
