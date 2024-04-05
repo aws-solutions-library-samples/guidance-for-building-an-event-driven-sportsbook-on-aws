@@ -314,6 +314,9 @@ Resources:
     DependsOn: LiveMarketServiceStack
     Properties:
       Location: infrastructure/cfn/sportingevents-service.yaml
+      Parameters:
+        EventBus: !Ref EventBus
+
 
 Outputs:
   Region:

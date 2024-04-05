@@ -14,7 +14,9 @@ type Event @aws_cognito_user_pools @aws_iam {
   end: AWSDateTime!
   updatedAt: AWSDateTime!
   eventStatus: EventStatus!
-  outcome: String
+  outcome: String,
+  duration: String,
+  state: String,
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -114,6 +116,20 @@ input FinishEventInput {
   outcome: String!
 }
 
+input AddEventInput {
+  eventId: ID!
+  home: String!
+  away: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  duration: String!
+  state: String!
+}
+
 input BetRequest {
   eventId: ID!
   outcome: EventOutcome
@@ -155,6 +171,7 @@ type Mutation {
   # finishEvent is a synchronous method to update event in data storage
   # Currently not used
   finishEvent(input: FinishEventInput): EventResult @aws_iam
+  addEvent(input: AddEventInput): EventResult @aws_iam
   # triggerFinishEvent is an asynchronous method
   # used only to re-raise event into service bus.
   triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
@@ -169,6 +186,7 @@ type Mutation {
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
   finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
+  addEvent: EventResult @aws_subscribe(mutations: ["addEvent"])
   updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
   updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
 }

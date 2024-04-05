@@ -13,9 +13,11 @@ helper = CfnResource(json_logging=False, log_level='DEBUG',
 
 try:
     table_name = getenv('DB_TABLE')
+    event_bus_name = getenv('EVENT_BUS')
     session = boto3.Session()
     dynamodb = session.resource('dynamodb')
     table = dynamodb.Table(table_name)
+    eventsClient = session.client('events')
 except Exception as e:
     helper.init_failure(e)
 
@@ -69,7 +71,19 @@ def write_event_to_dynamo(betting_event, date_format):
             }
             print(item)
             batch.put_item(Item=item)
+            eventsClient.put_events(
+                Entries=form_event('EventAdded', item)
+            )
         logger.info("Event saved!")
     except Exception:
         logger.exception(Exception)
         raise Exception
+
+
+def form_event(detailType, detail):
+    return [{
+        'Source': 'com.thirdparty',
+        'DetailType': detailType,
+        'Detail': json.dumps(detail),
+        'EventBusName': event_bus_name
+    }]

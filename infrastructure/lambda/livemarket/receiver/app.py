@@ -2,7 +2,7 @@ from os import getenv
 import json
 import boto3
 from gql_utils import get_client
-from mutations import update_event_odds, finish_event, lock_bets_for_event
+from mutations import update_event_odds, add_event, finish_event, lock_bets_for_event
 from gql import gql
 
 from aws_lambda_powertools import Logger, Tracer
@@ -58,14 +58,53 @@ def handle_event_finished(item: dict) -> dict:
     }
     response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
         'finishEvent']
-    
+
     if response['__typename'] == 'Event':
         logger.info("Event closed")
         return form_event('com.livemarket', 'EventClosed', update_info)
     elif 'Error' in response['__typename']:
-        logger.exception("Failed to update odds")
+        logger.exception("Failed to finish event")
         raise ValueError(
             f"finish_event failed: {response['message']}")
+
+@tracer.capture_method
+def handle_add_event(item: dict) -> dict:
+
+    add_event_info = {
+        'eventId': item['detail']['eventId'],
+        'home': item['detail']['home'],
+        'away': item['detail']['away'],
+        'homeOdds': item['detail']['homeOdds'],
+        'awayOdds': item['detail']['awayOdds'],
+        'drawOdds': item['detail']['drawOdds'],
+        'start': item['detail']['start'],
+        'end': item['detail']['end'],
+        'updatedAt': item['detail']['updatedAt'],
+        'duration': item['detail']['duration'],
+        'state': item['detail']['state']
+
+    }
+
+    print('add_event_info', add_event_info)
+    gql_input = {
+        'input': add_event_info
+    }
+
+    try:
+        response = gql_client.execute(gql(add_event), variable_values=gql_input)[
+            'addEvent']
+
+        print('response:', response)
+        if response['__typename'] == 'Event':
+            logger.info("Event closed")
+            return form_event('com.livemarket', 'EventAdded', add_event_info)
+        elif 'Error' in response['__typename']:
+            logger.exception("Failed to add event")
+            raise ValueError(
+                f"add_event failed: {response['message']}")
+    except Exception:
+        logger.exception(Exception)
+        raise Exception
 
 
 def form_event(source, detailType, detail):
@@ -89,6 +128,8 @@ def record_handler(record: SQSRecord):
         if item['source'] == 'com.thirdparty':
             if item['detail-type'] == 'EventClosed':
                 return handle_event_finished(item)
+            elif item['detail-type'] == 'EventAdded':
+                return handle_add_event(item)
     logger.warning({"message": "Unknown record type", "record": item})
     return None
 

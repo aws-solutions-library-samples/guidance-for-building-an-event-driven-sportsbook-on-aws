@@ -49,3 +49,24 @@ export const updatedUserStatus = /* GraphQL */ `
     }
   }
 `;
+
+export const addEvent = /* GraphQL */ `
+  subscription AddEvent {
+    addEvent {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;

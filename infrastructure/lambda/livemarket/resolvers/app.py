@@ -187,6 +187,21 @@ def trigger_finish_event(input: dict) -> dict:
         logger.exception({'UnknownError': e})
         return events_error('UnknownError', 'An unknown error occured.')
 
+@app.resolver(type_name="Mutation", field_name="addEvent")
+@tracer.capture_method
+def add_event(input: dict) -> dict:
+    try:
+        print('Adding event to ui')
+        print('input', input)
+        current_event = get_event(input['eventId'])
+        print('current_event', current_event)
+        return event_response(current_event)
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured while adding event.')
+    except Exception as e:
+        return events_error('UnknownError', 'An unknown error occured while adding event.')
+
 def form_event(userResponse):
     return {
         'Source': 'com.thirdparty',

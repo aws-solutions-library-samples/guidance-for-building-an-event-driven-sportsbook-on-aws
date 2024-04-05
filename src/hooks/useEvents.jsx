@@ -33,6 +33,26 @@ export const useEvents = (config = {}) => {
     return () => sub.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const sub = API.graphql(
+      graphqlOperation(subscriptions.addEvent)
+    ).subscribe({
+      next: ({ provider, value }) => {
+        queryClient.setQueryData([CACHE_PATH], (oldData) => {
+          const newEvent = deserializer(value.data.addEvent);
+          const newItems = oldData.filter(
+            (e) => e.eventId !== newEvent.eventId
+          );
+          newItems.push(newEvent);
+          return newItems;
+        });
+      },
+      error: (error) => console.warn(error),
+    });
+
+    return () => sub.unsubscribe();
+  }, []);
+
   return useQuery(
     [CACHE_PATH],
     () =>

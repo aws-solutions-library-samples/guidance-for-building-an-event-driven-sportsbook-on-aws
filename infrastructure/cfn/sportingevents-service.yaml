@@ -14,16 +14,8 @@ Globals:
         POWERTOOLS_SERVICE_NAME: sportingevents
 
 Parameters:
-  LiveMarketStackName:
-    Description: >-
-      Name of an active CloudFormation stack that contains the networking  
-      resources, such as the subnet and security group, that will be used in  
-      this stack.
+  EventBus:
     Type: String
-    MinLength: 1
-    MaxLength: 255
-    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
-    Default: LiveMarketStackName
 
 Resources:
   LambdaFunction:
@@ -41,6 +33,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Fn::ImportValue: 'LiveMarketDataStore'
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
       Events:
         ApiEvent:
           Type: Api
@@ -51,6 +45,7 @@ Resources:
         Variables:
           DB_TABLE:
             Fn::ImportValue: 'LiveMarketDataStore'
+          EVENT_BUS: !Ref EventBus
 
 Outputs:
   EndpointUrl:

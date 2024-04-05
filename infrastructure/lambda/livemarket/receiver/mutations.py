@@ -44,6 +44,31 @@ mutation FinishEvent ($input: FinishEventInput!) {
 }
 """
 
+add_event = """
+mutation AddEvent ($input: AddEventInput!) {
+  addEvent(input: $input) {
+    ... on Event {
+      __typename
+      eventId
+      home
+      away
+      homeOdds
+      awayOdds
+      drawOdds
+      start
+      end
+      updatedAt
+      duration
+      state
+    }
+    ... on Error {
+      __typename
+      message
+    }
+  }
+}
+"""
+
 lock_bets_for_event = """
 mutation MyMutation ($input: LockBetsForEventInput!){
   lockBetsForEvent (input: $input){
