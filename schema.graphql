@@ -32,7 +32,6 @@ type Event @aws_cognito_user_pools @aws_iam {
   end: AWSDateTime!
   updatedAt: AWSDateTime!
   eventStatus: EventStatus!
-  outcome: String
   marketstatus: [MarketStatus]
   outcome: String
   duration: String
