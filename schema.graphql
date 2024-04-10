@@ -15,8 +15,7 @@ type Event @aws_cognito_user_pools @aws_iam {
   updatedAt: AWSDateTime!
   eventStatus: EventStatus!
   outcome: String,
-  duration: String,
-  state: String,
+  duration: String
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -127,7 +126,7 @@ input AddEventInput {
   end: AWSDateTime!
   updatedAt: AWSDateTime!
   duration: String!
-  state: String!
+  eventStatus: String!
 }
 
 input BetRequest {

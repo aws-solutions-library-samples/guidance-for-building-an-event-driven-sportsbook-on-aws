@@ -277,9 +277,3 @@ Outputs:
   QueueURL:
     Description: SQS queue URL
     Value: !Ref SQSQueue
-
-  LiveMarketDataStore:
-    Description: DynamoDB Table for storing the betting events
-    Value: !Select [1, !Split ['/', !GetAtt LiveMarketDataStore.Arn]]
-    Export:
-      Name: 'LiveMarketDataStore'

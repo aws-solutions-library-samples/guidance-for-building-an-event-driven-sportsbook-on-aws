@@ -63,6 +63,7 @@ export const addEvent = /* GraphQL */ `
         start
         end
         updatedAt
+        eventStatus
       }
       ... on Error {
         message

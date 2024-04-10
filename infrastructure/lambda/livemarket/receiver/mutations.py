@@ -59,7 +59,7 @@ mutation AddEvent ($input: AddEventInput!) {
       end
       updatedAt
       duration
-      state
+      eventStatus
     }
     ... on Error {
       __typename

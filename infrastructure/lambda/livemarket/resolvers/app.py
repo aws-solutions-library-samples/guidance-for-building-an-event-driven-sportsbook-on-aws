@@ -191,11 +191,11 @@ def trigger_finish_event(input: dict) -> dict:
 @tracer.capture_method
 def add_event(input: dict) -> dict:
     try:
-        print('Adding event to ui')
-        print('input', input)
-        current_event = get_event(input['eventId'])
-        print('current_event', current_event)
-        return event_response(current_event)
+        logger.info('Adding event %s to DynamoDB Table', input)
+        table.put_item(Item=input)
+        return event_response(input)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event could not be added in the dynamodb table')
     except ClientError as e:
         logger.exception({'ClientError': e})
         return events_error('UnknownError', 'An unknown error occured while adding event.')

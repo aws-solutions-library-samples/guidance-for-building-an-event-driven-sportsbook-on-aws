@@ -12,11 +12,8 @@ helper = CfnResource(json_logging=False, log_level='DEBUG',
                      boto_level='CRITICAL')
 
 try:
-    table_name = getenv('DB_TABLE')
     event_bus_name = getenv('EVENT_BUS')
     session = boto3.Session()
-    dynamodb = session.resource('dynamodb')
-    table = dynamodb.Table(table_name)
     eventsClient = session.client('events')
 except Exception as e:
     helper.init_failure(e)
@@ -26,7 +23,7 @@ def lambda_handler(event, context):
     date_format = '%Y-%m-%dT%H:%M:%SZ'
     for betting_event in betting_events:
         try:
-            write_event_to_dynamo(betting_event, date_format)
+            send_new_event(betting_event, date_format)
         except:
             return {
                 'statusCode': 400,
@@ -38,43 +35,41 @@ def lambda_handler(event, context):
     }
 
 
-def write_event_to_dynamo(betting_event, date_format):
+def send_new_event(betting_event, date_format):
     try:
-        with table.batch_writer() as batch:
-            event_id = betting_event['eventId']
-            home_team = betting_event['homeTeam']
-            away_team = betting_event['awayTeam']
+        event_id = betting_event['eventId']
+        home_team = betting_event['homeTeam']
+        away_team = betting_event['awayTeam']
 
-            start_time = datetime.fromtimestamp(betting_event['startTime']/1000.0).strftime(date_format)
-            end_time = datetime.fromtimestamp(betting_event['endTime']/1000.0).strftime(date_format)
-            updated_at = datetime.fromtimestamp(betting_event['updatedAt']/1000.0).strftime(date_format)
-            duration = betting_event['duration']
-            state = betting_event['state']
-            away_odds = betting_event['awayOdds']
-            draw_odds = betting_event['drawOdds']
-            home_odds = betting_event['homeOdds']
-            if None in (event_id, home_team, away_team, start_time, duration, state):
-                raise Exception("Null values are not allowed")
-            logger.info(event_id)
-            item = {
-                'eventId': event_id,
-                'home': home_team,
-                'away': away_team,
-                'start': str(start_time),
-                'updatedAt': str(updated_at),
-                'end': str(end_time),
-                'duration': str(duration),
-                'homeOdds': home_odds,
-                'state': state,
-                'drawOdds': draw_odds,
-                'awayOdds': away_odds
-            }
-            print(item)
-            batch.put_item(Item=item)
-            eventsClient.put_events(
-                Entries=form_event('EventAdded', item)
-            )
-        logger.info("Event saved!")
+        start_time = datetime.fromtimestamp(betting_event['startTime']/1000.0).strftime(date_format)
+        end_time = datetime.fromtimestamp(betting_event['endTime']/1000.0).strftime(date_format)
+        updated_at = datetime.fromtimestamp(betting_event['updatedAt']/1000.0).strftime(date_format)
+        duration = betting_event['duration']
+        eventStatus = betting_event['state']
+        away_odds = betting_event['awayOdds']
+        draw_odds = betting_event['drawOdds']
+        home_odds = betting_event['homeOdds']
+        if None in (event_id, home_team, away_team, start_time, duration, eventStatus):
+            raise Exception("Null values are not allowed")
+        logger.info(event_id)
+        item = {
+            'eventId': event_id,
+            'home': home_team,
+            'away': away_team,
+            'start': str(start_time),
+            'updatedAt': str(updated_at),
+            'end': str(end_time),
+            'duration': str(duration),
+            'homeOdds': home_odds,
+            'eventStatus': eventStatus,
+            'drawOdds': draw_odds,
+            'awayOdds': away_odds
+        }
+        print(item)
+        eventsClient.put_events(
+            Entries=form_event('EventAdded', item)
+        )
+        logger.info("Event sent!")
     except Exception:
         logger.exception(Exception)
         raise Exception

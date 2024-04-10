@@ -70,6 +70,8 @@ def handle_event_finished(item: dict) -> dict:
 @tracer.capture_method
 def handle_add_event(item: dict) -> dict:
 
+    print('handle_add_event')
+    print('Item: ', item['detail'])
     add_event_info = {
         'eventId': item['detail']['eventId'],
         'home': item['detail']['home'],
@@ -81,8 +83,7 @@ def handle_add_event(item: dict) -> dict:
         'end': item['detail']['end'],
         'updatedAt': item['detail']['updatedAt'],
         'duration': item['detail']['duration'],
-        'state': item['detail']['state']
-
+        'eventStatus': item['detail']['eventStatus']
     }
 
     print('add_event_info', add_event_info)
