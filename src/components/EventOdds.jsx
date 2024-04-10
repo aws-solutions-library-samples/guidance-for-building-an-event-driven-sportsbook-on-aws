@@ -18,6 +18,9 @@ const dateOptions = {
 
 const renderOdds = (params) => {
   const { addToSlip } = useBetSlip();
+  const eventType = params.field;
+  const marketStatus = params.row.marketstatus?.find((ms)=>ms.name === eventType);
+  //disabled: (row.marketstatus?.find((ms)=>ms.name === "homeOdds").status !== 'Active'),
 
   return (
     <Button
@@ -25,6 +28,7 @@ const renderOdds = (params) => {
       size="small"
       tabIndex={params.hasFocus ? 0 : -1}
       onClick={() => addToSlip(params.row, params.field)}
+      disabled={marketStatus?.status === 'Suspended'}
     >
       {params.value}
     </Button>
@@ -44,7 +48,7 @@ const renderButton = (event, eventType, eventValue, label="") => {
         variant="outlined"
         size="small"
         onClick={() => addToSlip(event, eventType)}
-        disabled={marketStatus?.status !== 'Active'}
+        disabled={marketStatus?.status === 'Suspended'}
       >
         {eventValue}
       </Button>
@@ -82,8 +86,55 @@ export const EventOdds = () => {
     }
   };
 
+  const columns = [
+    {
+      field: "eventName",
+      headerName: "Event",
+      sortable: false,
+      flex: 1,
+      renderCell: ({ row }) => (
+        <Box>
+          <Typography variant={"subtitle2"} fontWeight={600}>
+            {row.home} vs {row.away}
+          </Typography>
+          <Typography variant={"caption"}>
+            Starts at {new Date(row.start).toLocaleString("en-GB", dateOptions)}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "homeOdds",
+      headerName: "Home Win",
+      sortable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
+    },
+    {
+      field: "awayOdds",
+      headerName: "Away Win",
+      sortable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
+    },
+    {
+      field: "drawOdds",
+      headerName: "Draw",
+      sortable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: renderOdds,
+    },
+    {
+      field: "updatedAt",
+    },
+  ];
+
+
   return (
-    <Card style={{ maxWidth: "1600px", height: "220px" }}>
+    <Card style={{ maxWidth: "1600px", height: "980px" }}>
       <Typography variant="h5" sx={{ padding: 2 }}>
         In Soccer Today
       </Typography>
@@ -121,6 +172,30 @@ export const EventOdds = () => {
           </div>
         ))}
       </Slider>
+      <DataGrid
+        rows={events}
+        columns={columns}
+        initialState={{
+          pagination: {
+            paginationModel: {
+              pageSize: 10,
+            },
+          },
+          sorting: {
+            sortModel: [{ field: "updatedAt", sort: "desc" }],
+          },
+          columns: {
+            columnVisibilityModel: {
+              updatedAt: false,
+            },
+          },
+        }}
+        getRowId={(row) => row?.eventId}
+        disableColumnSelector
+        disableColumnFilter
+        disableColumnMenu
+        pageSizeOptions={[10]}
+      />
     </Card>
   );
 };
