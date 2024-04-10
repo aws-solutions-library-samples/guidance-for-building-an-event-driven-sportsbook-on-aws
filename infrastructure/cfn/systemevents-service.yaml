@@ -52,6 +52,7 @@ Resources:
           - "com.thirdparty"
           - "com.livemarket"
           - "com.pam"
+          - "com.betting.settlement"
       Targets:
         - Arn: !GetAtt SQSQueue.Arn
           Id: SQSqueue

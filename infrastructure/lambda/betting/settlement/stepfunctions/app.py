@@ -99,4 +99,7 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
     
     settle_bet(event['betId'], event['userId'])
 
-    return form_event('BetSettlementComplete', response)
+    event = form_event('BetSettlementComplete', response)
+    events.put_events(Entries=[event])
+
+    return event

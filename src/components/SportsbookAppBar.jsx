@@ -11,6 +11,9 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import MenuIcon from '@mui/icons-material/Menu';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import { Switch } from "@mui/material";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import { Auth } from "aws-amplify";
 import {
@@ -44,7 +47,7 @@ import {
 
 const pages = ["About", "Admin"];
 
-function SportsbookAppBar({ user, signOut, isLocked }) {
+function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMode}) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const { currencySymbol, toggleCurrency } = useGlobal();
   
@@ -73,9 +76,7 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
     return (
       <Box>
         <Tooltip title="Account Settings">
-          <IconButton 
-           {...bindTrigger(profileMenuState)}
-          >
+          <IconButton {...bindTrigger(profileMenuState)}>
             <Avatar />
           </IconButton>
         </Tooltip>
@@ -84,31 +85,31 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
           PaperProps={{
             elevation: 0,
             sx: {
-              overflow: 'visible',
-              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              overflow: "visible",
+              filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
               mt: 1.5,
-              '& .MuiAvatar-root': {
+              "& .MuiAvatar-root": {
                 width: 32,
                 height: 32,
                 ml: -0.5,
                 mr: 1,
               },
-              '&:before': {
+              "&:before": {
                 content: '""',
-                display: 'block',
-                position: 'absolute',
+                display: "block",
+                position: "absolute",
                 top: 0,
                 right: 14,
                 width: 10,
                 height: 10,
-                bgcolor: 'background.paper',
-                transform: 'translateY(-50%) rotate(45deg)',
+                bgcolor: "background.paper",
+                transform: "translateY(-50%) rotate(45deg)",
                 zIndex: 0,
               },
             },
           }}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          transformOrigin={{ horizontal: "right", vertical: "top" }}
+          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         >
           <MenuItem sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
             <Avatar /> {user.attributes.email}
@@ -116,25 +117,23 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
           <Divider />
           <MenuItem onClick={handleLock}>
             <ListItemIcon>
-              {isLocked ?
-                <LockOpenIcon /> : <LockIcon />
-              }
+              {isLocked ? <LockOpenIcon /> : <LockIcon />}
             </ListItemIcon>
             {isLocked ? "Unlock Account" : "Lock Account"}
           </MenuItem>
           <MenuItem onClick={toggleCurrency}>
             <ListItemIcon>
-              {currencySymbol == '£' &&
-                <CurrencyPoundIcon />
-              }
-              {currencySymbol == '€' &&
-                <EuroIcon />
-              }
-              {currencySymbol == '$' &&
-                <AttachMoneyIcon />
-              }
+              {currencySymbol == "£" && <CurrencyPoundIcon />}
+              {currencySymbol == "€" && <EuroIcon />}
+              {currencySymbol == "$" && <AttachMoneyIcon />}
             </ListItemIcon>
             Switch currency
+          </MenuItem>
+          <MenuItem onClick={handleThemeChange}>
+            <ListItemIcon>
+              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </ListItemIcon>
+            {isDarkMode ? "Light Mode" : "Dark Mode"}
           </MenuItem>
           <MenuItem onClick={handleCloseNavMenu}>
             <ListItemIcon>
@@ -151,7 +150,7 @@ function SportsbookAppBar({ user, signOut, isLocked }) {
         </Menu>
       </Box>
     );
-  }
+  };
 
   //function that sets user "locked" attribute to provided boolean value
   const handleLock = async () => {

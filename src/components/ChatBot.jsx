@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "../css/internalStyles.css";
-import axios from 'axios';
+import {
+    useSendChatbotMessage,
+  } from "../hooks/useChatbot";
 
-const Chatbot = () => {
+export const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sessionId, setSessionId] = useState(localStorage.getItem('chatbotSessionId') || '');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const { mutateAsync: sendChatbotMessage } = useSendChatbotMessage();
   const chatbotInputRef = useRef(null);
   const isChatbotOpenRef = useRef(isChatbotOpen);
   const chatbotButtonInputRef = useRef(null);
@@ -20,15 +23,6 @@ const Chatbot = () => {
     isChatbotOpenRef.current = isChatbotOpen;
     // Initialize or retrieve the session ID from local storage
     if (!sessionId) {
-      /*axios.post('/api/startSession') // Replace with your backend API endpoint
-        .then(response => {
-          const newSessionId = response.data.sessionId;
-          setSessionId(newSessionId);
-          localStorage.setItem('chatbotSessionId', newSessionId);
-        })
-        .catch(error => {
-          console.error('Error starting session:', error);
-        });*/
         setSessionId('1');
     }
     document.addEventListener('keydown', handleKeyPress);
@@ -39,6 +33,22 @@ const Chatbot = () => {
     };
   }, [sessionId]);
 
+  const sendMessageLocalImplementation = () => {
+    if (inputText.trim() === '') return;
+    var messageToSend = {
+        "prompt": inputText.trim()
+      }
+    setMessages([...messages, { text: inputText, isUser: true }, {text: "...", isUser: false}]);
+    sendChatbotMessage( { data: messageToSend }).then((response) => {
+        const botReply = response.data.sendChatbotMessage.completion;
+        setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
+        div.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        setInputText('');
+      }).catch(()=> {
+        console.error('Error sending message:', error);
+      })
+  }
+
   const sendMessage = () => {
     const headers = {
         Authorization: 'Bearer 1234567890',
@@ -46,22 +56,21 @@ const Chatbot = () => {
       };
     if (inputText.trim() === '') return;
     var messageToSend = {
-        "input": inputText,
-        "schema": ""
-    }
-    // Send the user's message to the backend
-    axios.post('https://em69k83ho9.execute-api.us-east-1.amazonaws.com/prod/', {
-      sessionId,
-      message: messageToSend,
-    }, headers)
-    .then(response => {
-      const botReply = response.data.query;
-      setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
-      setInputText('');
-    })
-    .catch(error => {
-      console.error('Error sending message:', error);
-    });
+        "modelId": "anthropic.claude-v2",
+        "contentType": "application/json",
+        "accept": "*/*",
+        "body": {
+          "prompt": "\n\nHuman: Hello world\n\nAssistant:",
+          "max_tokens_to_sample": 300,
+          "temperature": 0.5,
+          "top_k": 250,
+          "top_p": 1,
+          "stop_sequences": [
+            "\\n\\nHuman:"
+          ],
+          "anthropic_version": "bedrock-2023-05-31"
+        }
+      }
   };
 
   const handleKeyPress = (event) => {
@@ -112,7 +121,7 @@ const Chatbot = () => {
             onChange={(e) => setInputText(e.target.value)}
             ref={chatbotInputRef}
           />
-          <button ref={chatbotButtonInputRef} onClick={sendMessage}>Send</button>
+          <button ref={chatbotButtonInputRef} onClick={sendMessageLocalImplementation}>Send</button>
         </div>
       </div>
     </div>

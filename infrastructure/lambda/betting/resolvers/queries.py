@@ -12,6 +12,7 @@ query GetEvent($eventId: ID!, $timestamp: Float) {
       drawOdds
       awayOdds
       away
+      outcome
     }
     ... on Error {
       __typename

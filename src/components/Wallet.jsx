@@ -50,7 +50,7 @@ export const Wallet = (isLocked) => {
           Your Balance
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {currencySymbol}{(wallet.balance/100).toFixed(2)}
+          {currencySymbol}{(wallet.balance).toFixed(2)}
         </Typography>
       </CardContent>
       <CardActions>

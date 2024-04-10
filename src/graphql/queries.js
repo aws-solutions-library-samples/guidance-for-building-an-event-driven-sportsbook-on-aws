@@ -12,6 +12,10 @@ export const getEvents = /* GraphQL */ `
           start
           end
           updatedAt
+          marketstatus {
+            name
+            status
+          }
         }
         nextToken
       }
@@ -31,6 +35,7 @@ export const getBets = /* GraphQL */ `
           odds
           outcome
           placedAt
+          amount
           betStatus
           event {
             away
@@ -42,6 +47,7 @@ export const getBets = /* GraphQL */ `
             homeOdds
             start
             updatedAt
+            outcome
           }
         }
         nextToken
@@ -81,6 +87,24 @@ export const getEvent = /* GraphQL */ `
         homeOdds
         start
         updatedAt
+      }
+      ... on Error {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
+export const getPingInfo = /* GraphQL */ `
+  query GetPingInfo {
+    getPingInfo {
+      ... on PingInfo {
+        __typename
+        items {
+          pingLocation
+          pingLatency
+        }
       }
       ... on Error {
         __typename

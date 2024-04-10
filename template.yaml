@@ -270,7 +270,10 @@ Resources:
     Properties:
       Location: infrastructure/cfn/thirdparty-service.yaml
       Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
   TradingServiceStack:
     Type: AWS::Serverless::Application

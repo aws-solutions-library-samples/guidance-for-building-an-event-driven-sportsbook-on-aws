@@ -166,6 +166,8 @@ Resources:
       Layers:
         - !Ref AppSyncLambdaLayer
       Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
         - DynamoDBCrudPolicy:
             TableName: !Ref BettingDataStore
         - Statement:
@@ -184,6 +186,7 @@ Resources:
           APPSYNC_API_ID: !Ref AppSyncApiId
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
+          EVENT_BUS: !Ref EventBus
   
   StatesExecutionRole:
     Type: "AWS::IAM::Role"
@@ -238,6 +241,8 @@ Resources:
       Layers:
         - !Ref AppSyncLambdaLayer
       Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
         - DynamoDBCrudPolicy:
             TableName: !Ref BettingDataStore
         - Statement:
@@ -256,6 +261,8 @@ Resources:
           APPSYNC_API_ID: !Ref AppSyncApiId
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
+          EVENT_BUS: !Ref EventBus
+
 
   BettingAppSyncRole:
     Type: AWS::IAM::Role
