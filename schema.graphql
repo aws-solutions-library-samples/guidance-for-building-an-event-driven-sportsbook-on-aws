@@ -32,8 +32,9 @@ type Event @aws_cognito_user_pools @aws_iam {
   end: AWSDateTime!
   updatedAt: AWSDateTime!
   eventStatus: EventStatus!
-  outcome: String
   marketstatus: [MarketStatus]
+  outcome: String
+  duration: String
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -137,6 +138,20 @@ input FinishEventInput {
   outcome: String!
 }
 
+input AddEventInput {
+  eventId: ID!
+  home: String!
+  away: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  duration: String!
+  eventStatus: String!
+}
+
 input BetRequest {
   eventId: ID!
   outcome: EventOutcome
@@ -199,6 +214,7 @@ type Mutation {
   # finishEvent is a synchronous method to update event in data storage
   # Currently not used
   finishEvent(input: FinishEventInput): EventResult @aws_iam
+  addEvent(input: AddEventInput): EventResult @aws_iam
   # triggerFinishEvent is an asynchronous method
   # used only to re-raise event into service bus.
 
@@ -209,7 +225,7 @@ type Mutation {
 
   suspendMarket(input: SuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
   unsuspendMarket(input: UnsuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
- 
+
   closeMarket(input: CloseMarketInput!): EventResult @aws_cognito_user_pools
 
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
@@ -217,12 +233,13 @@ type Mutation {
   createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools @aws_iam
   addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
   lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
-  lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam  
+  lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam
 }
 
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
   finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
+  addEvent: EventResult @aws_subscribe(mutations: ["addEvent"])
   updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
   updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
   marketStatusUpdated: EventResult @aws_subscribe(mutations: ["suspendMarket", "unsuspendMarket"])

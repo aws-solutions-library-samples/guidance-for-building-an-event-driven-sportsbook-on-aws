@@ -56,8 +56,8 @@ export const useMarket = (user) => {
       return ;
       //setSuspendedMarkets(marketStatus);
     });
-    
-    
+
+
 
 
     const sub = API.graphql(
@@ -73,13 +73,13 @@ export const useMarket = (user) => {
           });
           return updatedEvents;
         });
-        //Update suspendedMarkets with new values retrieved from subscription handler. 
+        //Update suspendedMarkets with new values retrieved from subscription handler.
         //SuspendedMarkets should follow the format [{eventId:xxxx, marketStatus: {name:yyyy, status: zzzz}}]
         setSuspendedMarkets((prevState) => {
           const eventIndex = (prevState.findIndex!==undefined)?prevState.findIndex(
             (event) => event.eventId === value.data.marketStatusUpdated.eventId
           ):-1;
-        
+
 
           if (eventIndex === -1) {
             // If the event is not found in the previous state, add a new entry
@@ -103,7 +103,7 @@ export const useMarket = (user) => {
 
             updatedState[eventIndex].marketstatus = value.data.marketStatusUpdated.marketstatus.map(marketstatus => ({
               status: marketstatus.status,
-              name: marketstatus.name  
+              name: marketstatus.name
             }));
 
             return updatedState;
@@ -143,13 +143,35 @@ export const useMarket = (user) => {
         error: (error) => console.warn(error),
       });
 
-      
-      
+
+
       return () => {
         sub.unsubscribe();
         //marketStatusSub.unsubscribe();
       };
     }, []);
+
+      useEffect(() => {
+          const sub = API.graphql(
+              graphqlOperation(subscriptions.addEvent)
+          ).subscribe({
+              next: ({ provider, value }) => {
+                  queryClient.setQueryData([CACHE_PATH], (oldData) => {
+                      const newEvent = deserializer(value.data.addEvent);
+                      const newItems = oldData.filter(
+                          (e) => e.eventId !== newEvent.eventId
+                      );
+                      newItems.push(newEvent);
+                      return newItems;
+                  });
+              },
+              error: (error) => console.warn(error),
+          });
+
+          return () => sub.unsubscribe();
+      }, []);
+
+
 
     return useQuery(
       [CACHE_PATH],
@@ -166,7 +188,7 @@ export const useMarket = (user) => {
       }
     );
   };
-  
+
 // New hooks to handle "Suspend" and "Close" mutations
 export const useSuspendMarket = (config = {}) => {
   const queryClient = useQueryClient();

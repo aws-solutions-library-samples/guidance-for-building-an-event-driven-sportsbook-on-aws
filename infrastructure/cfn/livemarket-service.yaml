@@ -166,6 +166,7 @@ Resources:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/finishEvent
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/suspendMarket
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/unsuspendMarket
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/addEvent
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -284,7 +285,7 @@ Resources:
       TypeName: Mutation
       FieldName: triggerUnsuspendMarket
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
-  
+
   SuspendMarketResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -292,7 +293,7 @@ Resources:
       TypeName: Mutation
       FieldName: suspendMarket
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
-  
+
   UnsuspendMarketResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -307,6 +308,14 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: closeMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  AddEventsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: addEvent
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
 
 Outputs:

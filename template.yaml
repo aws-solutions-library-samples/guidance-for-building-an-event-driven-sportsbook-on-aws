@@ -312,6 +312,15 @@ Resources:
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
 
+  EventsServiceStack:
+    Type: AWS::Serverless::Application
+    DependsOn: LiveMarketServiceStack
+    Properties:
+      Location: infrastructure/cfn/sportingevents-service.yaml
+      Parameters:
+        EventBus: !Ref EventBus
+
+
 Outputs:
   Region:
     Description: Deployment region

@@ -155,11 +155,11 @@ def suspend_market(input: dict) -> dict:
         existing_market = next((market for market in existing_markets if market['name'] == input['market']), None)
         if existing_market:
             existing_market['status'] = 'Suspended'
-           
+
         else:
             #add new market to existing_markets
             existing_markets.append({'name': input['market'], 'status': 'Suspended'})
-        
+
         #iterate through existing_markets and generate "SET" message to dynamodb
         update_expression = "SET marketstatus = :marketstatus"
         expression_values = {
@@ -186,7 +186,7 @@ def suspend_market(input: dict) -> dict:
     except Exception as e:
         logger.exception({'UnknownError': e})
         return events_error('UnknownError', 'An unknown error occurred.')
-    
+
 @app.resolver(type_name="Mutation", field_name="unsuspendMarket")
 @tracer.capture_method
 def unsuspend_market(input: dict) -> dict:
@@ -202,7 +202,7 @@ def unsuspend_market(input: dict) -> dict:
         existing_market = next((market for market in existing_markets if market['name'] == input['market']), None)
         if existing_market:
             existing_market['status'] = 'Active'
-           
+
         else:
             #add new market to existing_markets
             existing_markets.append({'name': input['market'], 'status': 'Active'})
@@ -340,7 +340,7 @@ def trigger_suspend_market(input: dict) -> dict:
     except Exception as e:
         logger.exception({'UnknownError': e})
         return events_error('UnknownError', 'An unknown error occurred.')
-    
+
 @app.resolver(type_name="Mutation", field_name="triggerUnsuspendMarket")
 @tracer.capture_method
 def trigger_unsuspend_market(input: dict) -> dict:
@@ -365,6 +365,21 @@ def trigger_unsuspend_market(input: dict) -> dict:
     except Exception as e:
         logger.exception({'UnknownError': e})
         return events_error('UnknownError', 'An unknown error occurred.')
+
+@app.resolver(type_name="Mutation", field_name="addEvent")
+@tracer.capture_method
+def add_event(input: dict) -> dict:
+    try:
+        logger.info('Adding event %s to DynamoDB Table', input)
+        table.put_item(Item=input)
+        return event_response(input)
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+        return events_error('InputError', 'The event could not be added in the dynamodb table')
+    except ClientError as e:
+        logger.exception({'ClientError': e})
+        return events_error('UnknownError', 'An unknown error occured while adding event.')
+    except Exception as e:
+        return events_error('UnknownError', 'An unknown error occured while adding event.')
 
 def form_event(detail_type, event_data, market_name=None):
     return {

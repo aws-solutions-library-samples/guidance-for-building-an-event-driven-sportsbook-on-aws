@@ -66,3 +66,25 @@ export const marketStatusUpdated = /* GraphQL */ `
     }
   }
 `;
+
+export const addEvent = /* GraphQL */ `
+  subscription AddEvent {
+    addEvent {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+        eventStatus
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
