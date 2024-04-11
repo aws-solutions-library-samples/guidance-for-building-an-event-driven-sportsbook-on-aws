@@ -330,3 +330,7 @@ Outputs:
   QueueURL:
     Description: SQS queue URL
     Value: !Ref SQSQueue
+
+  LiveMarketDataStoreName:
+    Description: Live market data store name
+    Value: !Ref LiveMarketDataStore

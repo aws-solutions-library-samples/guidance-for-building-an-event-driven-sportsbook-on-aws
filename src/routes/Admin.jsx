@@ -10,7 +10,7 @@ import {
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EventOdds from "../components/admin/EventOdds";
-import SystemEvents from "../components/admin/SystemEvents";
+import SystemEventsTable from "../components/admin/SystemEventsTable";
 
 export default function Home() {
   const [expanded, setExpanded] = React.useState(false);
@@ -43,7 +43,7 @@ export default function Home() {
           <Typography sx={{ color: 'text.secondary', padding: 2 }}>View ongoing system events across sportsbook</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <SystemEvents />
+          <SystemEventsTable />
         </AccordionDetails>
       </Accordion>
     </Box>

@@ -274,6 +274,7 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+        LiveMarketDataStore: !GetAtt LiveMarketServiceStack.Outputs.LiveMarketDataStoreName
 
   TradingServiceStack:
     Type: AWS::Serverless::Application

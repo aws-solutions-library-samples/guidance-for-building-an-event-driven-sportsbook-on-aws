@@ -42,13 +42,14 @@ export const BetSlip = ({ onClose, isLocked }) => {
     const market = suspendedMarkets.find((market) => market.eventId === pendingBets[pendingbet].eventId)
 
     //Disgusting, but i dont have much time
-    const marketstatus = market.marketstatus.find((ms)=>{
+    const marketstatus = market?.marketstatus?.find((ms)=>{
       if(pendingBets[pendingbet].outcome === "homeWin" && ms.name === "homeOdds")
         return true;
       if(pendingBets[pendingbet].outcome === "awayWin" && ms.name === "awayOdds")
         return true;
       if(pendingBets[pendingbet].outcome === "draw" && ms.name === "drawOdds")
         return true;
+      return false;
     });
     
     pendingBets[pendingbet].marketstatus = marketstatus;

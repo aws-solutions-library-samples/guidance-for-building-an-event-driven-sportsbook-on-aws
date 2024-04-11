@@ -19,6 +19,7 @@ import TimelineOppositeContent from "@mui/lab/TimelineOppositeContent";
 import TimelineDot from "@mui/lab/TimelineDot";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AddIcon from '@mui/icons-material/Add';
 import ErrorIcon from "@mui/icons-material/Error";
 import StartIcon from "@mui/icons-material/Start";
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
@@ -121,6 +122,8 @@ const PopupBody = styled('div')(
           return <PauseIcon color="info" />;
         case "MarketUnsuspended":
           return <RestartAltIcon color="success" />;
+        case "EventAdded":
+          return <AddIcon color="success" />;
         default:
           return null;
       }
@@ -150,6 +153,10 @@ const PopupBody = styled('div')(
           return "Settlement Started";
         case "com.betting.BetsPlaced":
           return "Bets Placed";
+        case "com.thirdparty.EventAdded":
+          return "Event received";
+        case "com.livemarket.EventAdded":
+            return "Event processed and added";
         default:
           return eventName;
       }

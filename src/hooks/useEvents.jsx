@@ -46,6 +46,7 @@ export const useMarket = (user) => {
   const queryClient = useQueryClient();
   useEffect(() => {
     //make initial call to live market receiver getEvents and populate suspendedMarkets
+
     const marketStatusInitial = API.graphql(graphqlOperation(queries.getEvents)).then((data) => {
       const events = data.data.getEvents.items;
       const marketStatus = events.map((event) => ({
@@ -56,8 +57,6 @@ export const useMarket = (user) => {
       return ;
       //setSuspendedMarkets(marketStatus);
     });
-
-
 
 
     const sub = API.graphql(
@@ -128,6 +127,7 @@ export const useMarket = (user) => {
 
     useEffect(() => {
       const sub = API.graphql(
+        //filter by eventStatus = "running"
         graphqlOperation(subscriptions.updatedEventOdds)
       ).subscribe({
         next: ({ provider, value }) => {

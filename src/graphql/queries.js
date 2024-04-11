@@ -12,6 +12,7 @@ export const getEvents = /* GraphQL */ `
           start
           end
           updatedAt
+          eventStatus
           marketstatus {
             name
             status
@@ -48,6 +49,7 @@ export const getBets = /* GraphQL */ `
             start
             updatedAt
             outcome
+            eventStatus
           }
         }
         nextToken
@@ -87,6 +89,7 @@ export const getEvent = /* GraphQL */ `
         homeOdds
         start
         updatedAt
+        eventStatus
       }
       ... on Error {
         __typename

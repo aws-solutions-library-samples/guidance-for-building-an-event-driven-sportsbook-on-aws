@@ -24,6 +24,9 @@ Parameters:
 
   AppSyncLambdaLayer:
     Type: String
+  
+  LiveMarketDataStore:
+    Type: String
 
 Resources:
   BedrockLambdaLayer:
@@ -58,6 +61,21 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
+  
+  ChatHistoryDataStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
 
   ChatBotResolverFunction:
     Type: AWS::Serverless::Function
@@ -70,6 +88,8 @@ Resources:
       Layers:
         - !Ref BedrockLambdaLayer
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketDataStore
         - Statement:
             - Effect: Allow
               Action:
@@ -82,6 +102,10 @@ Resources:
                 - kendra:*
               Resource:
                 - "*"
+      Environment:
+        Variables:
+          DB_TABLE: !Ref LiveMarketDataStore
+          DB_TABLE_CHATHISTORY: !Ref ChatHistoryDataStore
 
   ChatbotAppSyncRole:
     Type: AWS::IAM::Role

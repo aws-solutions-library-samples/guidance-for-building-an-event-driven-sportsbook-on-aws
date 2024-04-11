@@ -366,6 +366,7 @@ export const getBets = /* GraphQL */ `
             homeOdds
             start
             updatedAt
+            eventStatus
           }
         }
         nextToken

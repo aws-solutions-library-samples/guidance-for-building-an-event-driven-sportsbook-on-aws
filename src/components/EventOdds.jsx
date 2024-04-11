@@ -61,9 +61,10 @@ const renderButton = (event, eventType, eventValue, label="") => {
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
   const suspendedMarkets = useMarket();
+  const [showSlider, setShowSlider] = useState(true);
 
   
-    if(events!==undefined && suspendedMarkets.find!==undefined){
+  if(events!==undefined && suspendedMarkets.find!==undefined){
     events.map((event) => {
       const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
       event.marketstatus = internalEvent?.marketstatus;
@@ -134,68 +135,79 @@ export const EventOdds = () => {
 
 
   return (
-    <Card style={{ maxWidth: "1600px", height: "980px" }}>
-      <Typography variant="h5" sx={{ padding: 2 }}>
-        In Soccer Today
-      </Typography>
-      <Slider {...settings}>
-        {events.map((event) => (
-          <div key={event.eventId} style={{ padding: "10px" }}>
-            <Card style={{ margin: "10px" }}>
-              <Box sx={{ padding: 2 }}>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {event.home} vs {event.away}
-                </Typography>
-                <Typography variant="caption">
-                  Starts at{" "}
-                  {new Date(event.start).toLocaleString("en-GB", dateOptions)}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    marginTop: 1,
-                  }}
-                >
-                  <Zoom in={true} timeout={500}>
-                    {renderButton(event, "homeOdds", event.homeOdds, "Home")}
-                  </Zoom>
-                  <Zoom in={true} timeout={500}>
-                    {renderButton(event, "drawOdds", event.drawOdds, "Draw")}
-                  </Zoom>
-                  <Zoom in={true} timeout={500}>
-                    {renderButton(event, "awayOdds", event.awayOdds, "Away")}
-                  </Zoom>
+    <Card style={{ maxWidth: "1600px", height: showSlider ? "290px" : "750px" }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+    <Typography variant="h5">
+      In Soccer Today
+    </Typography>
+    <Button
+      variant="contained"
+      onClick={() => setShowSlider(!showSlider)}
+    >
+      {showSlider ? "Table" : "Slider"}
+    </Button>
+  </Box>
+      {showSlider ? (
+        <Slider {...settings}>
+          {events.slice(0, 10).map((event) => (
+            <div key={event.eventId} style={{ padding: "10px" }}>
+              <Card style={{ margin: "10px" }}>
+                <Box sx={{ padding: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    {event.home} vs {event.away}
+                  </Typography>
+                  <Typography variant="caption">
+                    Starts at{" "}
+                    {new Date(event.start).toLocaleString("en-GB", dateOptions)}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-around",
+                      marginTop: 1,
+                    }}
+                  >
+                    <Zoom in={true} timeout={500}>
+                      {renderButton(event, "homeOdds", event.homeOdds, "Home")}
+                    </Zoom>
+                    <Zoom in={true} timeout={500}>
+                      {renderButton(event, "drawOdds", event.drawOdds, "Draw")}
+                    </Zoom>
+                    <Zoom in={true} timeout={500}>
+                      {renderButton(event, "awayOdds", event.awayOdds, "Away")}
+                    </Zoom>
+                  </Box>
                 </Box>
-              </Box>
-            </Card>
-          </div>
-        ))}
-      </Slider>
-      <DataGrid
-        rows={events}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 10,
+              </Card>
+            </div>
+          ))}
+        </Slider>
+      ) : (
+        <DataGrid
+          rows={events}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10,
+              },
             },
-          },
-          sorting: {
-            sortModel: [{ field: "updatedAt", sort: "desc" }],
-          },
-          columns: {
-            columnVisibilityModel: {
-              updatedAt: false,
+            sorting: {
+              sortModel: [{ field: "updatedAt", sort: "desc" }],
             },
-          },
-        }}
-        getRowId={(row) => row?.eventId}
-        disableColumnSelector
-        disableColumnFilter
-        disableColumnMenu
-        pageSizeOptions={[10]}
-      />
+            columns: {
+              columnVisibilityModel: {
+                updatedAt: false,
+              },
+            },
+          }}
+          getRowId={(row) => row?.eventId}
+          disableColumnSelector
+          disableColumnFilter
+          disableColumnMenu
+          pageSizeOptions={[10]}
+        />
+      )}
     </Card>
   );
 };

@@ -13,7 +13,8 @@ export const Chatbot = () => {
   const chatbotInputRef = useRef(null);
   const isChatbotOpenRef = useRef(isChatbotOpen);
   const chatbotButtonInputRef = useRef(null);
-  
+  const messagesRef = useRef(null); // New ref for the messages container
+
   const toggleChatbot = () => {
     setIsChatbotOpen(!isChatbotOpen);
     isChatbotOpenRef.current = !isChatbotOpen;
@@ -33,45 +34,27 @@ export const Chatbot = () => {
     };
   }, [sessionId]);
 
+  // Scroll to the bottom of the messages container whenever the messages array changes
+  useEffect(() => {
+    const messagesContainer = messagesRef.current;
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }, [messages]);
+
   const sendMessageLocalImplementation = () => {
     if (inputText.trim() === '') return;
     var messageToSend = {
         "prompt": inputText.trim()
       }
     setMessages([...messages, { text: inputText, isUser: true }, {text: "...", isUser: false}]);
+    
     sendChatbotMessage( { data: messageToSend }).then((response) => {
         const botReply = response.data.sendChatbotMessage.completion;
         setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
-        div.current.scrollIntoView({ behavior: "smooth", block: "end" });
         setInputText('');
-      }).catch(()=> {
-        console.error('Error sending message:', error);
+      }).catch((e)=> {
+        console.error('Error sending message:', e);
       })
   }
-
-  const sendMessage = () => {
-    const headers = {
-        Authorization: 'Bearer 1234567890',
-        'Content-Type': 'application/json',
-      };
-    if (inputText.trim() === '') return;
-    var messageToSend = {
-        "modelId": "anthropic.claude-v2",
-        "contentType": "application/json",
-        "accept": "*/*",
-        "body": {
-          "prompt": "\n\nHuman: Hello world\n\nAssistant:",
-          "max_tokens_to_sample": 300,
-          "temperature": 0.5,
-          "top_k": 250,
-          "top_p": 1,
-          "stop_sequences": [
-            "\\n\\nHuman:"
-          ],
-          "anthropic_version": "bedrock-2023-05-31"
-        }
-      }
-  };
 
   const handleKeyPress = (event) => {
     if (event.key === 'Enter' && isChatbotOpenRef.current && document.activeElement === chatbotInputRef.current) {
@@ -79,15 +62,6 @@ export const Chatbot = () => {
         //sendMessage();
     }
   };
-
-  /*const sendMessage = () => {
-    if (inputText.trim() === '') return;
-
-    // Simulate a response from the bot (replace with your own mock data)
-    const botReply = `Mock Bot: You said "${inputText}"`;
-    setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
-    setInputText('');
-  };*/
 
   return (
     <div>
@@ -106,7 +80,7 @@ export const Chatbot = () => {
             X
           </button>
         </div>
-        <div className="chatbot-messages">
+        <div className="chatbot-messages" id="chatbot-messages" ref={messagesRef}>
           {messages.map((message, index) => (
             <div key={index} className={`message ${message.isUser ? 'user' : 'bot'}`}>
               {message.text}

@@ -6,6 +6,7 @@ import json
 import boto3
 
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 
 from aws_lambda_powertools.utilities.data_classes import AppSyncResolverEvent
 from aws_lambda_powertools import Logger, Tracer
@@ -33,10 +34,12 @@ events = session.client('events')
 @tracer.capture_method
 def get_events(startKey: str = "") -> dict:
     try:
-        args = {}
+        args = {
+            'FilterExpression': Key('eventStatus').eq('running')
+        }
         if startKey:
             args['ExclusiveStartKey'] = {'eventId': startKey}
-
+                
         response = table.scan(**args)
         result = {
             'items': response.get('Items', [])

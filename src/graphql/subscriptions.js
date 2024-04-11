@@ -14,6 +14,7 @@ export const updatedEventOdds = /* GraphQL */ `
         start
         end
         updatedAt
+        eventStatus
       }
       ... on Error {
         message
