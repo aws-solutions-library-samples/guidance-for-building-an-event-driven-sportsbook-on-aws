@@ -176,7 +176,7 @@ const PopupBody = styled('div')(
           </Box>
           <ChatContainer ref={containerRef} onScroll={handleScroll}>
             <Timeline style={{maxWidth: '100%'}}>
-              {events.map((event, index) => {
+              {events.reverse().map((event, index) => {
                 const isLeft = index % 2 === 0;
                 const align = isLeft ? "right" : "left";
                 return (
