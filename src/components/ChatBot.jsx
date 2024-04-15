@@ -9,6 +9,7 @@ export const Chatbot = () => {
   const [inputText, setInputText] = useState('');
   const [sessionId, setSessionId] = useState(localStorage.getItem('chatbotSessionId') || '');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { mutateAsync: sendChatbotMessage } = useSendChatbotMessage();
   const chatbotInputRef = useRef(null);
   const isChatbotOpenRef = useRef(isChatbotOpen);
@@ -43,6 +44,7 @@ export const Chatbot = () => {
 
   const sendMessageLocalImplementation = () => {
     if (inputText.trim() === '') return;
+    setIsSending(true);
     var messageToSend = {
         "prompt": inputText.trim(),
         "sessionId": sessionId
@@ -53,8 +55,10 @@ export const Chatbot = () => {
         const botReply = response.data.sendChatbotMessage.completion;
         setMessages([...messages, { text: inputText, isUser: true }, { text: botReply, isUser: false }]);
         setInputText('');
+        setIsSending(false);
       }).catch((e)=> {
         console.error('Error sending message:', e);
+        setIsSending(false);
       })
   }
 
@@ -96,8 +100,9 @@ export const Chatbot = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             ref={chatbotInputRef}
+            disabled={isSending}
           />
-          <button ref={chatbotButtonInputRef} onClick={sendMessageLocalImplementation}>Send</button>
+          <button ref={chatbotButtonInputRef} onClick={sendMessageLocalImplementation} disabled={isSending}>Send</button>
         </div>
       </div>
     </div>
