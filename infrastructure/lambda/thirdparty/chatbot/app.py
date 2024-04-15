@@ -7,9 +7,9 @@ from langchain.memory import ConversationBufferMemory
 from langchain import PromptTemplate
 from langchain.llms.bedrock import Bedrock
 from langchain.chains import ConversationalRetrievalChain
-from langchain.llms.bedrock import Bedrock
 import re
 from langchain.retrievers import AmazonKendraRetriever
+from langchain.memory.chat_message_histories import DynamoDBChatMessageHistory
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
@@ -19,7 +19,7 @@ from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from langchain_community.chat_models import BedrockChat
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 
 tracer = Tracer()
@@ -28,6 +28,8 @@ app = AppSyncResolver()
 session = boto3.Session()
 dynamodb = session.resource('dynamodb')
 table_name = getenv('DB_TABLE')
+table_name_history = getenv('DB_TABLE_CHATHISTORY')
+
 table = dynamodb.Table(table_name)
 
 session = boto3.Session()
@@ -43,176 +45,92 @@ Follow Up Input: {question}
 
 CONDENSE_QUESTION_PROMPT1 = PromptTemplate.from_template(_template_new)
 
-prompt_template = "Use the context to answer the question at the end. If you don't know the answer from the context, do not answer from your knowledge and be precise. Dont fake the answer."
+prompt_template = f"""
+You're an casino support agent. 
+I ask you a question regarding current state of a casino or informational question. 
+Your job is to answer my question and give recommendations based on the context that you have available. 
+Reject any irrelevant questions with max 1 sentence and stop responding. 
+Never provide recommendations instead of what's asked and use only context.
+"""
 
 bedrock_client = session.client(service_name='bedrock-runtime', region_name=aws_region, endpoint_url='https://bedrock-runtime.'+aws_region+'.amazonaws.com')
-
 
 @app.resolver(type_name="Mutation", field_name="sendChatbotMessage")
 @tracer.capture_method
 def send_chatbot_message(input: dict) -> dict:
+    conversation_id = input["sessionId"]
+    
     try: 
         kendra_client = session.client(service_name='kendra', region_name=aws_region)
         kendra_retriever = AmazonKendraRetriever(client=kendra_client, index_id=index_id)
         # Get the input from the request payload
         #print the langchain version
         
-        bedrock_runtime = boto3.client(
-        service_name="bedrock-runtime",
-        region_name="us-east-1",
-    )
-
-    # Claude 3 Sonnet model ID
-        model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
-        chat = BedrockChat(
-            client=bedrock_runtime,
-            model_id=model_id,
-            model_kwargs={"temperature": 0}
-        )
-        parser = JsonOutputParser()
-
-        system_message = f"""
-            You're an casino support agent. 
-            User gives you a question regarding current state of a casino or informational question. 
-            Your job is to answer user's questions and give recommendations based on the context that you have available. 
-            Reject any irrelevant questions with max 1 sentence and stop responding. 
-            Never provide recommendations instead of what's asked and use only context.
-        """
-        currentEventsData = "Currently running events" + json.dumps(get_events())
+        currentEventsData = "Currently running events " + get_events()[:800]
         
-        payload = input["prompt"].strip()+system_message+currentEventsData
+        payload = input["prompt"].strip()+currentEventsData
         #replace all double quotes with single quotes in payload
         payload = payload.replace('"', "'")
 
-        human_q = {
-            "type": "text",
-            "text": f"{payload}"
-        }
-        formatting_system_message = """
-        Format the answer using the JSON format. 
-
-        Example:
-
-        {
-            "completion": {
-                    "Answer"
-            }
-        }    
-        """
-        
-        messages = [
-            #SystemMessage(content=),
-            HumanMessage(content=[human_q]),
-        ]
-
-        prompt_config = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 4096,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": payload},
-                    ],
-                }
-            ],
-        }
-        body = json.dumps(prompt_config)
-
-        #body = json.dumps(
-        #    {
-        #        "anthropic_version": "bedrock-2023-05-31",
-        #        "max_tokens": 2000,
-        #        "messages": messages
-        #    }
-        #)
-
-        accept = 'application/json'
-        contentType = 'application/json'
-        response = bedrock_runtime.invoke_model(body=body, modelId=model_id, accept=accept, contentType=contentType)
-        response_body = json.loads(response.get('body').read())
-        answer = response_body["content"][0]["text"]
-        #aimessage = chat.pipe(parser).invoke(messages)
-        response_body = '''{
-                "completion": "'''+answer+'''"
-            }'''
-            
-        #print("prediction:",prediction)
-        print("response_body:",response_body)
-            
-            # Return the prediction as a JSON response
-        return chatbot_response(json.loads(response_body, strict=False))
-
-
-        return chatbot_response(json.loads(response, strict=False))
-
-
-        
-
-        # cl_llm = Bedrock(model_id="anthropic.claude-v1", client=bedrock_client, model_kwargs={"max_tokens_to_sample": 500}) # change model_id here
         cl_llm = Bedrock(model_id="anthropic.claude-v2", client=bedrock_client, model_kwargs={"max_tokens_to_sample": 500}) # change model_id here
-        memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-       
-
+        message_history = DynamoDBChatMessageHistory(
+            table_name=table_name_history, session_id=conversation_id
+        )
+        
+        print("session id", conversation_id)
+    
+        memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            chat_memory=message_history,
+            input_key="question",
+            output_key="answer",
+            return_messages=True,
+        )
 
         qa = ConversationalRetrievalChain.from_llm(
             llm=cl_llm,
             retriever=kendra_retriever,
-            memory=memory_chain,
-            #get_chat_history='No history so far',
+            memory=memory,
             verbose = True,
             condense_question_prompt=CONDENSE_QUESTION_PROMPT1,
             chain_type='stuff',
         )
         
-        currentEventsData = get_events()
+        currentEventsData = "Currently running events" + get_events()[:800]
         # the LLMChain prompt to get the answer. the ConversationalRetrievalChange does not expose this parameter in the constructor
-        qa.combine_docs_chain.llm_chain.prompt = PromptTemplate.from_template("""
-
+        qa.combine_docs_chain.llm_chain.prompt = PromptTemplate.from_template(
+            """
+        Website context: 
+        <system>
         Currently running events: 
         """ + currentEventsData + """                                                        
-                                                                              
+        </system>               
+
         {context}
 
         Human: %s
         <q>{question}</q>
 
-
         Assistant:""" % (
             prompt_template
         ))
-        print("Payload:")
-        print(payload)
-        # Get the input text from the payload
-        
-        print("tag4")
-        question = payload
-        print("tag5")
-        print("question:",question)
-        if input_validation(question):
-            #question = payload['question']
 
-            #trychat = chathistory1
+        question = payload
+        if input_validation(question):
             trychat = []
-            chat_history = trychat 
-            print("chat_history:",chat_history)
             
             # Append the new question to the chat history
             trychat.append((question, ''))
             # Generate the prediction from the Conversational Retrieval Chain
-            print(CONDENSE_QUESTION_PROMPT1.template)
+            
             prediction = qa.run(question=question)
             response_body = '''{
                 "completion": "'''+prediction+'''"
             }'''
-            
-            print("prediction:",prediction)
-            print("response_body:",response_body)
-            
+
             # Return the prediction as a JSON response
             return chatbot_response(json.loads(response_body, strict=False))
-            #return response_body
     
     except Exception as e:
         logger.info({'UnknownError': e})
@@ -228,16 +146,17 @@ def get_events() -> dict:
         result = {
             'items': response.get('Items', [])
         }
+        
+        logger.info({'result': result})
+     
         if response.get('LastEvaluatedKey'):
             result['nextToken'] = response['LastEvaluatedKey']['eventId']
 
         resultstring = ''
-        # parse result json to string
-        return json.dumps(result)
 
-        return result
         for item in result['items']:
-            resultstring += " ".join([' home team ', item['home'], ' vs ', ' guest team ', item['away'], ' with odds ', 'away win ', item['awayOdds'], ' home win ', item['homeOdds'], ' draw ', item['drawOdds'], ';'])
+            resultstring += " ".join([' event id ', item['eventId'], ', home team name \'', item['home'], '\' vs ', ' guest team name \'', item['away'], '\' with odds ', 'away win \'', item['awayOdds'], '\' home win \'', item['homeOdds'], '\' draw \'', item['drawOdds'], '\';'])
+        
         return resultstring
 
     except ClientError as e:
@@ -254,7 +173,7 @@ def chatbot_error(errorType: str, error_msg: str) -> dict:
     return {'__typename': errorType, 'message': error_msg}
     
 def input_validation(input_str):
-    pattern = r'^[a-zA-Z0-9\s\-!@#$%^&*(),.?":{}|<>]{1,1000}$'
+    pattern = r'^[a-zA-Z0-9\s\-!@#$%^&*(),\'/;.?":{}|<>]{1,10000}$'
 
     if re.match(pattern, input_str):
         return True

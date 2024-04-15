@@ -24,7 +24,8 @@ export const Chatbot = () => {
     isChatbotOpenRef.current = isChatbotOpen;
     // Initialize or retrieve the session ID from local storage
     if (!sessionId) {
-        setSessionId('1');
+        //set session id to random guid
+        setSessionId(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
     }
     document.addEventListener('keydown', handleKeyPress);
 
@@ -43,7 +44,8 @@ export const Chatbot = () => {
   const sendMessageLocalImplementation = () => {
     if (inputText.trim() === '') return;
     var messageToSend = {
-        "prompt": inputText.trim()
+        "prompt": inputText.trim(),
+        "sessionId": sessionId
       }
     setMessages([...messages, { text: inputText, isUser: true }, {text: "...", isUser: false}]);
     

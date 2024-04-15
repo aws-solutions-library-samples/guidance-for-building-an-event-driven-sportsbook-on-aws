@@ -180,6 +180,7 @@ input LockBetsForEventInput {
 
 input ChatbotMessageInput {
   prompt: String!
+  sessionId: String!
 }
 
 input SuspendMarketInput {
