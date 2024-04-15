@@ -66,7 +66,7 @@ export const SystemEventsTable = () => {
                     },
                     sorting: {
                         sortModel: [{field: 'id', sort: 'desc'}]
-                    }
+                    },
                   }}
             />
         </Card>

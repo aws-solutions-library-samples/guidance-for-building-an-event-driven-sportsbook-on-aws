@@ -114,7 +114,7 @@ const getRowClassName = (params) => {
   const { outcome, event, amount, odds } = params.row;
   const [numerator, denominator] = odds.split("/");
   const winAmount = (amount * parseInt(numerator)) / parseInt(denominator);
-  const profitAmount = winAmount - amount;
+  const profitAmount = winAmount;
 
   if (outcome === event.outcome && profitAmount > 0) {
     return "win-row";
@@ -128,7 +128,7 @@ const getRowClassName = (params) => {
 const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
   const [numerator, denominator] = odds.split("/");
   const winAmount = (amount * parseInt(numerator)) / parseInt(denominator);
-  const profitAmount = winAmount - amount;
+  const profitAmount = winAmount+amount;
   //round up the profitAmount to 2 digits
   const roundedProfitAmount = Math.round(profitAmount * 100) / 100;
   if (outcome !== eventOutcome) {
