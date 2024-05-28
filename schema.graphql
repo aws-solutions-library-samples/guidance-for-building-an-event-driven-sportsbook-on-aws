@@ -3,6 +3,24 @@ type Wallet @aws_cognito_user_pools @aws_iam {
   balance: Float!
 }
 
+type PingInfo @aws_cognito_user_pools @aws_iam {
+  items: [PingInfoItem]!
+}
+
+type PingInfoItem @aws_cognito_user_pools @aws_iam {
+  pingLocation: String!
+  pingLatency: Float!
+}
+
+type ChatbotResponse @aws_cognito_user_pools @aws_iam {
+  completion: String!
+}
+
+type MarketStatus @aws_cognito_user_pools @aws_iam{
+  name: String!
+  status: String!
+}
+
 type Event @aws_cognito_user_pools @aws_iam {
   eventId: ID!
   homeOdds: String!
@@ -14,7 +32,9 @@ type Event @aws_cognito_user_pools @aws_iam {
   end: AWSDateTime!
   updatedAt: AWSDateTime!
   eventStatus: EventStatus!
+  marketstatus: [MarketStatus]
   outcome: String
+  duration: String
 }
 
 type EventList @aws_cognito_user_pools @aws_iam {
@@ -82,11 +102,15 @@ type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
 }
 
 union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union PingInfoResult = PingInfo | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union EventResult = Event | NotFoundError | InputError | UnknownError
 union EventsResult = EventList | NotFoundError | InputError | UnknownError
 union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
 union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
 union UserResult = User | NotFoundError | InputError | UnknownError
+union ChatbotResult = ChatbotResponse | NotFoundError | InputError | UnknownError
+
+
 
 input CreateWalletInput {
   userId: ID!
@@ -112,6 +136,20 @@ input FinishEventInput {
   eventId: ID!
   eventStatus: String!
   outcome: String!
+}
+
+input AddEventInput {
+  eventId: ID!
+  home: String!
+  away: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  duration: String!
+  eventStatus: String!
 }
 
 input BetRequest {
@@ -140,9 +178,30 @@ input LockBetsForEventInput {
   eventId: ID!
 }
 
+input ChatbotMessageInput {
+  prompt: String!
+  sessionId: String!
+}
+
+input SuspendMarketInput {
+  eventId: ID!
+  market: String!
+}
+
+input UnsuspendMarketInput {
+  eventId: ID!
+  market: String!
+}
+
+input CloseMarketInput {
+  eventId: ID!
+  market: String!
+}
+
 type Query {
   getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
   getWallet: WalletResult @aws_cognito_user_pools
+  getPingInfo: PingInfoResult @aws_cognito_user_pools
   getBets(startKey: String): BetsResult @aws_cognito_user_pools
   getWalletByUserId(userId: ID!): WalletResult @aws_iam
   getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools
@@ -151,16 +210,28 @@ type Query {
 type Mutation {
   createWallet(input: CreateWalletInput): WalletResult @aws_iam
   depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  sendChatbotMessage(input: ChatbotMessageInput): ChatbotResult @aws_cognito_user_pools @aws_iam
   updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
   # finishEvent is a synchronous method to update event in data storage
   # Currently not used
   finishEvent(input: FinishEventInput): EventResult @aws_iam
+  addEvent(input: AddEventInput): EventResult @aws_iam
   # triggerFinishEvent is an asynchronous method
   # used only to re-raise event into service bus.
+
   triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
+  triggerSuspendMarket(input: SuspendMarketInput!): EventResult @aws_cognito_user_pools @aws_iam
+  triggerUnsuspendMarket(input: UnsuspendMarketInput!): EventResult @aws_cognito_user_pools @aws_iam
+
+
+  suspendMarket(input: SuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
+  unsuspendMarket(input: UnsuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
+
+  closeMarket(input: CloseMarketInput!): EventResult @aws_cognito_user_pools
+
   withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
   deductFunds(input: DeductFundsInput): WalletResult @aws_iam
-  createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools
+  createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools @aws_iam
   addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
   lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
   lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam
@@ -169,8 +240,10 @@ type Mutation {
 type Subscription {
   updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
   finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
+  addEvent: EventResult @aws_subscribe(mutations: ["addEvent"])
   updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
   updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
+  marketStatusUpdated: EventResult @aws_subscribe(mutations: ["suspendMarket", "unsuspendMarket"])
 }
 
 schema {

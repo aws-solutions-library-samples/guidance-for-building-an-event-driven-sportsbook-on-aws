@@ -270,7 +270,11 @@ Resources:
     Properties:
       Location: infrastructure/cfn/thirdparty-service.yaml
       Parameters:
+        AppSyncApiId: !GetAtt AppSyncApi.ApiId
+        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
+        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+        LiveMarketDataStore: !GetAtt LiveMarketServiceStack.Outputs.LiveMarketDataStoreName
 
   TradingServiceStack:
     Type: AWS::Serverless::Application
@@ -308,6 +312,15 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
+
+  EventsServiceStack:
+    Type: AWS::Serverless::Application
+    DependsOn: LiveMarketServiceStack
+    Properties:
+      Location: infrastructure/cfn/sportingevents-service.yaml
+      Parameters:
+        EventBus: !Ref EventBus
+
 
 Outputs:
   Region:

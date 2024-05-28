@@ -33,6 +33,8 @@ session = boto3.Session()
 dynamodb = session.resource('dynamodb')
 table = dynamodb.Table(table_name)
 gql_client = get_client(region, appsync_url)
+event_bus_name = getenv('EVENT_BUS')
+events = session.client('events')
 
 
 @app.resolver(type_name="Query", field_name="getBets")
@@ -85,7 +87,9 @@ def create_bets(input: dict) -> dict:
             bet['placedAt'] = placement_time
             bet['amount'] = Decimal(bet['amount'])
             bet['betStatus'] = 'placed'
-            total_stakes += 10.0
+            # convert bet amount to float
+            total_stakes += float(bet['amount'])
+            
             processed_bets.append(bet)
 
         # TODO - check market status (e.g., not Closed or Suspended)
@@ -115,6 +119,7 @@ def create_bets(input: dict) -> dict:
                 batch.put_item(Item=item)
 
         bet_list = {'items': processed_bets}
+        send_event(bet_list)
         return bet_list_response(bet_list)
     except ValueError as e:
         logger.exception({'ValueError': e})
@@ -212,6 +217,19 @@ def bet_list_response(data: dict) -> dict:
 
 def get_user_id(event: AppSyncResolverEvent):
     return event.identity.sub
+
+def form_event(bet):
+    return {
+        'Source': 'com.betting',
+        'DetailType': 'BetsPlaced',
+        'Detail': json.dumps(bet, default=str),
+        'EventBusName': event_bus_name
+    }
+
+def send_event(bet):
+    data = form_event(bet)
+    response = events.put_events(Entries=[data])
+    return response
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)

@@ -56,7 +56,8 @@ def calculate_event_outcome(eventOutcome, betOutcome, odds, betAmount):
     fractionOdds = Fraction(odds)
     decimalOdds = float(fractionOdds.numerator) / float(fractionOdds.denominator)
     if eventOutcome == betOutcome:
-        return decimalOdds * betAmount
+        #We add amount that was bet. Since we might win less than we bet to begin with :)
+        return betAmount+(decimalOdds * betAmount)
     else:
         return 0
 
@@ -99,4 +100,7 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
     
     settle_bet(event['betId'], event['userId'])
 
-    return form_event('BetSettlementComplete', response)
+    event = form_event('BetSettlementComplete', response)
+    events.put_events(Entries=[event])
+
+    return event

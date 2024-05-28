@@ -16,6 +16,7 @@
   
   .chatbot-container.open {
     transform: translateY(0);
+    z-index: 1000;
   }
   
   .chatbot-button {
@@ -34,6 +35,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    z-index: 1000;
   }
   
   .chatbot-header {
@@ -63,15 +65,16 @@
     margin: 5px;
     padding: 10px;
     border-radius: 5px;
+    font-size: 12px;
   }
   
   .message.user {
-    background-color: #f0f0f0;
+    background-color: #896ac6;
     align-self: flex-start;
   }
   
   .message.bot {
-    background-color: #007bff;
+    background-color: #2c5581;
     color: #fff;
     align-self: flex-end;
   }

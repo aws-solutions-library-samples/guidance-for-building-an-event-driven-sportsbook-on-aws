@@ -28,7 +28,9 @@ export const useSystemEvents = (config = {}) => {
                 queryClient.setQueryData([CACHE_PATH], (oldData) => {
                     const newEvent = { id: idCount++, ...value.data.updatedSystemEvents};
                     const newItems = oldData.filter(
-                        (e) => e.id !== newEvent.id
+                        //parse newEvent.detail with following schema "{eventId=39d96a19-4590-4492-8ac7-8f79934eeecb, market=homeOdds, eventStatus=running}" to object
+                        (e) => e.id !== newEvent.id 
+                        
                     );
                     newItems.push(newEvent);
                     return newItems;
