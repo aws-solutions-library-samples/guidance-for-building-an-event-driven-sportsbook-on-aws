@@ -2,6 +2,7 @@
 from os import getenv
 import json
 import boto3
+import uuid
 from gql_utils import get_client
 from mutations import add_system_event
 from gql import gql
@@ -25,15 +26,19 @@ events = session.client('events')
 @tracer.capture_method
 def handle_system_event(item: dict):
     logger.info( f'handle_system_event:{item}' )
+    extended_detail = item['detail']
+    extended_detail["systemEventId"] = str(uuid.uuid4())
+    
     gql_input = { 
         'input': 
             {'source':item['source'],
              'detailType':item['detail-type'],
-             'detail':item['detail']}
+             'detail':extended_detail}
         } 
     response = gql_client.execute(gql(add_system_event), variable_values=gql_input)[
         'addSystemEvent']
     return response
+
 
 @tracer.capture_method
 def record_handler(record: SQSRecord):
@@ -56,7 +61,9 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
         logger.info(processed_messages)
 
     output_events = [x[1]
-                     for x in processed_messages if x[0] == "success" and x[1] is not None]
+                    for x in processed_messages if x[0] == "success" and x[1] is not None]
+                    
+    print("Processed: ",processed_messages[0])
     if output_events:
         events.put_events(Entries=output_events)
 

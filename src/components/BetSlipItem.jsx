@@ -1,8 +1,9 @@
-import { Box, Typography, Card, CardContent, IconButton } from "@mui/material";
+import { Box, Typography, Card, CardContent, IconButton, TextField } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useBetSlip } from "../providers/BetSlipContext";
 import { useGlobal } from "../providers/GlobalContext";
 import { useEvent } from "../hooks/useEvent";
+import { useState } from 'react';
 
 const conditionMap = {
   homeWin: "Home Win",
@@ -10,19 +11,36 @@ const conditionMap = {
   draw: "Away Win",
 };
 
-export const BetSlipItem = ({ bet }) => {
-  const { removeFromSlip } = useBetSlip();
+export const BetSlipItem = ({ bet, updateBetAmount }) => {
+  const { removeFromSlip, updateInSlip } = useBetSlip();
   const { currencySymbol } = useGlobal();
   const { data: event, isLoading } = useEvent(bet.eventId);
+  const [betAmount, setBetAmount] = useState(bet.amount);
 
   if (isLoading) return <Typography>Loading...</Typography>;
   const oddsChanged = bet.selectedOdds !== bet.currentOdds;
 
+  const calculatePossibleWinning = () => {
+    const [numerator, denominator] = bet.currentOdds.split('/').map(Number);
+    const oddValue = numerator / denominator;
+    return (betAmount * oddValue).toFixed(2);
+  };
+
+  const handleBetAmountChange = (event, bet) => {
+    if(event!==undefined)
+    {
+      const newAmount = event.target.value;
+      bet.amount = newAmount;
+      updateInSlip(bet);
+      setBetAmount(bet.amount);
+    }
+  };
+
   return (
     <Card>
       <CardContent>
-        <Box>
-          <Typography variant={"subtitle1"}>
+        <Box sx={bet.marketstatus?.status==='Suspended'?{ color: 'error.main' }:{ color: 'text.primary' }}>
+          <Typography variant={"subtitle1"} sx={{fontColor: "red"}}>
             {event.home} vs {event.away}
           </Typography>
           {oddsChanged && (
@@ -33,12 +51,26 @@ export const BetSlipItem = ({ bet }) => {
           <Typography variant={"subtitle2"}>
             Current Odds {bet.currentOdds} - {conditionMap[bet.outcome]}
           </Typography>
-          <Typography variant={"caption"}>{currencySymbol}{(bet.amount/100).toFixed(2)}</Typography>
-          <IconButton 
+          <Box display="flex" alignItems="center" gap={2}> {/* Add gap prop */}
+            <Box>
+              <TextField
+                type="number"
+                value={betAmount}
+                onChange={(e) => handleBetAmountChange(e, bet)}
+                InputProps={{ startAdornment: <Typography>{currencySymbol}</Typography> }}
+              />
+            </Box>
+            <Box>
+              <Typography variant={"caption"}>
+                Possible Winning: {currencySymbol}{calculatePossibleWinning()}
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton
             color="error"
             size="small"
             onClick={() => removeFromSlip(bet)}>
-              <DeleteIcon />
+            <DeleteIcon />
           </IconButton>
         </Box>
       </CardContent>

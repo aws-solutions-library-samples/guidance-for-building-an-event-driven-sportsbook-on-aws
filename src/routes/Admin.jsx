@@ -10,7 +10,7 @@ import {
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EventOdds from "../components/admin/EventOdds";
-import SystemEvents from "../components/admin/SystemEvents";
+import SystemEventsTable from "../components/admin/SystemEventsTable";
 
 export default function Home() {
   const [expanded, setExpanded] = React.useState(false);
@@ -20,7 +20,7 @@ export default function Home() {
     setExpanded(isExpanded ? panel : false);
   };
   return (
-    <Box mt={4}>
+    <Box mt={4} maxWidth="1600px">
       <Accordion expanded={expanded === 'eventOdds'} onChange={handleChange('eventOdds')}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
@@ -29,7 +29,7 @@ export default function Home() {
           sx={{ color: 'text.primary', fontSize: 34, fontWeight: 'medium' }}
         >
           <Typography variant="h5" sx={{ width: '33%', flexShrink: 0, padding:2 }}>Manage Markets</Typography>
-          <Typography sx={{ color: 'text.secondary', padding: 2 }}>Supsend and close markets and events</Typography>
+          <Typography sx={{ color: 'text.secondary', padding: 2 }}>Suspend and close markets and events</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <EventOdds />
@@ -43,7 +43,7 @@ export default function Home() {
           <Typography sx={{ color: 'text.secondary', padding: 2 }}>View ongoing system events across sportsbook</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <SystemEvents />
+          <SystemEventsTable />
         </AccordionDetails>
       </Accordion>
     </Box>

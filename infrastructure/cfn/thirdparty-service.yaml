@@ -13,11 +13,32 @@ Globals:
         POWERTOOLS_SERVICE_NAME: thirdparty
 
 Parameters:
+  AppSyncApiId:
+    Type: String
+
+  AppSyncApiUrl:
+    Type: String
 
   EventBus:
     Type: String
 
+  AppSyncLambdaLayer:
+    Type: String
+  
+  LiveMarketDataStore:
+    Type: String
+
 Resources:
+  BedrockLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Layer containing bedrock namespace
+      ContentUri: ../lambda/bedrock/
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+
   OddsFetcherFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -40,3 +61,149 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
+  
+  ChatHistoryDataStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ChatBotResolverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/thirdparty/chatbot/
+      Description: Lambda for chatbot interaction
+      Timeout: 60
+      MemorySize: 256
+      Layers:
+        - !Ref BedrockLambdaLayer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LiveMarketDataStore
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:*
+              Resource:
+                - "*"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kendra:*
+              Resource:
+                - "*"
+      Environment:
+        Variables:
+          DB_TABLE: !Ref LiveMarketDataStore
+          DB_TABLE_CHATHISTORY: !Ref ChatHistoryDataStore
+
+  ChatbotAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt ChatBotResolverFunction.Arn
+
+  PingInfoResolverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: ../lambda/thirdparty/pinginfo/
+      Description: Lambda for pinginfo interaction
+      Timeout: 60
+      MemorySize: 256
+      Layers:
+        - !Ref BedrockLambdaLayer
+
+  PingInfoAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-AppSyncRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt PingInfoResolverFunction.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PingPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeRegions
+                Resource: '*'
+        
+  ChatbotMessageLambdaDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      Name: Chatbot_Lambda_Source_Upd
+      Description: Chatbot Lambda AppSync Data Source
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt ChatbotAppSyncRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt ChatBotResolverFunction.Arn
+
+  ChatbotMessageResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: sendChatbotMessage
+      DataSourceName: !GetAtt ChatbotMessageLambdaDataSource.Name  
+
+  PingInfoDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      Name: PingInfo_Lambda_Source
+      Description: PingInfo Lambda AppSync Data Source
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt PingInfoAppSyncRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt PingInfoResolverFunction.Arn
+
+  PingInfoResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getPingInfo
+      DataSourceName: !GetAtt PingInfoDataSource.Name  

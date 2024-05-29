@@ -14,6 +14,7 @@ export const updatedEventOdds = /* GraphQL */ `
         start
         end
         updatedAt
+        eventStatus
       }
       ... on Error {
         message
@@ -42,6 +43,45 @@ export const updatedUserStatus = /* GraphQL */ `
       ... on User {
         userId
         isLocked
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const marketStatusUpdated = /* GraphQL */ `
+  subscription MarketStatusUpdated {
+    marketStatusUpdated {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const addEvent = /* GraphQL */ `
+  subscription AddEvent {
+    addEvent {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+        eventStatus
       }
       ... on Error {
         message

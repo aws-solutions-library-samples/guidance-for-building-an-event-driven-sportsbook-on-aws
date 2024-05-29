@@ -38,9 +38,20 @@ Resources:
       AttributeDefinitions:
         - AttributeName: eventId
           AttributeType: S
+        - AttributeName: marketstatus.name
+          AttributeType: S
       KeySchema:
         - AttributeName: eventId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: MarketStatusIndex
+        KeySchema:
+          - AttributeName: eventId
+            KeyType: HASH
+          - AttributeName: marketstatus.name
+            KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
 
   LiveMarketHistoryStore:
@@ -153,6 +164,9 @@ Resources:
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/updateEventOdds
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/finishEvent
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/suspendMarket
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/unsuspendMarket
+                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/addEvent
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -248,12 +262,60 @@ Resources:
       FieldName: finishEvent
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
   
-  TriggereFinishEventResolver:
+  TriggerFinishEventResolver:
     Type: AWS::AppSync::Resolver
     Properties:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: triggerFinishEvent
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  TriggerSuspendMarketResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: triggerSuspendMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  TriggerUnsuspendMarketResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: triggerUnsuspendMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  SuspendMarketResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: suspendMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  UnsuspendMarketResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: unsuspendMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  CloseMarketResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: closeMarket
+      DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
+
+  AddEventsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: addEvent
       DataSourceName: !GetAtt LiveMarketLambdaDataSource.Name
 
 Outputs:
@@ -268,3 +330,7 @@ Outputs:
   QueueURL:
     Description: SQS queue URL
     Value: !Ref SQSQueue
+
+  LiveMarketDataStoreName:
+    Description: Live market data store name
+    Value: !Ref LiveMarketDataStore
