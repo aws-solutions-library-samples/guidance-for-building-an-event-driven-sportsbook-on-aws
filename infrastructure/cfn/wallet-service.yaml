@@ -65,7 +65,6 @@ Resources:
                 Resource:
                   - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/createWallet
 
-  # Add EB event for user sign up
   UserSignedUpRule:
     Type: AWS::Events::Rule
     Properties:
