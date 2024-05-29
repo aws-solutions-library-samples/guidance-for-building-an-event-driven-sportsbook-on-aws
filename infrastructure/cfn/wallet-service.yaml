@@ -17,15 +17,12 @@ Parameters:
   AppSyncApiId:
     Type: String
 
-  AppSyncApiUrl:
+  AppSyncEndpointArn:
     Type: String
 
   EventBus:
     Type: String
 
-  AppSyncLambdaLayer:
-    Type: String
-  
 
 Resources:
 
@@ -44,41 +41,60 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
-  WalletReceiverFunction:
-    Type: AWS::Serverless::Function
+  EventBridgeMutationsRole:
+    Type: AWS::IAM::Role
     Properties:
-      Handler: app.lambda_handler
-      CodeUri: ../lambda/wallet/receiver/
-      Description: Lambda for receiving events for this service
-      Timeout: 10
-      MemorySize: 256
-      Layers:
-        - !Ref AppSyncLambdaLayer
-      Events:
-        UserSignedUp:
-          Type: EventBridgeRule
-          Properties:
-            Enabled: true
-            EventBusName: !Ref EventBus
-            Pattern:
-              source:
-                - com.auth
-              detail-type:
-                - UserSignedUp
+      Description: A role for eventbridge to call appsync mutations for the wallet service
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
       Policies:
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref EventBus
-        - Statement:
-            - Effect: Allow
-              Action:
-                - appsync:GraphQL
-              Resource:
-                - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/createWallet
-      Environment:
-        Variables:
-          REGION: !Ref AWS::Region
-          APPSYNC_URL: !Ref AppSyncApiUrl
-          EVENT_BUS: !Ref EventBus
+        - PolicyName: appsync
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: appsync:GraphQL
+                Resource:
+                  - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/createWallet
+
+  # Add EB event for user sign up
+  UserSignedUpRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: A rule for initiating wallet creation on signup
+      EventBusName: !Ref EventBus
+      EventPattern:
+        source:
+          - com.auth
+        detail-type:
+          - UserSignedUp
+      Targets:
+        -
+          Arn: !Ref AppSyncEndpointArn
+          Id: AppSyncCreateWalletOnSignup
+          RoleArn: !GetAtt EventBridgeMutationsRole.Arn
+          AppSyncParameters:
+            GraphQLOperation: |
+              mutation CreateWallet ($input: CreateWalletInput) {
+                createWallet(input: $input) {
+                  ... on Wallet {
+                    balance
+                    userId
+                  }
+                }
+              }
+          InputTransformer:
+            InputPathsMap:
+              userId: "$.detail.userId"
+            InputTemplate: "{ \"input\": { \"userId\": \"<userId>\" } }"
 
   WalletResolverFunction:
     Type: AWS::Serverless::Function
@@ -91,11 +107,14 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref WalletDataStore
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
       Environment:
         Variables:
           DB_TABLE: !Ref WalletDataStore
           ACCOUNT_ID: !Ref AWS::AccountId
           APPSYNC_API_ID: !Ref AppSyncApiId
+          EVENT_BUS: !Ref EventBus
 
   WalletAppSyncRole:
     Type: AWS::IAM::Role
@@ -118,7 +137,7 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: !GetAtt WalletResolverFunction.Arn
-  
+
   WalletLambdaDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -129,7 +148,7 @@ Resources:
       ServiceRoleArn: !GetAtt WalletAppSyncRole.Arn
       LambdaConfig:
         LambdaFunctionArn: !GetAtt WalletResolverFunction.Arn
-  
+
   GetWalletResolver:
     Type: AWS::AppSync::Resolver
     Properties:
@@ -168,7 +187,7 @@ Resources:
       ApiId: !Ref AppSyncApiId
       TypeName: Mutation
       FieldName: depositFunds
-      DataSourceName: !GetAtt WalletLambdaDataSource.Name  
+      DataSourceName: !GetAtt WalletLambdaDataSource.Name
 
   DeductFundsResolver:
     Type: AWS::AppSync::Resolver

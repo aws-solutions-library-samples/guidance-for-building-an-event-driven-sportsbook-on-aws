@@ -1,9 +1,9 @@
 from os import getenv
 import json
 import boto3
-from gql_utils import get_client
-from mutations import create_wallet
-from gql import gql
+# from gql_utils import get_client
+# from mutations import create_wallet
+# from gql import gql
 
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -11,10 +11,10 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 tracer = Tracer()
 logger = Logger()
 
-appsync_url = getenv("APPSYNC_URL")
+# appsync_url = getenv("APPSYNC_URL")
 region = getenv("REGION")
 event_bus_name = getenv('EVENT_BUS')
-gql_client = get_client(region, appsync_url)
+# gql_client = get_client(region, appsync_url)
 session = boto3.Session()
 events = session.client('events')
 

@@ -14,10 +14,12 @@ tracer = Tracer()
 logger = Logger()
 app = AppSyncResolver()
 
+event_bus_name = getenv('EVENT_BUS')
 table_name = getenv('DB_TABLE')
 session = boto3.Session()
 dynamodb = session.resource('dynamodb')
 table = dynamodb.Table(table_name)
+events = session.client('events')
 
 # User pool resolvers
 
@@ -48,12 +50,13 @@ def withdraw_funds(input: dict) -> dict:
     try:
         item = _try_get_wallet(userId)
         withdrawAmount = Decimal(input['amount'])
-        logger.info(f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
+        logger.info(
+            f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
         if ((item['balance'] - withdrawAmount) >= 0):
             item['balance'] -= withdrawAmount
         else:
             logger.info(f'Insufficient funds for withdrawal request')
-            return wallet_error('InsufficientFundsError', 'Wallet contains insufficuient funds to withdraw') 
+            return wallet_error('InsufficientFundsError', 'Wallet contains insufficuient funds to withdraw')
 
         table.update_item(
             Key={'userId': userId},
@@ -130,6 +133,7 @@ def create_wallet(input: dict) -> dict:
         'balance': Decimal(0),
     }
     table.put_item(Item=item)
+    raise_wallet_event('WalletCreated', {'userId': input['userId']})
     return wallet_response(item)
 
 
@@ -149,7 +153,7 @@ def deduct_funds(input: dict) -> dict:
         else:
             logger.info(f'Insufficient funds to deduct')
             return wallet_error('InsufficientFundsError', 'Wallet contains insufficient funds to deduct')
-        
+
         table.update_item(
             Key={'userId': userId},
             UpdateExpression="set balance=:r",
@@ -183,6 +187,20 @@ def wallet_error(errorType: str, error_msg: str) -> dict:
 
 def wallet_response(data: dict) -> dict:
     return {**{'__typename': 'Wallet'}, **data}
+
+
+@tracer.capture_method
+def raise_wallet_event(detailType: str, detail: str) -> None:
+    events.put_events(
+        Entries=[
+            {
+                'Source': 'com.wallet',
+                'DetailType': detailType,
+                'Detail': json.dumps(detail),
+                'EventBusName': event_bus_name
+            },
+        ]
+    )
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)

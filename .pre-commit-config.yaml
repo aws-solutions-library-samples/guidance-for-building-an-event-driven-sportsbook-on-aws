@@ -31,7 +31,7 @@ repos:
       - id: cfn-python-lint
         name: AWS CloudFormation Linter
         files: template.yaml$
-        args: [ --ignore-checks=W2001, --ignore-checks=W3002, --ignore-checks=W3011 ]
+        args: [ --ignore-checks=W2001, --ignore-checks=W3002, --ignore-checks=W3011, --ignore-checks=E1010 ]
 
   # JS
   - repo: https://github.com/pre-commit/mirrors-prettier

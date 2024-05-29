@@ -250,10 +250,9 @@ Resources:
       Location: infrastructure/cfn/wallet-service.yaml
       Parameters:
         AppSyncApiId: !GetAtt AppSyncApi.ApiId
-        AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
+        AppSyncEndpointArn: !GetAtt AppSyncApi.GraphQLEndpointArn
         EventBus: !Ref EventBus
-        AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
-  
+
   PamServiceStack:
     Type: AWS::Serverless::Application
     Properties:

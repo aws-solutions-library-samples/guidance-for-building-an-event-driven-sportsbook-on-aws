@@ -25,3 +25,4 @@ dist-ssr
 
 samconfig.toml
 .aws-sam/*
+.envrc
