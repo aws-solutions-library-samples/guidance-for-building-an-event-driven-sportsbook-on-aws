@@ -1,5 +1,5 @@
 import { Box, Typography, Card, CardContent, IconButton, TextField } from "@mui/material";
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from '@mui/icons-material/Clear';
 import { useBetSlip } from "../providers/BetSlipContext";
 import { useGlobal } from "../providers/GlobalContext";
 import { useEvent } from "../hooks/useEvent";
@@ -37,31 +37,31 @@ export const BetSlipItem = ({ bet, updateBetAmount }) => {
   };
 
   return (
-    <Card>
+    <Card className="betslip-card">
       <CardContent>
-        <Box sx={bet.marketstatus?.status==='Suspended'?{ color: 'error.main' }:{ color: 'text.primary' }}>
-          <Typography variant={"subtitle1"} sx={{fontColor: "red"}}>
+        <Box sx={bet.marketstatus?.status==='Suspended'?{ color: 'error.main' }:{ color: 'white' }}>
+          <Typography variant={"subtitle1"} className="betslip-event" >
             {event.home} vs {event.away}
           </Typography>
           {oddsChanged && (
             <Typography variant={"subtitle2"}>
-              Starting Odds {bet.selectedOdds}
+              Starting Odds: {bet.selectedOdds}
             </Typography>
           )}
           <Typography variant={"subtitle2"}>
-            Current Odds {bet.currentOdds} - {conditionMap[bet.outcome]}
+            Current Odds: {bet.currentOdds} - {conditionMap[bet.outcome]}
           </Typography>
           <Box display="flex" alignItems="center" gap={2}> {/* Add gap prop */}
             <Box>
-              <TextField
+              <TextField className="bet-amount"
                 type="number"
                 value={betAmount}
                 onChange={(e) => handleBetAmountChange(e, bet)}
-                InputProps={{ startAdornment: <Typography>{currencySymbol}</Typography> }}
+                InputProps={{ startAdornment: <Typography className="currency-symbol">{currencySymbol}</Typography> }}
               />
             </Box>
             <Box>
-              <Typography variant={"caption"}>
+              <Typography variant={"subtitle2"}>
                 Possible Winning: {currencySymbol}{calculatePossibleWinning()}
               </Typography>
             </Box>

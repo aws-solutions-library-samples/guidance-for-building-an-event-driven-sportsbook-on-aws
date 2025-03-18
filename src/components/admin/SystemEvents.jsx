@@ -7,7 +7,7 @@ import {
   styled,
   keyframes,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteIcon from "@mui/icons-material/HighlightOff";
 import { useSystemEvents, useClearHistory } from "../../hooks/useSystemEvents";
 import moment from "moment";
 import Timeline from "@mui/lab/Timeline";
@@ -167,42 +167,49 @@ const PopupBody = styled('div')(
     const events = systemEvents.slice(-6); // Retain only the last 20 events
   
     return (
-        <Card style={{maxWidth: '100%'}}>
+      
+        <Card className="live-updates-wrapper" style={{maxWidth: '100%'}}>
+          <Typography variant="h5" component="div" className="title">
+            Live Updates
+          </Typography>
+
           <Box display="flex" justifyContent="flex-end" p={1}>
             <IconButton color="error" size="small" onClick={clearHistory}>
-              Clear
-              <DeleteIcon />
+             <DeleteIcon />
+            &nbsp; Clear
             </IconButton>
           </Box>
-          <ChatContainer ref={containerRef} onScroll={handleScroll}>
+          <ChatContainer className="live-updates" ref={containerRef} onScroll={handleScroll}>
             <Timeline style={{maxWidth: '100%'}}>
               {events.reverse().map((event, index) => {
                 const isLeft = index % 2 === 0;
                 const align = isLeft ? "right" : "left";
                 return (
-                  <TimelineItem key={index} style={{maxWidth: '100%'}}>
-                  <TimelineOppositeContent
-                    sx={{ m: "auto 0" }}
-                    align={align}
-                    maxWidth={"100%"}
-                    variant="body2"
-                    color="text.secondary"
-                  >
-                    {moment(event.timestamp).format("MMM D, YYYY h:mm A")}
-                  </TimelineOppositeContent>
+                  <TimelineItem className="timeline-item" key={index}>
+
                   <TimelineSeparator>
                     <TimelineConnector />
                     <TimelineDot>{getIcon(event.detailType)}</TimelineDot>
                     <TimelineConnector />
                   </TimelineSeparator>
                   <TimelineContent sx={{ py: "12px", px: 2, maxWidth: "100%" }}>
+                  
+                  <Typography
+                    color="white"
+                    fontSize={"11px"}
+                  >
+                    {moment(event.timestamp).format("MMM D, YYYY h:mm A")}
+                  </Typography>
+<p>
                     <Typography variant="caption" style={{ wordWrap: "break-word" }}>
                       {getEventName(event.source+'.'+event.detailType)}
-                    </Typography>
+                    </Typography></p>
+                    
                     <Button
                       aria-describedby={id}
                       variant="outlined"
                       type="button"
+                      className="details-button"
                       onClick={(e) => handleClick(e, event)}
                     >
                       Details

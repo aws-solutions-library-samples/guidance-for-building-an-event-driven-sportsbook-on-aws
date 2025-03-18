@@ -55,15 +55,6 @@ export const BetSlip = ({ onClose, isLocked }) => {
     pendingBets[pendingbet].marketstatus = marketstatus;
   }
 
-  const buttonSx = {
-    ...(pendingBets.length > 0 && {
-      bgcolor: green[500],
-      '&:hover': {
-        bgcolor: green[700],
-      },
-    }),
-  };
-
   const handlePlaceBets = () => {
     if(pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined){
       showError("One or more markets are suspended");
@@ -110,7 +101,7 @@ export const BetSlip = ({ onClose, isLocked }) => {
   };
 
   return (
-    <Card>
+    <Card className="betslip">
       <CardContent>
         <Stack
           mb={1}
@@ -118,17 +109,17 @@ export const BetSlip = ({ onClose, isLocked }) => {
           justifyContent={"space-between"}
           alignItems={"center"}
         >
-          <Typography variant="h5" component="div">
+          <Typography variant="h5" component="div" className="title">
             Your Betslip
           </Typography>
-          <IconButton onClick={onClose}>
+          {/* <IconButton onClick={onClose}>
             <Close />
-          </IconButton>
+          </IconButton> */}
         </Stack>
         <Slide in={pendingBets.length > 0} direction="up" timeout={500}>
           <Stack spacing={1}>
             {pendingBets.map((bet, idx) => (
-              <BetSlipItem
+              <BetSlipItem 
                 key={idx}
                 bet={bet}
                 updateBetAmount={updateBetAmount}
@@ -137,27 +128,33 @@ export const BetSlip = ({ onClose, isLocked }) => {
           </Stack>
         </Slide>
         {pendingBets.length === 0 && (
-          <Typography>You have no bets added to your betslip</Typography>
+          <Typography>You have no bets added to your Betslip.</Typography>
         )}
       </CardContent>
+      {(!isValid || isLocked) && (
+      <Box sx={{ m: 1, position: 'relative', width: '100%' }}>
       <CardActions>
-        {(!isValid || isLocked) && (
-          <Button onClick={acceptCurrentOdds} size="small" variant="contained">
+        
+          <Button onClick={acceptCurrentOdds} className="accept-odds" size="large">
             Accept current odds
           </Button>
-        )}
+        
       </CardActions>
+      </Box>
+      )}
       <CardActions>
-        <Box sx={{ m: 1, position: 'relative' }}>
+        <Box sx={{ m: 1, position: 'relative', width: '100%' }}>
+        {pendingBets.length > 0 && (
           <Button
             onClick={handlePlaceBets}
-            size="small"
-            sx={buttonSx}
+            size="large"
+            className="place-bets-button"
             variant="contained"
             disabled={betInProgress || !pendingBets.length || !isValid || isLocked || pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined}
           >
             Place Bets
           </Button>
+          )}
           {(pendingBets.find(bet=>bet.marketstatus?.status==="Suspended")!==undefined) && (
           <Typography>One or more markets are suspended</Typography>
         )}

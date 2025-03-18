@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+import '../css/bootstrap.min.css';
+import '../css/magnific-popup.css';
+import '../css/owl.carousel.min.css';
+import '../css/owl.theme.default.css';
+import '../css/nice-select.css';
+import '../css/animate.css';
+import '../css/all.min.css';
+import '../css/main.css';
 
 import EuroIcon from '@mui/icons-material/Euro';
 import CurrencyPoundIcon from '@mui/icons-material/CurrencyPound';
@@ -7,7 +17,8 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import Settings from '@mui/icons-material/Settings';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import MenuIcon from '@mui/icons-material/Menu';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -16,6 +27,7 @@ import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import { Auth } from "aws-amplify";
+
 import {
   AppBar,
   Box,
@@ -32,6 +44,10 @@ import {
   Tooltip,
   Avatar,
 } from "@mui/material";
+
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
+import { styled } from '@mui/material/styles';
+
 import {
   usePopupState,
   bindTrigger,
@@ -47,15 +63,26 @@ import {
 
 const pages = ["About", "Admin"];
 
-function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMode}) {
+// custom icons
+const CustomAccountIcon = styled(AccountCircleRoundedIcon)({
+  color: 'white',
+  fontSize: 35,
+});
+
+const CustomWalletIcon = styled(LocalAtmIcon)({
+  color: 'white',
+  fontSize: 35,
+});
+
+function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMode }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const { currencySymbol, toggleCurrency } = useGlobal();
-  
+
   const { mutateAsync: lockUser } = useLockUser();
-  const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username  } });
-  
+  const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username } });
+
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
-  const profileMenuState = usePopupState({ variant: "popover", popupId: "profile"});
+  const profileMenuState = usePopupState({ variant: "popover", popupId: "profile" });
 
   // const [anchorElProfile, setAnchorElProfile] = useState(null);
   // const profileMenuOpen = Boolean(anchorElProfile);
@@ -74,10 +101,11 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
 
   const accountSettings = () => {
     return (
+      
       <Box>
         <Tooltip title="Account Settings">
           <IconButton {...bindTrigger(profileMenuState)}>
-            <Avatar />
+            <CustomAccountIcon />
           </IconButton>
         </Tooltip>
         <Menu
@@ -112,7 +140,7 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         >
           <MenuItem sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-            <Avatar /> {user.attributes.email}
+            <AccountCircleRoundedIcon /> {user.attributes.email}
           </MenuItem>
           <Divider />
           <MenuItem onClick={handleLock}>
@@ -129,12 +157,12 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
             </ListItemIcon>
             Switch currency
           </MenuItem>
-          <MenuItem onClick={handleThemeChange}>
+          {/* <MenuItem onClick={handleThemeChange}>
             <ListItemIcon>
               {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             </ListItemIcon>
             {isDarkMode ? "Light Mode" : "Dark Mode"}
-          </MenuItem>
+          </MenuItem> */}
           <MenuItem onClick={handleCloseNavMenu}>
             <ListItemIcon>
               <Settings fontSize="small" />
@@ -149,21 +177,29 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
           </MenuItem>
         </Menu>
       </Box>
+      
     );
   };
 
   //function that sets user "locked" attribute to provided boolean value
   const handleLock = async () => {
     handleLockUser(!isLocked);
-    console.log("User lock status:"+ !isLocked);
+    console.log("User lock status:" + !isLocked);
   };
-  
+
   return (
-    <AppBar position="sticky" color="primary">
-      <Container maxWidth="xxl">
-        <Toolbar disableGutters>
-          <img src={logo} width={48} alt="sportsbook logo" />
-          <Typography
+    <>
+      <header className="header-section">
+        <div className="container-fluid p-0">
+          <div className="header-wrapper">
+            <div className="menu__left__wrap">
+              <div className="logo-menu px-2">
+                <Link to="/" className="logo">
+                <img src={logo} alt="sportsbook logo" />
+                </Link>
+              </div>
+
+              <Typography
             variant="h6"
             noWrap
             component={Link}
@@ -173,119 +209,66 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
               mr: 2,
               mb: 0.5,
               display: { xs: "none", md: "flex" },
-              fontFamily: "monospace",
               fontWeight: 700,
               letterSpacing: ".2rem",
               color: "inherit",
               textDecoration: "none",
             }}
           >
-            AWS Event Driven Sportsbook
+            AWS Sportsbook
           </Typography>
 
-          <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: "block", md: "none" },
-              }}
-            >
+
+
+              <ul className="main-menu">
+
               {pages.map((page) => (
-                <MenuItem key={page} component={Link} to={page}>
-                  <Typography
-                    textAlign="center"
-                    sx={{ textTransform: "capitalize", textDecoration: "none" }}
-                  >
+                
+                <li>
+                  <Link to="/lives">
                     {page}
-                  </Typography>
-                </MenuItem>
+                    </Link>
+                    </li>
+                
               ))}
-            </Menu>
-          </Box>
-          <Typography
-            variant="h5"
-            noWrap
-            component={Link}
-            to="/"
-            sx={{
-              mr: 2,
-              display: { xs: "flex", md: "none" },
-              flexGrow: 1,
-              fontFamily: "monospace",
-              fontWeight: 600,
-              letterSpacing: ".2rem",
-              color: "inherit",
-              textDecoration: "none",
-            }}
-          >
-            Sportsbook
-          </Typography>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}
-          >
-            {pages.map((page) => (
-              <Button
-                key={page}
-                component={Link}
-                to={page}
-                sx={{ color: "white", display: "block" }}
-              >
-                {page}
-              </Button>
-            ))}
-          </Stack>
-          <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-            {user.attributes.email}
-          </Typography>
-          
-          <IconButton color="inherit" {...bindTrigger(popupState)}>
-            <AccountBalanceIcon />
-          </IconButton>
-          <Popover
-            {...bindMenu(popupState)}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-          >
-            <Box width={300}>
-              <Wallet isLocked={isLocked} />
-            </Box>
-          </Popover>
-          
-          {accountSettings()}
+        
+              </ul>
+            </div>
+            <div className="mneu-btn-grp">
+              <div className="header-bar">
+                <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
+                  {user.attributes.email}
+                </Typography>
+              </div>
+              <div className="header-bar">
+                <IconButton color="inherit" {...bindTrigger(popupState)}>
+                  <CustomWalletIcon />
+                </IconButton>
 
-        </Toolbar>
-      </Container>
-    </AppBar>
+                <Popover
+                  {...bindMenu(popupState)}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                >
+                  <Box width={300}>
+                    <Wallet isLocked={isLocked} />
+                  </Box>
+                </Popover>
+              </div>
+
+              {accountSettings()}
+
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }
 export default SportsbookAppBar;
