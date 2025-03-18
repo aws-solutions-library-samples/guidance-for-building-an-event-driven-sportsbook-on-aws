@@ -2,6 +2,7 @@ import { Typography, Card } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useBets } from "../hooks/useBets";
 import { darken, lighten, styled } from "@mui/material/styles";
+import { Pagination } from '@mui/material';
 
 const dateOptions = {
   year: "numeric",
@@ -147,6 +148,7 @@ export const BetHistory = () => {
       field: "eventName",
       headerName: "Event",
       flex: 1,
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
       valueGetter: (params) =>
         `${params.row.event.home || ""} vs ${params.row.event.away || ""}`,
@@ -154,17 +156,20 @@ export const BetHistory = () => {
     {
       field: "odds",
       headerName: "Your Odds",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
     },
     {
       field: "outcome",
       headerName: "You bet on",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
       valueFormatter: ({ value }) => conditionFormat[value],
     },
     {
       field: "result",
       headerName: "Outcome",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
       valueGetter: (params) =>
         calculateOutcome(
@@ -177,7 +182,9 @@ export const BetHistory = () => {
     {
       field: "event.outcome",
       headerName: "Event outcome",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
+      flex: 1,
       valueGetter: (params) =>
         `${params.row.event.outcome || ""}`,
       valueFormatter: ({ value }) => conditionFormat[value],
@@ -185,6 +192,7 @@ export const BetHistory = () => {
     {
       field: "placedAt",
       headerName: "Placed",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
       flex: 1,
       valueFormatter: ({ value }) =>
@@ -193,17 +201,20 @@ export const BetHistory = () => {
     {
       field: "betStatus",
       headerName: "Bet status",
+      headerClassName: 'bets-theme-header',
       sortable: true, // Add sortable prop
       valueFormatter: ({ value }) => betStatusFormat[value],
     }
   ];
 
+
   return (
-    <Card>
-      <Typography variant="h5" sx={{ padding: 2 }}>
-        Recent trades
+    <div style={{ padding: "9px" }} >
+    <Card className="recent-trades">
+      <Typography variant="h5" className="title" sx={{ padding: 2 }}>
+        Recent Trades
       </Typography>
-      <StyledDataGrid
+      <StyledDataGrid className="bets-datagrid"
         rows={bets}
         columns={columns}
         initialState={{
@@ -220,10 +231,15 @@ export const BetHistory = () => {
         getRowClassName={getRowClassName}
         disableColumnSelector
         disableColumnFilter
-        disableColumnMenu
         pageSizeOptions={[10]}
+        slotProps={{
+          pagination: {
+            className: 'custom-pagination'
+          }
+        }}
       />
     </Card>
+    </div>
   );
 };
 

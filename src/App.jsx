@@ -62,9 +62,9 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
-    backgroundImage: `url(${bgImage})`,
+    backgroundColor: "#060C1F",
     color: "#ffffff", // Light text color
-  },
+  }
 };
 
 const primaryColor = "rgb(25, 118, 80)";
@@ -129,7 +129,7 @@ function App({ user, signOut }) {
         <SportsbookAppBar user={user} signOut={signOut} isLocked={isLocked} handleThemeChange={handleThemeChange}
           isDarkMode={isDarkMode}/>
         <Container disableGutters={true} maxWidth="xxl">
-          <Snackbar
+          <Snackbar className="alerts"
             open={bShowSnackbar}
             autoHideDuration={6000}
             onClose={closeSnackbar}
@@ -147,42 +147,34 @@ function App({ user, signOut }) {
             direction={"row"}
             sx={{ position: "relative", height: "calc(100vh - 64px)" }}
           >
-            <Box
+            <Box 
               sx={{
                 height: "100%",
                 paddingBottom: "50px",
                 position: "relative",
-                overflowY: "scroll",
-                backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
+                overflowY: "scroll"
               }}
             >
-              <img src={headerImage} alt="dice" style={{
-                width: "100%",
-                height: "200px",
-                objectFit: "cover",
-                objectPosition: "center",
-              }}/>
+              
               <Outlet />
             </Box>
-            <Box
+            <Box className="betslip-wrapper"
               sx={{
                 height: "100%",
                 paddingRight: showHub ? 11 : 0,
                 display: { lg: "flex", xs: "none" },
-                backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                 overflowY: showHub ? "scroll" : "hidden",
               }}
             >
               <Collapse orientation="horizontal" in={showHub}>
-                <Box
+                <Box className="betslip-wrapper-container"
                   sx={{
-                    width: "300px",
                     pr: "5px",
                     pl: "5px",
                     backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
                   }}
                 >
-                  <Box
+                  <Box className="betslip-wrapper-container"
                     sx={{
                       pt: "5px",
                       backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
@@ -193,7 +185,7 @@ function App({ user, signOut }) {
                       isLocked={isLocked}
                     />
                   </Box>
-                  <Box
+                  <Box className="events-wrapper-container"
                     sx={{
                       pt: "5px",
                       backgroundColor: isDarkMode ? "#000" : "#eee", // Darker background color
@@ -225,9 +217,9 @@ function App({ user, signOut }) {
           </Stack>
         </Container>
       </Box>
-      <Drawer
+      <Drawer className="betslip-drawer"
         sx={{ display: { lg: "none", xs: "block" } }}
-        PaperProps={{ sx: { width: 350, backgroundColor: "#333333" } }} // Darker drawer background
+        PaperProps={{ sx: { width: 350, backgroundColor: "transparent" } }} // Darker drawer background
         anchor="right"
         variant={"temporary"}
         open={showHub}
