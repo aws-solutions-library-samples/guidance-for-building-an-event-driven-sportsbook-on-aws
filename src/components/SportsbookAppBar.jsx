@@ -224,11 +224,9 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
 
               {pages.map((page) => (
                 
-                <li>
-                  <Link to="/lives">
-                    {page}
-                    </Link>
-                    </li>
+                <li key={page}>
+                    <Link to={`/${page}`}>{page}</Link>
+                  </li>
                 
               ))}
         
