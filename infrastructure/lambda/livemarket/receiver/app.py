@@ -39,7 +39,7 @@ def handle_updated_odds(item: dict) -> dict:
         'updateEventOdds']
 
     if response['__typename'] == 'Event':
-        logger.info("Odds updated")
+        logger.debug("Odds updated")
         return form_event('com.livemarket', 'UpdatedOdds', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to update odds")
@@ -61,7 +61,7 @@ def handle_event_finished(item: dict) -> dict:
         'finishEvent']
 
     if response['__typename'] == 'Event':
-        logger.info("Event closed")
+        logger.debug("Event closed")
         return form_event('com.livemarket', 'EventClosed', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to finish event")
@@ -71,8 +71,8 @@ def handle_event_finished(item: dict) -> dict:
 @tracer.capture_method
 def handle_add_event(item: dict) -> dict:
 
-    print('handle_add_event')
-    print('Item: ', item['detail'])
+    logger.debug('handle_add_event')
+    logger.debug('Item: ', item['detail'])
     add_event_info = {
         'eventId': item['detail']['eventId'],
         'home': item['detail']['home'],
@@ -87,7 +87,7 @@ def handle_add_event(item: dict) -> dict:
         'eventStatus': item['detail']['eventStatus']
     }
 
-    print('add_event_info', add_event_info)
+    logger.debug('add_event_info', add_event_info)
     gql_input = {
         'input': add_event_info
     }
@@ -96,9 +96,9 @@ def handle_add_event(item: dict) -> dict:
         response = gql_client.execute(gql(add_event), variable_values=gql_input)[
             'addEvent']
 
-        print('response:', response)
+        logger.debug('response:', response)
         if response['__typename'] == 'Event':
-            logger.info("Event closed")
+            logger.debug("Event closed")
             return form_event('com.livemarket', 'EventAdded', add_event_info)
         elif 'Error' in response['__typename']:
             logger.exception("Failed to add event")
@@ -152,7 +152,7 @@ def handle_market_suspended(item: dict) -> dict:
         'suspendMarket']
 
     if response['__typename'] == 'Event':
-        logger.info("Market suspended")
+        logger.debug("Market suspended")
         return form_event('com.livemarket', 'MarketSuspended', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to suspend market")
@@ -172,7 +172,7 @@ def handle_market_unsuspended(item: dict) -> dict:
         'unsuspendMarket']
 
     if response['__typename'] == 'Event':
-        logger.info("Market unsuspended")
+        logger.debug("Market unsuspended")
         return form_event('com.livemarket', 'MarketUnsuspended', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to unsuspend market")
@@ -182,14 +182,11 @@ def handle_market_unsuspended(item: dict) -> dict:
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info("Event:")
     logger.info(event)
-    print("Event:")
-    print(event)
     batch = event["Records"]
     with processor(records=batch, handler=record_handler):
         processed_messages = processor.process()
-        logger.info(processed_messages)
+        logger.debug(processed_messages)
 
     output_events = [x[1]
                      for x in processed_messages if x[0] == "success" and x[1] is not None]

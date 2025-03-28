@@ -12,10 +12,11 @@ app = AppSyncResolver()
 @tracer.capture_method
 def add_system_event(input: dict) -> dict:
     # echo response as if we wrote it to data store
-    logger.info(input)
+    logger.debug(input)
     return {'__typename': 'SystemEvent', **input}
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     return app.resolve(event, context)

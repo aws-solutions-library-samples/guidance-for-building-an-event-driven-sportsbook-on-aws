@@ -822,10 +822,10 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
 
   Function:
-    Runtime: python3.9
+    Runtime: python3.12
     Tracing: Active
     Layers:
-      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
     Environment:
       Variables:
         POWERTOOLS_SERVICE_NAME: livemarket
@@ -1461,7 +1461,7 @@ def trigger_finish_event(input: dict) -> dict:
         current_event = get_event(input['eventId'])
         current_event["outcome"] = input["outcome"]
         send_event(current_event)
-        print(current_event)
+        logger.debug(current_event)
         return event_response(current_event)
     except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
         return events_error('InputError', 'The event does not exist')

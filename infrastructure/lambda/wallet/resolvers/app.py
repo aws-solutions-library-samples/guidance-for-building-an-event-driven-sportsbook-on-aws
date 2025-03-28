@@ -33,10 +33,10 @@ def get_wallet() -> dict:
         item = _try_get_wallet(userId)
         return wallet_response(item)
     except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
+        logger.error(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('Unknown error', 'An unknown error occured.')
 
 
@@ -50,12 +50,11 @@ def withdraw_funds(input: dict) -> dict:
     try:
         item = _try_get_wallet(userId)
         withdrawAmount = Decimal(input['amount'])
-        logger.info(
-            f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
+        logger.debug(f'withdraw amount: {withdrawAmount}, wallet balance: {item["balance"]}')
         if ((item['balance'] - withdrawAmount) >= 0):
             item['balance'] -= withdrawAmount
         else:
-            logger.info(f'Insufficient funds for withdrawal request')
+            logger.debug(f'Insufficient funds for withdrawal request')
             return wallet_error('InsufficientFundsError', 'Wallet contains insufficuient funds to withdraw')
 
         table.update_item(
@@ -68,10 +67,10 @@ def withdraw_funds(input: dict) -> dict:
 
         return wallet_response(item)
     except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
+        logger.error(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('Unknown error', 'An unknown error occured.')
 
 
@@ -96,10 +95,10 @@ def deposit_funds(input: dict) -> dict:
 
         return wallet_response(item)
     except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
+        logger.error(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('Unknown error', 'An unknown error occured.')
 
 
@@ -116,10 +115,10 @@ def get_wallet_by_user_id(userId: str) -> dict:
         item = _try_get_wallet(userId)
         return wallet_response(item)
     except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
+        logger.error(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('UnknownError', 'An unknown error occured.')
 
 
@@ -140,8 +139,8 @@ def create_wallet(input: dict) -> dict:
 @app.resolver(type_name="Mutation", field_name="deductFunds")
 @tracer.capture_method
 def deduct_funds(input: dict) -> dict:
-    logger.info(app.current_event)
-    logger.info(input)
+    logger.debug(app.current_event)
+    logger.debug(input)
 
     userId = input['userId']
     amount = Decimal(input['amount'])
@@ -151,7 +150,7 @@ def deduct_funds(input: dict) -> dict:
         if ((item['balance'] - amount) >= 0):
             item['balance'] -= amount
         else:
-            logger.info(f'Insufficient funds to deduct')
+            logger.debug(f'Insufficient funds to deduct')
             return wallet_error('InsufficientFundsError', 'Wallet contains insufficient funds to deduct')
 
         table.update_item(
@@ -164,10 +163,10 @@ def deduct_funds(input: dict) -> dict:
 
         return wallet_response(item)
     except KeyError:
-        logger.info(f'Failed to get wallet for user {userId}')
+        logger.error(f'Failed to get wallet for user {userId}')
         return wallet_error('NotFoundError', 'No wallet exists for user')
     except Exception as e:
-        logger.info({'Unknown error', f'An unknown error occured:{e}'})
+        logger.error({'Unknown error', f'An unknown error occured:{e}'})
         return wallet_error('UnknownError', 'An unknown error occured.')
 
 
@@ -206,4 +205,5 @@ def raise_wallet_event(detailType: str, detail: str) -> None:
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     return app.resolve(event, context)

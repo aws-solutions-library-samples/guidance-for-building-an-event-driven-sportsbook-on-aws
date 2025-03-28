@@ -19,6 +19,7 @@ except Exception as e:
     helper.init_failure(e)
 
 def lambda_handler(event, context):
+    logger.info(event)
     betting_events = json.loads(event.get('body'))
     date_format = '%Y-%m-%dT%H:%M:%SZ'
     for betting_event in betting_events:
@@ -51,7 +52,7 @@ def send_new_event(betting_event, date_format):
         home_odds = betting_event['homeOdds']
         if None in (event_id, home_team, away_team, start_time, duration, eventStatus):
             raise Exception("Null values are not allowed")
-        logger.info(event_id)
+        logger.debug(event_id)
         item = {
             'eventId': event_id,
             'home': home_team,
@@ -65,11 +66,11 @@ def send_new_event(betting_event, date_format):
             'drawOdds': draw_odds,
             'awayOdds': away_odds
         }
-        print(item)
+        logger.debug(item)
         eventsClient.put_events(
             Entries=form_event('EventAdded', item)
         )
-        logger.info("Event sent!")
+        logger.debug("Event sent!")
     except Exception:
         logger.exception(Exception)
         raise Exception

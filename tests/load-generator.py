@@ -93,7 +93,7 @@ def main(bets_per_minute: int):
         }
 
         response = send_graphql_request(CREATE_BETS_MUTATION, variables)
-        print(f'Response: {response}')
+        logger.debug(f'Response: {response}')
 
         if bets_per_minute <= 10:
             time.sleep(60 / bets_per_minute)

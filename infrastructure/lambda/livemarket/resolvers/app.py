@@ -58,7 +58,7 @@ def get_events(startKey: str = "") -> dict:
 
 def event_list_response(data: dict) -> dict:
     items = data.get('items', [])
-    print(items)
+    logger.debug(items)
     for item in items:
         item['marketstatus'] = item.get('marketstatus', [])
     return {**{'__typename': 'EventList'}, **data}
@@ -308,7 +308,7 @@ def trigger_finish_event(input: dict) -> dict:
         current_event = get_event(input['eventId'])
         current_event["outcome"] = input["outcome"]
         send_event(current_event, 'EventClosed')
-        print(current_event)
+        logger.debug(current_event)
         return event_response(current_event)
     except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
         return events_error('InputError', 'The event does not exist')
@@ -373,7 +373,7 @@ def trigger_unsuspend_market(input: dict) -> dict:
 @tracer.capture_method
 def add_event(input: dict) -> dict:
     try:
-        logger.info('Adding event %s to DynamoDB Table', input)
+        logger.debug('Adding event %s to DynamoDB Table', input)
         table.put_item(Item=input)
         return event_response(input)
     except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
@@ -396,7 +396,7 @@ def form_event(detail_type, event_data, market_name=None):
 def send_event(current_event, detail_type, market_name=None):
     event_entry = form_event(detail_type, current_event, market_name)
     response = events.put_events(Entries=[event_entry])
-    logger.info(f'Event sent to EventBridge: {response}')
+    logger.debug(f'Event sent to EventBridge: {response}')
 
 def events_error(errorType: str, error_msg: str) -> dict:
     return {'__typename': errorType, 'message': error_msg}
@@ -413,4 +413,5 @@ def event_list_response(data: dict) -> dict:
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     return app.resolve(event, context)

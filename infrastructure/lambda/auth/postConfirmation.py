@@ -17,7 +17,7 @@ event_bus_name = getenv('EVENT_BUS')
 
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(json.dumps(event))
+    logger.info(event)
 
     detail = { 'userId': event['userName'] }
 

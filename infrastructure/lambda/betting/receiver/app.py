@@ -49,7 +49,7 @@ def record_handler(record: SQSRecord):
             if item['detail-type'] == 'EventClosed':
                 return handle_event_closed(item)
 
-    logger.info({"message": "Unknown record type", "record": item})
+    logger.debug({"message": "Unknown record type", "record": item})
     return None
 
 @tracer.capture_method
@@ -67,7 +67,7 @@ def handle_event_closed(item: dict) -> dict:
 
     #iterate through all response['items'] form an event
     for bet in update_info['bets']:
-        logger.info(f"Starting step function for bet")
+        logger.debug(f"Starting step function for bet")
         result = step_function.start_execution(
             stateMachineArn=getenv('STEP_FUNCTION_ARN'),
             input=json.dumps(bet, default=str)
@@ -75,7 +75,7 @@ def handle_event_closed(item: dict) -> dict:
         bet['result'] = result
 
     if response['__typename'] == 'BetList':
-        logger.info("Bets are closed. Beginning to settle the bets")
+        logger.debug("Bets are closed. Beginning to settle the bets")
         return form_event('com.betting', 'SettlementStarted', update_info)
     elif 'Error' in response['__typename']:
         logger.exception("Failed to update odds")
@@ -98,10 +98,11 @@ def betting_error(errorType: str, error_msg: str) -> dict:
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     batch = event["Records"]
     with processor(records=batch, handler=record_handler):
         processed_messages = processor.process()
-        logger.info(processed_messages)
+        logger.debug(processed_messages)
 
     output_events = [x[1]
                      for x in processed_messages if x[0] == "success" and x[1] is not None]

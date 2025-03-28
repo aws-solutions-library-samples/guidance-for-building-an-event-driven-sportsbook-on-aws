@@ -5,10 +5,10 @@ Description: Sporting Events Service - Amazon API Gateway to AWS Lambda to proce
 Globals:
 
   Function:
-    Runtime: python3.9
+    Runtime: python3.12
     Tracing: Active
     Layers:
-      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
     Environment:
       Variables:
         POWERTOOLS_SERVICE_NAME: sportingevents
@@ -26,7 +26,7 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/sportingevents/receiver/
       Description: Lambda for receiving sporting events
-      Runtime: python3.9
+      Runtime: python3.12
       Timeout: 10
       MemorySize: 256
       Policies:

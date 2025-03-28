@@ -75,7 +75,7 @@ def settle_bet(betId, userId):
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    print(event)
+    logger.info(event)
     
     odds = event['odds']
     betAmount = event['amount']
@@ -93,7 +93,7 @@ def lambda_handler(event: dict, context: LambdaContext) -> dict:
         'input': update_info
     }
 
-    logger.info("The bet is settled. Event outcome is: %s, bet outcome: %s, amount: %s", eventOutcome, betOutcome, amount)
+    logger.debug("The bet is settled. Event outcome is: %s, bet outcome: %s, amount: %s", eventOutcome, betOutcome, amount)
 
     response = gql_client.execute(gql(deduct_funds), variable_values=gql_input)[
         'deductFunds']
