@@ -25,7 +25,7 @@ events = session.client('events')
 
 @tracer.capture_method
 def handle_system_event(item: dict):
-    logger.info( f'handle_system_event:{item}' )
+    logger.debug( f'handle_system_event:{item}' )
     extended_detail = item['detail']
     extended_detail["systemEventId"] = str(uuid.uuid4())
     
@@ -34,10 +34,21 @@ def handle_system_event(item: dict):
             {'source':item['source'],
              'detailType':item['detail-type'],
              'detail':extended_detail}
-        } 
-    response = gql_client.execute(gql(add_system_event), variable_values=gql_input)[
+        }
+
+    try:
+        response = gql_client.execute(gql(add_system_event), variable_values=gql_input)[
         'addSystemEvent']
-    return response
+        logger.debug({"response": response}) 
+        return {
+            'Source': response['source'],
+            'DetailType': response['detailType'],
+            'Detail': response['detail'],
+            'EventBusName': event_bus_name
+        }
+    except Exception as e:
+        logger.error({"message": "Error adding system event", "error": e})
+        raise ValueError(f"addSystemEvent failed: {e}")
 
 
 @tracer.capture_method
@@ -55,15 +66,16 @@ def record_handler(record: SQSRecord):
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     batch = event["Records"]
     with processor(records=batch, handler=record_handler):
         processed_messages = processor.process()
-        logger.info(processed_messages)
+        logger.debug(processed_messages)
 
     output_events = [x[1]
                     for x in processed_messages if x[0] == "success" and x[1] is not None]
                     
-    print("Processed: ",processed_messages[0])
+    logger.debug(processed_messages[0])
     if output_events:
         events.put_events(Entries=output_events)
 

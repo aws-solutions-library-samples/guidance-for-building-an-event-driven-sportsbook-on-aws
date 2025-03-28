@@ -78,7 +78,7 @@ def send_chatbot_message(input: dict) -> dict:
             table_name=table_name_history, session_id=conversation_id
         )
         
-        print("session id", conversation_id)
+        logger.debug("session id", conversation_id)
     
         memory = ConversationBufferMemory(
             memory_key="chat_history",
@@ -133,7 +133,7 @@ def send_chatbot_message(input: dict) -> dict:
             return chatbot_response(json.loads(response_body, strict=False))
     
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.debug({'UnknownError': e})
         return chatbot_error('UnknownError', 'An unknown error occured.')
 
 def get_events() -> dict:
@@ -147,7 +147,7 @@ def get_events() -> dict:
             'items': response.get('Items', [])
         }
         
-        logger.info({'result': result})
+        logger.debug({'result': result})
      
         if response.get('LastEvaluatedKey'):
             result['nextToken'] = response['LastEvaluatedKey']['eventId']
@@ -183,4 +183,5 @@ def input_validation(input_str):
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     return app.resolve(event, context)

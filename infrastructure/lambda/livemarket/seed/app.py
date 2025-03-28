@@ -27,7 +27,7 @@ def create(event, context):
     with open('data.json', 'r') as f:
         events = json.load(f)
 
-    logger.info(events)
+    logger.debug(events)
     now = scalar_types_utils.aws_datetime()
     with table.batch_writer() as batch:
         for event_item in events:
@@ -35,7 +35,7 @@ def create(event, context):
             event_item['eventStatus'] = 'running'
             batch.put_item(Item=event_item)
 
-    logger.info('Event seed complete')
+    logger.debug('Event seed complete')
 
     return True
 

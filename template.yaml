@@ -5,10 +5,10 @@ Description: Sportsbook Event Driven Example Application
 Globals:
 
   Function:
-    Runtime: python3.9
+    Runtime: python3.12
     Tracing: Active
     Layers:
-      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:32
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
 
 Parameters:
 
@@ -190,9 +190,9 @@ Resources:
       Description: Layer containing appsync graphql utilities
       ContentUri: infrastructure/lambda/gql/
       CompatibleRuntimes:
-        - python3.9
+        - python3.12
     Metadata:
-      BuildMethod: python3.9
+      BuildMethod: python3.12
 
   AppSyncLoggingRole:
     Type: AWS::IAM::Role

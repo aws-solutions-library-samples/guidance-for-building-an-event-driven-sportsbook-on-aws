@@ -40,10 +40,10 @@ def get_pinginfo() -> dict:
 
         #return getpinginfo_response(item)
     except KeyError:
-        logger.info(f'Failed to get pinginfo ')
+        logger.error(f'Failed to get pinginfo ')
         return getpinginfo_error('NotFoundError', 'No ping info exists')
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return getpinginfo_error('Unknown error', 'An unknown error occured.')
 
 def getpinginfo_error(errorType: str, error_msg: str) -> dict:
@@ -55,4 +55,5 @@ def getpinginfo_response(data: dict) -> dict:
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     return app.resolve(event, context)

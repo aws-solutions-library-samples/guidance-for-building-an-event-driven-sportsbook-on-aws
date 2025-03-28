@@ -42,10 +42,10 @@ def lock_user(input: dict) -> dict:
                     ]
                     )
         eventresponse = send_event(user_response(input))
-        logger.info({'EventResponse:': eventresponse})
+        logger.debug({'EventResponse:': eventresponse})
         return user_response(input)
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('Unknown error', 'An unknown error occured.')
     
 @app.resolver(type_name="Mutation", field_name="lockUserGenerateEvent")
@@ -69,10 +69,10 @@ def lock_user(input: dict) -> dict:
                     ]
                     )
         eventresponse = send_event(user_response(input))
-        logger.info({'EventResponse:': eventresponse})
+        logger.debug({'EventResponse:': eventresponse})
         return user_response(input)
     except Exception as e:
-        logger.info({'UnknownError': e})
+        logger.error({'UnknownError': e})
         return wallet_error('Unknown error', 'An unknown error occured.')
 
 def send_event(userResponse):
@@ -117,5 +117,5 @@ def form_event(userResponse):
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    
+    logger.info(event)
     return app.resolve(event, context)

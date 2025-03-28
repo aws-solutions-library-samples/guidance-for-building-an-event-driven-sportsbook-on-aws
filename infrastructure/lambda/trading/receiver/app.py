@@ -49,17 +49,18 @@ def record_handler(record: SQSRecord):
             if item['detail-type'] == 'UpdatedOdds':
                 return handle_updated_odds(item)
 
-    logger.info({"message": "Unknown record type", "record": item})
+    logger.debug({"message": "Unknown record type", "record": item})
     return None
 
 
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    logger.info(event)
     batch = event["Records"]
     with processor(records=batch, handler=record_handler):
         processed_messages = processor.process()
-        logger.info(processed_messages)
+        logger.debug(processed_messages)
 
     output_events = [x[1]
                      for x in processed_messages if x[0] == "success" and x[1] is not None]
