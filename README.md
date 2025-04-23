@@ -1,5 +1,53 @@
 # Sportsbook EDA
 
+## Architecture Overview
+
+This application is built using a serverless architecture on AWS, consisting of multiple microservices that handle different aspects of the sportsbook functionality. Each service has its own documentation that provides more details about its purpose, architecture, and implementation.
+
+## Service Documentation
+
+The following services are available in this application:
+
+- [Auth Service](/infrastructure/lambda/auth/README.md) - Handles user authentication and authorization
+- [Betting Service](/infrastructure/lambda/betting/README.md) - Manages betting operations
+- [GraphQL Service](/infrastructure/lambda/gql/README.md) - Provides the GraphQL API layer
+- [Live Market Service](/infrastructure/lambda/livemarket/README.md) - Handles live market data
+- [Sporting Events Service](/infrastructure/lambda/sportingevents/README.md) - Manages sporting event data
+- [System Events Service](/infrastructure/lambda/systemevents/README.md) - Handles system-wide events
+- [Third Party Service](/infrastructure/lambda/thirdparty/README.md) - Integrates with third-party providers
+- [Trading Service](/infrastructure/lambda/trading/README.md) - Manages trading operations
+- [User Service](/infrastructure/lambda/user/README.md) - Handles user management
+- [Wallet Service](/infrastructure/lambda/wallet/README.md) - Manages user wallet operations
+
+For more detailed information about each service, please refer to its respective README file.
+
+## Key Features
+
+- **Serverless Architecture**: Built entirely on AWS serverless services for scalability and cost efficiency
+- **Event-Driven Design**: Uses EventBridge for asynchronous communication between services
+- **GraphQL API**: Provides a unified API layer using AWS AppSync
+- **Authentication**: Secure user authentication with AWS Cognito
+- **Real-time Updates**: Live market data and bet status updates
+- **Comprehensive Testing**: Unit and integration tests for all services
+- **Observability**: Structured logging and distributed tracing with AWS Lambda Powertools
+
+## Testing
+
+The application includes comprehensive unit tests for services:
+- Auth Service tests
+- Betting Service tests
+- Wallet Service tests
+- User Service tests
+
+Tests are implemented using pytest and mock AWS services to ensure each service functions correctly in isolation.
+
+To run tests for a specific service:
+
+```bash
+python -m pytest tests/auth -v
+python -m pytest tests/betting -v
+```
+
 ## Pre-requisites
 To deploy this sample you will need to install:
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)

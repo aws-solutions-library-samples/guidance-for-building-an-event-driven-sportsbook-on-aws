@@ -1,0 +1,242 @@
+type Wallet @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  balance: Float!
+}
+
+type PingInfo @aws_cognito_user_pools @aws_iam {
+  items: [PingInfoItem]!
+}
+
+type PingInfoItem @aws_cognito_user_pools @aws_iam {
+  pingLocation: String!
+  pingLatency: Float!
+}
+
+type MarketStatus @aws_cognito_user_pools @aws_iam{
+  name: String!
+  status: String!
+}
+
+type Event @aws_cognito_user_pools @aws_iam {
+  eventId: ID!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  home: String!
+  away: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  eventStatus: EventStatus!
+  marketstatus: [MarketStatus]
+  outcome: String
+  duration: String
+}
+
+type EventList @aws_cognito_user_pools @aws_iam {
+  items: [Event]!
+  nextToken: String
+}
+
+type Bet @aws_cognito_user_pools @aws_iam {
+  betId: ID!
+  event: Event!
+  outcome: EventOutcome!
+  odds: String!
+  amount: Float!
+  placedAt: AWSDateTime!
+  userId: ID!
+  betStatus: String!
+}
+
+type BetList @aws_cognito_user_pools @aws_iam {
+  items: [Bet]!
+  nextToken: String
+}
+
+type User @aws_cognito_user_pools @aws_iam {
+  userId: ID!
+  isLocked: String!
+}
+
+type SystemEvent @aws_cognito_user_pools @aws_iam {
+  source: String!
+  detailType: String
+  detail: String
+}
+
+ enum EventOutcome {
+    homeWin
+    awayWin
+    draw
+ }
+
+ enum EventStatus {
+    running
+    finished
+    settled
+ }
+
+interface Error {
+  message: String!
+}
+
+type InsufficientFundsError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type NotFoundError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type InputError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+type UnknownError implements Error @aws_cognito_user_pools @aws_iam {
+  message: String!
+}
+
+union WalletResult = Wallet | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union PingInfoResult = PingInfo | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union EventResult = Event | NotFoundError | InputError | UnknownError
+union EventsResult = EventList | NotFoundError | InputError | UnknownError
+union BetsResult = BetList | InsufficientFundsError | NotFoundError | InputError | UnknownError
+union SystemEventResult =  SystemEvent | NotFoundError | InputError | UnknownError
+union UserResult = User | NotFoundError | InputError | UnknownError
+
+
+
+input CreateWalletInput {
+  userId: ID!
+}
+
+input WithdrawOrDepositInput {
+  amount: Float!
+}
+
+input DeductFundsInput {
+  userId: ID!
+  amount: Float!
+}
+
+input UpdateEventOddsInput {
+  eventId: ID!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+}
+
+input FinishEventInput {
+  eventId: ID!
+  eventStatus: String!
+  outcome: String!
+}
+
+input AddEventInput {
+  eventId: ID!
+  home: String!
+  away: String!
+  homeOdds: String!
+  awayOdds: String!
+  drawOdds: String!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  updatedAt: AWSDateTime!
+  duration: String!
+  eventStatus: String!
+}
+
+input BetRequest {
+  eventId: ID!
+  outcome: EventOutcome
+  odds: String!
+  amount: Float!
+}
+
+input SystemEventInput {
+  source: String!
+  detailType: String
+  detail: String
+}
+
+input CreateBetsInput {
+  bets: [BetRequest]!
+}
+
+input LockUserInput {
+  userId: ID!
+  isLocked: String!
+}
+
+input LockBetsForEventInput {
+  eventId: ID!
+}
+
+input SuspendMarketInput {
+  eventId: ID!
+  market: String!
+}
+
+input UnsuspendMarketInput {
+  eventId: ID!
+  market: String!
+}
+
+input CloseMarketInput {
+  eventId: ID!
+  market: String!
+}
+
+type Query {
+  getEvents(startKey: String): EventsResult @aws_cognito_user_pools @aws_iam
+  getWallet: WalletResult @aws_cognito_user_pools
+  getPingInfo: PingInfoResult @aws_cognito_user_pools
+  getBets(startKey: String): BetsResult @aws_cognito_user_pools
+  getWalletByUserId(userId: ID!): WalletResult @aws_iam
+  getEvent(eventId: ID!, timestamp: Float): EventResult @aws_iam @aws_cognito_user_pools
+}
+
+type Mutation {
+  createWallet(input: CreateWalletInput): WalletResult @aws_iam
+  depositFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  updateEventOdds(input: UpdateEventOddsInput): EventResult @aws_iam
+  # finishEvent is a synchronous method to update event in data storage
+  # Currently not used
+  finishEvent(input: FinishEventInput): EventResult @aws_iam
+  addEvent(input: AddEventInput): EventResult @aws_iam
+  # triggerFinishEvent is an asynchronous method
+  # used only to re-raise event into service bus.
+
+  triggerFinishEvent(input: FinishEventInput): EventResult @aws_cognito_user_pools
+  triggerSuspendMarket(input: SuspendMarketInput!): EventResult @aws_cognito_user_pools @aws_iam
+  triggerUnsuspendMarket(input: UnsuspendMarketInput!): EventResult @aws_cognito_user_pools @aws_iam
+
+
+  suspendMarket(input: SuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
+  unsuspendMarket(input: UnsuspendMarketInput!): EventResult @aws_iam @aws_cognito_user_pools
+
+  closeMarket(input: CloseMarketInput!): EventResult @aws_cognito_user_pools
+
+  withdrawFunds(input: WithdrawOrDepositInput): WalletResult @aws_cognito_user_pools @aws_iam
+  deductFunds(input: DeductFundsInput): WalletResult @aws_iam
+  createBets(input: CreateBetsInput): BetsResult @aws_cognito_user_pools @aws_iam
+  addSystemEvent(input: SystemEventInput): SystemEventResult @aws_iam
+  lockUser(input: LockUserInput): UserResult @aws_cognito_user_pools
+  lockBetsForEvent(input: LockBetsForEventInput): BetsResult @aws_iam
+}
+
+type Subscription {
+  updatedEventOdds: EventResult @aws_subscribe(mutations: ["updateEventOdds"])
+  finishEvent: EventResult @aws_subscribe(mutations: ["finishEvent"])
+  addEvent: EventResult @aws_subscribe(mutations: ["addEvent"])
+  updatedSystemEvents: SystemEventResult @aws_subscribe(mutations: ["addSystemEvent"])
+  updatedUserStatus: UserResult @aws_subscribe(mutations: ["lockUser"])
+  marketStatusUpdated: EventResult @aws_subscribe(mutations: ["suspendMarket", "unsuspendMarket"])
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

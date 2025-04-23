@@ -36,7 +36,7 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            Path: /
+            Path: /receiver
             Method: POST
       Environment:
         Variables:
@@ -45,4 +45,4 @@ Resources:
 Outputs:
   EndpointUrl:
     Description: 'HTTP REST endpoint URL'
-    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/receiver'

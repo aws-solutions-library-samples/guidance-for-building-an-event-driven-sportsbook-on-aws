@@ -23,7 +23,20 @@ export const fetchEvent = (eventId) =>
     const result = res.data.getEvent;
     if (result["__typename"].includes("Error"))
       throw new Error(result["message"]);
-    return result;
+    
+    // Ensure all odds are parsed as numbers for calculations
+    const homeOdds = parseFloat(result.homeOdds);
+    const awayOdds = parseFloat(result.awayOdds);
+    const drawOdds = parseFloat(result.drawOdds);
+    
+    console.log(`Event ${eventId} odds: home=${homeOdds}, away=${awayOdds}, draw=${drawOdds}`);
+    
+    return {
+      ...result,
+      homeOdds: homeOdds.toString(),
+      awayOdds: awayOdds.toString(),
+      drawOdds: drawOdds.toString()
+    };
   });
 
 const hooks = {

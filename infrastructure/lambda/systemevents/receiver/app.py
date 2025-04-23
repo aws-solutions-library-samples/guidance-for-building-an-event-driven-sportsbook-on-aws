@@ -1,4 +1,3 @@
-
 from os import getenv
 import json
 import boto3
@@ -25,21 +24,29 @@ events = session.client('events')
 
 @tracer.capture_method
 def handle_system_event(item: dict):
-    logger.debug( f'handle_system_event:{item}' )
-    extended_detail = item['detail']
-    extended_detail["systemEventId"] = str(uuid.uuid4())
+    """
+    Handle a system event by adding it to the system events database via GraphQL.
     
-    gql_input = { 
-        'input': 
-            {'source':item['source'],
-             'detailType':item['detail-type'],
-             'detail':extended_detail}
-        }
-
+    Args:
+        item: The event item to process
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
     try:
+        extended_detail = item['detail']
+        extended_detail["systemEventId"] = str(uuid.uuid4())
+        
+        gql_input = { 
+            'input': 
+                {'source': item['source'],
+                'detailType': item['detail-type'],
+                'detail': extended_detail}
+            }
+
         response = gql_client.execute(gql(add_system_event), variable_values=gql_input)[
-        'addSystemEvent']
-        logger.debug({"response": response}) 
+            'addSystemEvent']
+            
         return {
             'Source': response['source'],
             'DetailType': response['detailType'],
@@ -47,36 +54,62 @@ def handle_system_event(item: dict):
             'EventBusName': event_bus_name
         }
     except Exception as e:
-        logger.error({"message": "Error adding system event", "error": e})
-        raise ValueError(f"addSystemEvent failed: {e}")
+        logger.error(f"Error adding system event: {str(e)}")
+        return None
 
 
 @tracer.capture_method
 def record_handler(record: SQSRecord):
-    # This function processes a record from SQS
-    # Optionally return a dict which will be raised as a new event
-    payload = record.body
-    if payload:
+    """
+    Process a single record from SQS.
+    
+    Args:
+        record: SQS record to process
+        
+    Returns:
+        Event to be raised or None
+    """
+    try:
+        payload = record.body
+        if not payload:
+            return None
+            
         item = json.loads(payload)
         return handle_system_event(item)
+    except Exception as e:
+        logger.error(f"Error processing record: {str(e)}")
+        return None
 
-    logger.warning({"message": "Unknown record type", "record": item})
-    return None
 
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(event)
-    batch = event["Records"]
-    with processor(records=batch, handler=record_handler):
-        processed_messages = processor.process()
-        logger.debug(processed_messages)
+    """
+    Main Lambda handler function.
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        Batch processing response
+    """
+    try:
+        batch = event["Records"]
+        with processor(records=batch, handler=record_handler):
+            processed_messages = processor.process()
 
-    output_events = [x[1]
-                    for x in processed_messages if x[0] == "success" and x[1] is not None]
-                    
-    logger.debug(processed_messages[0])
-    if output_events:
-        events.put_events(Entries=output_events)
+        # Extract successful events that returned a value
+        output_events = [
+            result[1] for result in processed_messages 
+            if result[0] == "success" and result[1] is not None
+        ]
+        
+        # Send events to EventBridge if any exist
+        if output_events:
+            events.put_events(Entries=output_events)
 
-    return processor.response()
+        return processor.response()
+    except Exception as e:
+        logger.error(f"Error in lambda handler: {str(e)}")
+        return {"batchItemFailures": []}

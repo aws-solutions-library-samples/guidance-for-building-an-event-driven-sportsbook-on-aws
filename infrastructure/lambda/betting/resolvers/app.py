@@ -40,6 +40,15 @@ events = session.client('events')
 @app.resolver(type_name="Query", field_name="getBets")
 @tracer.capture_method
 def get_bets(startKey: str = "") -> dict:
+    """
+    Get bets for the current user.
+    
+    Args:
+        startKey: Optional pagination token
+        
+    Returns:
+        A BetList response containing the user's bets
+    """
     userId = get_user_id(app.current_event)
     try:
         args = {}
@@ -58,16 +67,25 @@ def get_bets(startKey: str = "") -> dict:
 
         return bet_list_response(result)
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return betting_error('UnknownError', 'An unknown error occured.')
+        logger.exception("ClientError when getting bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.error({'UnknownError': e})
-        return betting_error('Unknown error', 'An unknown error occured.')
+        logger.exception("Unknown error when getting bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
 
 
 @app.resolver(type_name="Mutation", field_name="createBets")
 @tracer.capture_method
 def create_bets(input: dict) -> dict:
+    """
+    Create new bets for the current user.
+    
+    Args:
+        input: Dictionary containing bet information
+        
+    Returns:
+        A BetList response containing the created bets or an error
+    """
     try:
         userId = get_user_id(app.current_event)
         processed_bets = []
@@ -78,7 +96,7 @@ def create_bets(input: dict) -> dict:
         for bet in input['bets']:
             event = get_live_market_event(bet['eventId'], now)
 
-            # check the event matches the request state
+            # Check the event matches the request state
             if not event_matches_bet(event, bet):
                 raise ValueError('Event does not match bet')
 
@@ -87,23 +105,18 @@ def create_bets(input: dict) -> dict:
             bet['placedAt'] = placement_time
             bet['amount'] = Decimal(bet['amount'])
             bet['betStatus'] = 'placed'
-            # convert bet amount to float
             total_stakes += float(bet['amount'])
             
             processed_bets.append(bet)
-
-        # TODO - check market status (e.g., not Closed or Suspended)
         
-        # TODO - call a handlePayments mutation to deduct the amounts from the wallet
-        walletResponse = handle_funds(userId, amount = total_stakes)
+        # Deduct funds from wallet
+        walletResponse = handle_funds(userId, amount=total_stakes)
         if 'InsufficientFundsError' in walletResponse['__typename']:
-            return betting_error('InsufficientFundsError','The wallet does not have enough funds to cover the bet')
+            return betting_error('InsufficientFundsError', 'The wallet does not have enough funds to cover the bet')
         elif 'Error' in walletResponse['__typename']:
-            return betting_error('Error','There was a problem deducting funds when placing the bet')
+            return betting_error('Error', 'There was a problem deducting funds when placing the bet')
 
-        # TODO - In future we could do a fraud check here
-
-        # write validated bets to the db
+        # Write validated bets to the db
         with table.batch_writer() as batch:
             for bet in processed_bets:
                 item = {
@@ -122,41 +135,65 @@ def create_bets(input: dict) -> dict:
         send_event(bet_list)
         return bet_list_response(bet_list)
     except ValueError as e:
-        logger.exception({'ValueError': e})
+        logger.exception("Validation error when creating bets")
         return betting_error('InputError', 'The requested bets could not be validated at this time.')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return betting_error('UnknownError', 'An unknown error occured.')
+        logger.exception("ClientError when creating bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
-        return betting_error('UnknownError', 'An unknown error occured.')
+        logger.exception("Unknown error when creating bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="lockBetsForEvent")
 @tracer.capture_method
 def lock_bets_for_event(input: dict) -> dict:
-    bets = get_open_bets_by_event_id(input['eventId'])
-    #iterate through all bets and update the "status" field to "finalized"
-    for bet in bets['items']:  
-        bet['event'] = {'eventId': input['eventId']}
-        table.update_item(
-            Key={'userId': bet['userId'], 'betId': bet['betId']},
-            UpdateExpression="set betStatus=:r",
-            ExpressionAttributeValues={
-                ':r': 'resulted'
-            },
-            ReturnValues="UPDATED_NEW")
+    """
+    Lock all bets for a specific event.
+    
+    Args:
+        input: Dictionary containing eventId
+        
+    Returns:
+        A BetList response containing the locked bets
+    """
+    try:
+        bets = get_open_bets_by_event_id(input['eventId'])
+        
+        # Update all bets to "resulted" status
+        for bet in bets['items']:  
+            bet['event'] = {'eventId': input['eventId']}
+            table.update_item(
+                Key={'userId': bet['userId'], 'betId': bet['betId']},
+                UpdateExpression="set betStatus=:r",
+                ExpressionAttributeValues={
+                    ':r': 'resulted'
+                },
+                ReturnValues="UPDATED_NEW")
 
-    return bet_list_response(bets)
+        return bet_list_response(bets)
+    except Exception as e:
+        logger.exception("Error locking bets for event")
+        return betting_error('UnknownError', 'An unknown error occurred.')
 
 
 @tracer.capture_method
 def get_open_bets_by_event_id(eventId: str = "") -> dict:
-    try:
-        args = {}
+    """
+    Get all open bets for a specific event.
+    
+    Args:
+        eventId: The event ID to query
         
-        args['KeyConditionExpression'] = 'eventId = :u AND betStatus = :s'
-        args['ExpressionAttributeValues'] = {':u': eventId, ':s': 'placed'}
-        args['IndexName'] = 'eventId-betStatus-index'
+    Returns:
+        A dictionary containing the open bets
+    """
+    try:
+        args = {
+            'KeyConditionExpression': 'eventId = :u AND betStatus = :s',
+            'ExpressionAttributeValues': {':u': eventId, ':s': 'placed'},
+            'IndexName': 'eventId-betStatus-index'
+        }
 
         response = table.query(**args)
         result = {'items': response.get('Items', [])}
@@ -165,60 +202,137 @@ def get_open_bets_by_event_id(eventId: str = "") -> dict:
 
         return bet_list_response(result)
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return betting_error('UnknownError', 'An unknown error occured.')
+        logger.exception("ClientError when getting open bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.error({'UnknownError': e})
-        return betting_error('Unknown error', 'An unknown error occured.')
+        logger.exception("Unknown error when getting open bets")
+        return betting_error('UnknownError', 'An unknown error occurred.')
 
 
 def event_matches_bet(event, bet):
-    outcome = bet['outcome']
+    """
+    Check if an event matches a bet's odds.
+    
+    Args:
+        event: Event data
+        bet: Bet data
+        
+    Returns:
+        True if the event matches the bet, False otherwise
+    """
+    try:
+        outcome = bet['outcome']
 
-    if outcome == OUTCOME_HOME_WIN:
-        event_odds = event['homeOdds']
-    elif outcome == OUTCOME_AWAY_WIN:
-        event_odds = event['awayOdds']
-    elif outcome == OUTCOME_DRAW:
-        event_odds = event['draw']
-    else:
-        raise ValueError(f'The specified outcome should be one of {OUTCOME_HOME_WIN}, {OUTCOME_AWAY_WIN}, {OUTCOME_DRAW}')
+        if outcome == OUTCOME_HOME_WIN:
+            event_odds = event['homeOdds']
+        elif outcome == OUTCOME_AWAY_WIN:
+            event_odds = event['awayOdds']
+        elif outcome == OUTCOME_DRAW:
+            event_odds = event['drawOdds']
+        else:
+            raise ValueError(f'The specified outcome should be one of {OUTCOME_HOME_WIN}, {OUTCOME_AWAY_WIN}, {OUTCOME_DRAW}')
 
-    if event_odds != bet['odds']:
+        # Compare decimal odds as strings
+        return event_odds == bet['odds']
+    except Exception as e:
+        logger.exception("Error matching event to bet")
         return False
-
-    return True
 
 
 def get_live_market_event(eventId: str, timestamp: float = None) -> dict:
-    gql_input = {'eventId': eventId}
+    """
+    Get event data from the live market service.
+    
+    Args:
+        eventId: The event ID to query
+        timestamp: Optional timestamp
+        
+    Returns:
+        Event data
+    """
+    try:
+        gql_input = {'eventId': eventId}
 
-    if timestamp is not None:
-        gql_input['timestamp'] = timestamp
+        if timestamp is not None:
+            gql_input['timestamp'] = timestamp
 
-    response = gql_client.execute(gql(get_event), variable_values=gql_input)[
-        'getEvent']
-    return response
+        response = gql_client.execute(gql(get_event), variable_values=gql_input)['getEvent']
+        return response
+    except Exception as e:
+        logger.exception("Error getting live market event")
+        raise
+
 
 def handle_funds(userId: str, amount: float) -> dict:
-    gql_input = {'input':{'amount': amount, 'userId': userId}}
-    response = gql_client.execute(gql(deduct_funds), variable_values=gql_input)[
-        'deductFunds']
-    return response
+    """
+    Handle funds for a user (deduct funds from wallet).
+    
+    Args:
+        userId: User ID
+        amount: Amount to deduct
+        
+    Returns:
+        Response from wallet service
+    """
+    try:
+        gql_input = {'input': {'amount': amount, 'userId': userId}}
+        response = gql_client.execute(gql(deduct_funds), variable_values=gql_input)['deductFunds']
+        return response
+    except Exception as e:
+        logger.exception("Error handling funds")
+        raise
 
 
 def betting_error(errorType: str, error_msg: str) -> dict:
+    """
+    Create a betting error response.
+    
+    Args:
+        errorType: Type of error
+        error_msg: Error message
+        
+    Returns:
+        Error response dictionary
+    """
     return {'__typename': errorType, 'message': error_msg}
 
 
 def bet_list_response(data: dict) -> dict:
+    """
+    Create a bet list response.
+    
+    Args:
+        data: Bet data
+        
+    Returns:
+        BetList response dictionary
+    """
     return {**{'__typename': 'BetList'}, **data}
 
 
 def get_user_id(event: AppSyncResolverEvent):
+    """
+    Get the user ID from the event.
+    
+    Args:
+        event: AppSync resolver event
+        
+    Returns:
+        User ID
+    """
     return event.identity.sub
 
+
 def form_event(bet):
+    """
+    Form an event for EventBridge.
+    
+    Args:
+        bet: Bet data
+        
+    Returns:
+        EventBridge event
+    """
     return {
         'Source': 'com.betting',
         'DetailType': 'BetsPlaced',
@@ -226,14 +340,37 @@ def form_event(bet):
         'EventBusName': event_bus_name
     }
 
+
 def send_event(bet):
-    data = form_event(bet)
-    response = events.put_events(Entries=[data])
-    return response
+    """
+    Send an event to EventBridge.
+    
+    Args:
+        bet: Bet data
+        
+    Returns:
+        EventBridge response
+    """
+    try:
+        data = form_event(bet)
+        response = events.put_events(Entries=[data])
+        return response
+    except Exception as e:
+        logger.exception("Error sending event")
+        raise
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(event)
+    """
+    Lambda handler function.
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        AppSync resolver response
+    """
     return app.resolve(event, context)

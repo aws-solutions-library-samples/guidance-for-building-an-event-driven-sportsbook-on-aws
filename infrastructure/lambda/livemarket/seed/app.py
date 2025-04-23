@@ -24,25 +24,44 @@ except Exception as e:
 
 @helper.create
 def create(event, context):
-    with open('data.json', 'r') as f:
-        events = json.load(f)
+    """
+    Seed the DynamoDB table with initial event data.
+    
+    Args:
+        event: CloudFormation custom resource event
+        context: Lambda context
+        
+    Returns:
+        True if successful
+    """
+    try:
+        with open('data.json', 'r') as f:
+            events = json.load(f)
 
-    logger.debug(events)
-    now = scalar_types_utils.aws_datetime()
-    with table.batch_writer() as batch:
-        for event_item in events:
-            event_item['updatedAt'] = now
-            event_item['eventStatus'] = 'running'
-            batch.put_item(Item=event_item)
+        now = scalar_types_utils.aws_datetime()
+        with table.batch_writer() as batch:
+            for event_item in events:
+                event_item['updatedAt'] = now
+                event_item['eventStatus'] = 'running'
+                batch.put_item(Item=event_item)
 
-    logger.debug('Event seed complete')
-
-    return True
-
+        logger.info('Event seed complete')
+        return True
+    except Exception as e:
+        logger.error(f"Error seeding events: {str(e)}")
+        raise
 
 
 def lambda_handler(event, context):
-    # This function is triggered by a CloudFormation custom resource.
-    # It seeds a dynamodb table with some event data
-    logger.info(event)
-    helper(event, context)
+    """
+    Main Lambda handler function triggered by CloudFormation custom resource.
+    
+    Args:
+        event: CloudFormation custom resource event
+        context: Lambda context
+    """
+    try:
+        helper(event, context)
+    except Exception as e:
+        logger.error(f"Error in lambda handler: {str(e)}")
+        raise
