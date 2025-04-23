@@ -1,4 +1,4 @@
-import { Typography, Card, Button, Box, ButtonGroup } from "@mui/material";
+import { Typography, Card, Button, Box, ButtonGroup, useMediaQuery, useTheme } from "@mui/material";
 import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid } from "@mui/x-data-grid";
 import { useEvents, useFinishEvent, useMarket } from "../../hooks/useEvents";
@@ -19,9 +19,10 @@ const renderOdds = (params) => {
   const [isLoading, setIsLoading] = useState(false);
   const [marketStatus, setMarketStatus] = useState('');
   const suspendedMarkets = useMarket();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   //update marketStatus based on corresponding market status from suspendedMarkets array
-
   useEffect(() => {
     try{
     const markets = suspendedMarkets.find((market) => market.eventId === params.row.eventId)
@@ -63,12 +64,16 @@ const renderOdds = (params) => {
   };
 
   return (
-    <ButtonGroup>
+    <ButtonGroup 
+      orientation={isMobile ? "vertical" : "horizontal"}
+      size="small"
+    >
       <Button
         variant="outlined"
         size="small"
         onClick={marketStatus === 'Suspended' ? handleUnsuspend : handleSuspend}
         disabled={isLoading}
+        sx={{ fontSize: isMobile ? 11 : 'inherit', whiteSpace: 'nowrap' }}
       >
         {marketStatus === 'Suspended' ? 'Unsuspend' : 'Suspend'}
       </Button>
@@ -78,29 +83,13 @@ const renderOdds = (params) => {
         color="error"
         onClick={handleClose}
         disabled={isLoading}
+        sx={{ fontSize: isMobile ? 11 : 'inherit', whiteSpace: 'nowrap' }}
       >
         Close
       </Button>
     </ButtonGroup>
   );
 };
-
-const renderActions = (params) => {
-    return (
-        <ButtonGroup>
-            <Button
-            size="small"
-            startIcon={<CancelIcon />}
-            variant="contained"
-            onClick={() => {
-              EventOdds.handleFinishEvent(params.row.eventId, 'homeWin')
-            }}>
-                End Event
-            </Button>
-        </ButtonGroup>
-    )
-    
-}
 
 const suspendMarket = async ({ event, market }) => {
   try {
@@ -125,9 +114,14 @@ const closeMarket = async ({ event, market }) => {
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
   const { mutateAsync: triggerFinishEvent } = useFinishEvent();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
   const handleTriggerFinishEvent = (eventId, outcome) => triggerFinishEvent(
     { data: { eventId: eventId, outcome: outcome, eventStatus: 'finished'  } }
   );
+  
   const handleFinishEvent = async (eventId, outcome) => {
     console.log('closing event', {'eventId': eventId, 'outcome': outcome})
     handleTriggerFinishEvent(eventId, outcome);
@@ -141,13 +135,35 @@ export const EventOdds = () => {
       field: "eventName",
       headerName: "Event",
       sortable: false,
-      flex: 1,
+      flex: isMobile ? 1.5 : 2,
+      minWidth: isMobile ? 150 : 250,
       renderCell: ({ row }) => (
-        <Box>
-          <Typography variant={"subtitle2"} fontWeight={600}>
+        <Box sx={{ 
+          width: '100%', 
+          overflow: 'hidden',
+          padding: isMobile ? '4px 0' : '8px 0'
+        }}>
+          <Typography 
+            variant={isMobile ? "subtitle2" : "body1"}
+            fontWeight={600}
+            sx={{ 
+              fontSize: isMobile ? 12 : 16,
+              whiteSpace: 'normal',
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
             {row.home} vs {row.away}
           </Typography>
-          <Typography variant={"caption"}>
+          <Typography 
+            variant={"caption"}
+            sx={{ 
+              fontSize: isMobile ? 10 : 12,
+              display: 'block',
+              marginTop: '4px'
+            }}
+          >
             Starts at {new Date(row.start).toLocaleString("en-GB", dateOptions)}
           </Typography>
         </Box>
@@ -160,6 +176,7 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
+      minWidth: isMobile ? 100 : 150,
       renderCell: renderOdds,
     },
     {
@@ -169,6 +186,7 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
+      minWidth: isMobile ? 100 : 150,
       renderCell: renderOdds,
     },
     {
@@ -178,56 +196,90 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
+      minWidth: isMobile ? 100 : 150,
       renderCell: renderOdds,
     },
     {
-        field: "eventActions",
-        headerName: "Actions",
-        flex: 1,
-        align: "center",
-        sortable: false,
-        headerAlign: "center",
-        renderCell: (params) => {
-          return (
-            <ButtonGroup>
-                <Button
-                size="small"
-                variant="contained"
-                startIcon={<CancelIcon />}
-                onClick={() => {
-                  handleFinishEvent(params.row.eventId, 'homeWin')
-                }}>
-                    End Event
-                </Button>
-            </ButtonGroup>
+      field: "eventActions",
+      headerName: "Actions",
+      flex: 1,
+      align: "center",
+      sortable: false,
+      headerAlign: "center",
+      minWidth: isMobile ? 100 : 150,
+      renderCell: (params) => {
+        return (
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={!isMobile && <CancelIcon />}
+            onClick={() => {
+              handleFinishEvent(params.row.eventId, 'homeWin')
+            }}
+            sx={{ 
+              fontSize: isMobile ? 11 : 'inherit',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {isMobile ? 'End' : 'End Event'}
+          </Button>
         )
-       }
+      }
     }
   ];
 
-  
-
   return (
-    <Card style={{ "maxWidth": '1600px'}}>
-      <DataGrid
-        rows={events}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 10,
+    <Card 
+      sx={{ 
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}
+    >
+      <Box sx={{ 
+        width: '100%', 
+        height: { xs: 400, sm: 500, md: 600 },
+        '& .MuiDataGrid-root': {
+          '& .MuiDataGrid-cell': {
+            padding: isMobile ? '8px 4px' : '16px',
+          },
+          '& .MuiDataGrid-columnHeader': {
+            padding: isMobile ? '8px 4px' : '16px',
+          },
+          '& .MuiDataGrid-columnHeaderTitle': {
+            fontSize: isMobile ? 12 : 'inherit',
+            fontWeight: 'bold',
+            whiteSpace: 'normal',
+            lineHeight: 1.2
+          }
+        }
+      }}>
+        <DataGrid
+          rows={events}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: isTablet ? 5 : 10,
+              },
             },
-          },
-          sorting: {
-            sortModel: [{ field: "updatedAt", sort: "desc" }],
-          },
-        }}
-        getRowId={(row) => row?.eventId}
-        disableColumnSelector
-        disableColumnFilter
-        disableColumnMenu
-        pageSizeOptions={[10]}
-      />
+            sorting: {
+              sortModel: [{ field: "updatedAt", sort: "desc" }],
+            },
+          }}
+          getRowId={(row) => row?.eventId}
+          disableColumnSelector
+          disableColumnFilter
+          disableColumnMenu
+          pageSizeOptions={isTablet ? [5, 10] : [10, 25]}
+          rowHeight={isMobile ? 80 : 70}
+          sx={{
+            '& .MuiDataGrid-cell': {
+              whiteSpace: 'normal !important',
+              wordBreak: 'break-word'
+            }
+          }}
+        />
+      </Box>
     </Card>
   );
 };

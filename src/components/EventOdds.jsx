@@ -1,4 +1,4 @@
-import { Typography, Card, Button, Box } from "@mui/material";
+import { Typography, Card, Button, Box, Grid, useMediaQuery, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { useEvents, useMarket } from "../hooks/useEvents";
@@ -8,6 +8,8 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from "react-slick";
 import { decimalToFraction } from "../utils/oddsConverter";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
 const dateOptions = {
   year: "numeric",
@@ -68,12 +70,66 @@ export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
   const suspendedMarkets = useMarket();
   const [showSlider, setShowSlider] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const sliderRef = useRef(null);
+
+  // Custom arrow components for the slider
+  const NextArrow = (props) => {
+    const { onClick } = props;
+    return (
+      <Button 
+        className="slick-next-custom"
+        onClick={onClick}
+        sx={{
+          position: 'absolute',
+          right: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 2,
+          minWidth: '40px',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: 'rgba(0,0,0,0.7)',
+          }
+        }}
+      >
+        <ArrowForwardIosIcon />
+      </Button>
+    );
+  };
+
+  const PrevArrow = (props) => {
+    const { onClick } = props;
+    return (
+      <Button 
+        className="slick-prev-custom"
+        onClick={onClick}
+        sx={{
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 2,
+          minWidth: '40px',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: 'rgba(0,0,0,0.7)',
+          }
+        }}
+      >
+        <ArrowBackIosIcon />
+      </Button>
+    );
+  };
 
   // Array of flag URLs
   const flagUrls = [
     "src/assets/teams/cjfc.png",
     "src/assets/teams/ilfc.png",
-    "src/assets/teams/dlfc.png",
+    "src/assets/teams/edfc.png",
     "src/assets/teams/sefc.png",
     "src/assets/teams/ggfc.png",
     "src/assets/teams/rtfc.png",
@@ -83,12 +139,14 @@ export const EventOdds = () => {
     "src/assets/teams/ttfc.png",
     "src/assets/teams/srfc.png",
     "src/assets/teams/cufc.png",
-    "src/assets/teams/cjfc.png",
-    "src/assets/teams/ilfc.png",
-    "src/assets/teams/edfc.png",
-    "src/assets/teams/sefc.png",
-    "src/assets/teams/ggufc.png",
-    "src/assets/teams/rtufc.png",
+    "src/assets/teams/prfc.png",
+    "src/assets/teams/csfc.png",
+    "src/assets/teams/nnfc.png",
+    "src/assets/teams/moonfc.png",
+    "src/assets/teams/mmfc.png",
+    "src/assets/teams/ckfc.png",
+    "src/assets/teams/dlfc.png",
+    "src/assets/teams/mffc.png",
   ];
 
   // Map to store team name to flag URL mapping
@@ -131,17 +189,37 @@ export const EventOdds = () => {
   if (loadingEvents) return <Typography>Loading...</Typography>;
 
   const settings = {
-    className: "center",
+    className: "soccer-slider",
     infinite: true,
-    centerPadding: "60px",
+    speed: 500,
     slidesToShow: 4,
     slidesToScroll: 1,
     swipeToSlide: true,
-    afterChange: function (index) {
-      console.log(
-        `Slider Changed to: ${index + 1}, background: #222; color: #bada55`
-      );
-    }
+    nextArrow: <NextArrow />,
+    prevArrow: <PrevArrow />,
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: {
+          slidesToShow: 3,
+          slidesToScroll: 1
+        }
+      },
+      {
+        breakpoint: 900,
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 1
+        }
+      },
+      {
+        breakpoint: 600,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1
+        }
+      }
+    ]
   };
 
   const columns = [
@@ -191,89 +269,124 @@ export const EventOdds = () => {
   ];
 
   return (
-    <Card style={{ backgroundColor: "transparent", maxWidth: "1600px", height: showSlider ? "290px" : "750px" }}>
+    <Card style={{ backgroundColor: "transparent", maxWidth: "1600px", minHeight: showSlider ? "420px" : "750px" }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
         <Typography variant="h5" className="title">
           In Soccer Today
         </Typography>
-        {/* <Button
-      variant="contained"
-      onClick={() => setShowSlider(!showSlider)}
-    >
-      {showSlider ? "Table" : "Slider"}
-    </Button> */}
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => sliderRef.current?.slickNext()}
+          sx={{ display: { xs: 'none', md: 'flex' } }}
+        >
+          See More
+        </Button>
       </Box>
       {showSlider ? (
-        <Slider {...settings}>
-          {events && events.slice(0, 6).map((event) => (
-            <div key={event.eventId} style={{ padding: "10px" }}>
-              <Card className="soccer-today-card" style={{ margin: "10px" }}>
-                <Box sx={{ padding: 2 }}>
-                  <div className="match__head">
-                    <div className="match__head__left">
-                      <span className="icons">
-                        <i className="icon-football"></i>
-                      </span>
-                      <span>
-                        World Cup 2024
+        <Box className="slider-container" sx={{ 
+          padding: { xs: '0 10px', md: '0 40px' }, 
+          position: 'relative',
+          minHeight: '370px', // Fixed height to prevent collapse
+          height: '370px'     // Explicit height setting
+        }}>
+          {events && events.length > 0 ? (
+            <Slider ref={sliderRef} {...settings}>
+              {events.slice(0, 10).map((event) => (
+                <div key={event.eventId} style={{ padding: "10px" }}>
+                  <Card className="soccer-today-card" style={{ margin: "10px", height: "350px" }}>
+                  <Box sx={{ padding: 2 }}>
+                    <div className="match__head">
+                      <div className="match__head__left">
+                        <span className="icons">
+                          <i className="icon-football"></i>
+                        </span>
+                        <span>
+                          World Cup 2024
+                        </span>
+                      </div>
+                      <span className="today">
+                        Today / 12:00
                       </span>
                     </div>
-                    <span className="today">
-                      Today / 12:00
-                    </span>
-                  </div>
 
-                  <div className="match__vs">
-                    <div className="match__vs__left">
-                      <span>
-                      {event.home}
-                      </span>
-                      <span className="flag">
-                      <img src={getTeamFlag(event.home)} alt={event.home} />
-                      </span>
+                    <div className="match__vs">
+                      <div className="team-container">
+                        {/* Home team - left aligned */}
+                        <div className="team-flag-container">
+                          <span className="flag">
+                            <img src={getTeamFlag(event.home)} alt={event.home} />
+                          </span>
+                          <span className="team-name-horizontal">
+                            {event.home}
+                          </span>
+                        </div>
+                        
+                        <span className="vs">
+                          Vs
+                        </span>
+                        
+                        {/* Away team - right aligned */}
+                        <div className="away-team-container">
+                          <span className="team-name-horizontal text-right">
+                            {event.away}
+                          </span>
+                          <span className="flag">
+                            <img src={getTeamFlag(event.away)} alt={event.away} />
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="vs">
-                      Vs
-                    </span>
-                    <div className="match__vs__left">
-                      <span className="flag">
-                      <img src={getTeamFlag(event.away)} alt={event.away} />
-                      </span>
-                      <span>
-                      {event.away}
-                      </span>
-                    </div>
-                  </div>
 
-                  <Typography variant="caption">
-                    Starts at{" "}
-                    {new Date(event.start).toLocaleString("en-GB", dateOptions)}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-around",
-                      marginTop: 1,
-                    }}
-                  >
-                    <Zoom in={true} timeout={500}>
-                      <BetSlipButton event={event} eventType="homeOdds" eventValue={event.homeOdds} label="Home" />
-                    </Zoom>
-                    <Zoom in={true} timeout={500}>
-                      <BetSlipButton event={event} eventType="drawOdds" eventValue={event.drawOdds} label="Draw" />
-                    </Zoom>
-                    <Zoom in={true} timeout={500}>
-                      <BetSlipButton event={event} eventType="awayOdds" eventValue={event.awayOdds} label="Away" />
-                    </Zoom>
+                    <Typography variant="caption">
+                      Starts at{" "}
+                      {new Date(event.start).toLocaleString("en-GB", dateOptions)}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                        marginTop: 1,
+                      }}
+                    >
+                      <Zoom in={true} timeout={500}>
+                        <BetSlipButton event={event} eventType="homeOdds" eventValue={event.homeOdds} label="Home" />
+                      </Zoom>
+                      <Zoom in={true} timeout={500}>
+                        <BetSlipButton event={event} eventType="drawOdds" eventValue={event.drawOdds} label="Draw" />
+                      </Zoom>
+                      <Zoom in={true} timeout={500}>
+                        <BetSlipButton event={event} eventType="awayOdds" eventValue={event.awayOdds} label="Away" />
+                      </Zoom>
+                    </Box>
                   </Box>
-                </Box>
-              </Card>
-            </div>
-          ))}
-        </Slider>
+                </Card>
+              </div>
+            ))}
+          </Slider>
+          ) : (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '370px', // Match the container height
+              width: '100%',
+              backgroundColor: 'rgba(32, 42, 57, 0.3)',
+              borderRadius: '8px'
+            }}>
+              <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
+                No events available today
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Check back later for upcoming events
+              </Typography>
+            </Box>
+          )}
+        </Box>
       ) : (
         <DataGrid
-          rows={events || []}
+          rows={events && events.length > 0 ? events : []}
           columns={columns}
           initialState={{
             pagination: {
@@ -290,11 +403,28 @@ export const EventOdds = () => {
               },
             },
           }}
-          getRowId={(row) => row?.eventId}
+          getRowId={(row) => row?.eventId || Math.random().toString()}
           disableColumnSelector
           disableColumnFilter
           disableColumnMenu
           pageSizeOptions={[10]}
+          sx={{
+            minHeight: '400px',
+            '.MuiDataGrid-main': {
+              minHeight: '400px'
+            },
+            '.MuiDataGrid-virtualScroller': {
+              minHeight: '350px'
+            },
+            '.MuiDataGrid-overlay': {
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(32, 42, 57, 0.3)',
+              borderRadius: '4px'
+            }
+          }}
         />
       )}
     </Card>

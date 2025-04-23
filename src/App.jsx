@@ -25,6 +25,7 @@ import {
   Snackbar,
   Alert,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import SportsbookAppBar from "./components/SportsbookAppBar";
 import SystemEvents from "./components/admin/SystemEvents";
@@ -115,12 +116,13 @@ function App({ user, signOut }) {
   } = useGlobal();
   const isLocked = useUser(user);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const theme = getTheme(isDarkMode);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleThemeChange = () => {
     setIsDarkMode(!isDarkMode);
   };
-
-  const theme = getTheme(isDarkMode);
 
   return (
     <ThemeProvider theme={theme}>
@@ -152,10 +154,10 @@ function App({ user, signOut }) {
                 height: "100%",
                 paddingBottom: "50px",
                 position: "relative",
-                overflowY: "scroll"
+                overflowY: "scroll",
+                width: "100%"
               }}
             >
-              
               <Outlet />
             </Box>
             <Box className="betslip-wrapper"
@@ -202,12 +204,20 @@ function App({ user, signOut }) {
                 variant="extended"
                 aria-label="add"
                 sx={{
-                  width: 280,
-                  position: "absolute",
+                  width: isMobile ? 180 : 280,
+                  position: "fixed",
                   bottom: 10,
                   right: 10,
                   backgroundColor: "#424242", // Darker background color
                   color: "#ffffff", // Light text color
+                  fontSize: isMobile ? 14 : 'inherit',
+                  zIndex: 1000,
+                  ...(isMobile && {
+                    bottom: 20,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    right: 'auto'
+                  })
                 }}
                 onClick={() => setShowHub(!showHub)}
               >
@@ -219,8 +229,21 @@ function App({ user, signOut }) {
       </Box>
       <Drawer className="betslip-drawer"
         sx={{ display: { lg: "none", xs: "block" } }}
-        PaperProps={{ sx: { width: 350, backgroundColor: "transparent" } }} // Darker drawer background
-        anchor="right"
+        PaperProps={{ 
+          sx: { 
+            width: isMobile ? '100%' : 350, 
+            backgroundColor: "transparent",
+            ...(isMobile && {
+              height: 'auto',
+              maxHeight: '80%',
+              bottom: 0,
+              top: 'auto',
+              borderTopLeftRadius: '16px',
+              borderTopRightRadius: '16px'
+            })
+          } 
+        }}
+        anchor={isMobile ? "bottom" : "right"}
         variant={"temporary"}
         open={showHub}
         onClose={() => setShowHub(false)}

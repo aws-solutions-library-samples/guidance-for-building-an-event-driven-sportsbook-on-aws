@@ -1,4 +1,4 @@
-import { Typography, Card } from "@mui/material";
+import { Typography, Card, useTheme, useMediaQuery } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useBets } from "../hooks/useBets";
 import { darken, lighten, styled } from "@mui/material/styles";
@@ -38,11 +38,25 @@ const getSelectedHoverBackgroundColor = (color, mode) =>
   mode === "dark" ? darken(color, 0.4) : lighten(color, 0.4);
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  // Make cell text black but keep headers white
+  "& .MuiDataGrid-cell": {
+    color: "#000000",
+  },
+  // Remove scrollbar
+  "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
+    display: "none",
+  },
+  "& .MuiDataGrid-virtualScroller": {
+    msOverflowStyle: "none",
+    scrollbarWidth: "none",
+  },
+  // Row styling
   "& .win-row": {
     backgroundColor: getBackgroundColor(
       theme.palette.success.main,
       theme.palette.mode
     ),
+    color: "#000000",
     "&:hover": {
       backgroundColor: getHoverBackgroundColor(
         theme.palette.success.main,
@@ -67,6 +81,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
       theme.palette.error.main,
       theme.palette.mode
     ),
+    color: "#000000",
     "&:hover": {
       backgroundColor: getHoverBackgroundColor(
         theme.palette.error.main,
@@ -91,6 +106,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
       theme.palette.warning.main,
       theme.palette.mode
     ),
+    color: "#000000",
     "&:hover": {
       backgroundColor: getHoverBackgroundColor(
         theme.palette.warning.main,
@@ -167,15 +183,19 @@ const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
 
 export const BetHistory = () => {
   const { data: bets, isLoading: loadingBets } = useBets();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   if (loadingBets) return <Typography>Loading Bets...</Typography>;
 
-  const columns = [
+  // Define mobile and desktop columns separately
+  const desktopColumns = [
     {
       field: "eventName",
       headerName: "Event",
       flex: 1,
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       valueGetter: (params) =>
         `${params.row.event.home || ""} vs ${params.row.event.away || ""}`,
     },
@@ -200,14 +220,14 @@ export const BetHistory = () => {
       field: "outcome",
       headerName: "You bet on",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       valueFormatter: ({ value }) => conditionFormat[value],
     },
     {
       field: "result",
       headerName: "Outcome",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       valueGetter: (params) =>
         calculateOutcome(
           params.row.amount,
@@ -220,7 +240,7 @@ export const BetHistory = () => {
       field: "event.outcome",
       headerName: "Event outcome",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       flex: 1,
       valueGetter: (params) =>
         `${params.row.event.outcome || ""}`,
@@ -230,7 +250,7 @@ export const BetHistory = () => {
       field: "placedAt",
       headerName: "Placed",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       flex: 1,
       valueFormatter: ({ value }) =>
         new Date(value).toLocaleString("en-GB", dateOptions),
@@ -239,10 +259,45 @@ export const BetHistory = () => {
       field: "betStatus",
       headerName: "Bet status",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
       valueFormatter: ({ value }) => betStatusFormat[value],
     }
   ];
+  
+  // Simplified columns for mobile view
+  const mobileColumns = [
+    {
+      field: "eventName",
+      headerName: "Event",
+      flex: 1,
+      headerClassName: 'bets-theme-header',
+      sortable: true,
+      valueGetter: (params) =>
+        `${params.row.event.home || ""} vs ${params.row.event.away || ""}`,
+    },
+    {
+      field: "outcome",
+      headerName: "Bet",
+      headerClassName: 'bets-theme-header',
+      width: 80,
+      valueFormatter: ({ value }) => conditionFormat[value],
+    },
+    {
+      field: "result",
+      headerName: "Result",
+      headerClassName: 'bets-theme-header',
+      width: 80,
+      valueGetter: (params) =>
+        calculateOutcome(
+          params.row.amount,
+          params.row.odds,
+          params.row.outcome,
+          params.row.event.outcome
+        ),
+    }
+  ];
+
+  const columns = isMobile ? mobileColumns : desktopColumns;
 
 
   return (
@@ -268,12 +323,10 @@ export const BetHistory = () => {
         getRowClassName={getRowClassName}
         disableColumnSelector
         disableColumnFilter
-        pageSizeOptions={[10]}
-        slotProps={{
-          pagination: {
-            className: 'custom-pagination'
-          }
-        }}
+        disableColumnMenu
+        hideFooterPagination
+        autoHeight
+        pageSizeOptions={[5]}
       />
     </Card>
     </div>

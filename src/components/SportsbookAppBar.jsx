@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 
 import '../css/bootstrap.min.css';
 import '../css/magnific-popup.css';
@@ -22,7 +22,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import MenuIcon from '@mui/icons-material/Menu';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
-import { Switch } from "@mui/material";
+import { Switch, useMediaQuery } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 
@@ -43,6 +43,7 @@ import {
   Popover,
   Tooltip,
   Avatar,
+  Drawer,
 } from "@mui/material";
 
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
@@ -77,6 +78,10 @@ const CustomWalletIcon = styled(LocalAtmIcon)({
 function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMode }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const { currencySymbol, toggleCurrency } = useGlobal();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { mutateAsync: lockUser } = useLockUser();
   const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username } });
@@ -84,24 +89,26 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
   const profileMenuState = usePopupState({ variant: "popover", popupId: "profile" });
 
-  // const [anchorElProfile, setAnchorElProfile] = useState(null);
-  // const profileMenuOpen = Boolean(anchorElProfile);
-
   const location = useLocation();
   useEffect(() => {
     setAnchorElNav(null);
+    setMobileMenuOpen(false);
   }, [location]);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
+  
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   const accountSettings = () => {
     return (
-      
       <Box>
         <Tooltip title="Account Settings">
           <IconButton {...bindTrigger(profileMenuState)}>
@@ -157,12 +164,6 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
             </ListItemIcon>
             Switch currency
           </MenuItem>
-          {/* <MenuItem onClick={handleThemeChange}>
-            <ListItemIcon>
-              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-            </ListItemIcon>
-            {isDarkMode ? "Light Mode" : "Dark Mode"}
-          </MenuItem> */}
           <MenuItem onClick={handleCloseNavMenu}>
             <ListItemIcon>
               <Settings fontSize="small" />
@@ -177,7 +178,6 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
           </MenuItem>
         </Menu>
       </Box>
-      
     );
   };
 
@@ -195,49 +195,57 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
             <div className="menu__left__wrap">
               <div className="logo-menu px-2">
                 <Link to="/" className="logo">
-                <img src={logo} alt="sportsbook logo" />
+                  <img src={logo} alt="sportsbook logo" />
                 </Link>
               </div>
 
-              <Typography
-            variant="h6"
-            noWrap
-            component={Link}
-            to="/"
-            sx={{
-              ml: 2,
-              mr: 2,
-              mb: 0.5,
-              display: { xs: "none", md: "flex" },
-              fontWeight: 700,
-              letterSpacing: ".2rem",
-              color: "inherit",
-              textDecoration: "none",
-            }}
-          >
-            AWS Sportsbook
-          </Typography>
+              {!isMobile && (
+                <Typography
+                  variant="h6"
+                  noWrap
+                  component={Link}
+                  to="/"
+                  sx={{
+                    ml: 2,
+                    mr: 2,
+                    mb: 0.5,
+                    display: { xs: "none", md: "flex" },
+                    fontWeight: 700,
+                    letterSpacing: ".2rem",
+                    color: "inherit",
+                    textDecoration: "none",
+                  }}
+                >
+                  AWS Sportsbook
+                </Typography>
+              )}
 
-
-
-              <ul className="main-menu">
-
-              {pages.map((page) => (
-                
-                <li key={page}>
-                    <Link to={`/${page}`}>{page}</Link>
-                  </li>
-                
-              ))}
-        
-              </ul>
+              {isMobile ? (
+                <IconButton 
+                  color="inherit" 
+                  onClick={toggleMobileMenu}
+                  sx={{ ml: 1 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              ) : (
+                <ul className="main-menu">
+                  {pages.map((page) => (
+                    <li key={page}>
+                      <Link to={`/${page}`}>{page}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="mneu-btn-grp">
-              <div className="header-bar">
-                <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-                  {user.attributes.email}
-                </Typography>
-              </div>
+              {!isMobile && (
+                <div className="header-bar">
+                  <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
+                    {user.attributes.email}
+                  </Typography>
+                </div>
+              )}
               <div className="header-bar">
                 <IconButton color="inherit" {...bindTrigger(popupState)}>
                   <CustomWalletIcon />
@@ -254,18 +262,93 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
                     horizontal: "right",
                   }}
                 >
-                  <Box width={300}>
+                  <Box width={isMobile ? '100vw' : 300}>
                     <Wallet isLocked={isLocked} />
                   </Box>
                 </Popover>
               </div>
 
               {accountSettings()}
-
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={toggleMobileMenu}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: '80%',
+            maxWidth: 300,
+            backgroundColor: '#060C1F',
+            color: '#ffffff',
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Menu
+          </Typography>
+          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Link to="/" onClick={toggleMobileMenu} style={{ color: '#ffffff', textDecoration: 'none', padding: '8px 0' }}>
+              Home
+            </Link>
+            {pages.map((page) => (
+              <Link 
+                key={page} 
+                to={`/${page}`} 
+                onClick={toggleMobileMenu}
+                style={{ color: '#ffffff', textDecoration: 'none', padding: '8px 0' }}
+              >
+                {page}
+              </Link>
+            ))}
+          </Box>
+          
+          <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {user.attributes.email}
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              onClick={handleLock}
+              startIcon={isLocked ? <LockOpenIcon /> : <LockIcon />}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              {isLocked ? "Unlock Account" : "Lock Account"}
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              onClick={toggleCurrency}
+              startIcon={
+                currencySymbol === "£" ? <CurrencyPoundIcon /> :
+                currencySymbol === "€" ? <EuroIcon /> : <AttachMoneyIcon />
+              }
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Switch currency
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              onClick={signOut}
+              startIcon={<LogoutIcon />}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Logout
+            </Button>
+          </Box>
+        </Box>
+      </Drawer>
     </>
   );
 }
