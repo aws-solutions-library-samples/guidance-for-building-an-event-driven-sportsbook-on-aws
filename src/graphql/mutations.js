@@ -160,21 +160,6 @@ export const closeMarketMutation = /* GraphQL */ `
   }
 `;
 
-export const sendChatbotMessage = /* GraphQL */ `
-  mutation SendChatbotMessage($input: ChatbotMessageInput) {
-    sendChatbotMessage(input: $input) {
-      ... on ChatbotResponse {
-        __typename
-        completion
-      }
-      ... on Error {
-        __typename
-        message
-      }
-    }
-  }
-`;
-
 export const triggerSuspendMarketMutation = /* GraphQL */ `
   mutation TriggerSuspendMarket($input: SuspendMarketInput!) {
     triggerSuspendMarket(input: $input) {

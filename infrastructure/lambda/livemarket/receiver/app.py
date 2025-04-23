@@ -26,107 +26,160 @@ queue_url = getenv('QUEUE')
 
 @tracer.capture_method
 def handle_updated_odds(item: dict) -> dict:
-    update_info = {
-        'eventId': item['detail']['eventId'],
-        'homeOdds': item['detail']['homeOdds'],
-        'awayOdds': item['detail']['awayOdds'],
-        'drawOdds': item['detail']['drawOdds']
-    }
-    gql_input = {
-        'input': update_info
-    }
-    response = gql_client.execute(gql(update_event_odds), variable_values=gql_input)[
-        'updateEventOdds']
+    """
+    Handle updated odds event.
+    
+    Args:
+        item: Event containing updated odds
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
+    try:
+        update_info = {
+            'eventId': item['detail']['eventId'],
+            'homeOdds': item['detail']['homeOdds'],
+            'awayOdds': item['detail']['awayOdds'],
+            'drawOdds': item['detail']['drawOdds']
+        }
+        gql_input = {
+            'input': update_info
+        }
+        response = gql_client.execute(gql(update_event_odds), variable_values=gql_input)[
+            'updateEventOdds']
 
-    if response['__typename'] == 'Event':
-        logger.debug("Odds updated")
-        return form_event('com.livemarket', 'UpdatedOdds', update_info)
-    elif 'Error' in response['__typename']:
-        logger.exception("Failed to update odds")
-        raise ValueError(
-            f"updateEventOdds failed: {response['message']}")
+        if response['__typename'] == 'Event':
+            return form_event('com.livemarket', 'UpdatedOdds', update_info)
+        elif 'Error' in response['__typename']:
+            logger.error(f"Failed to update odds: {response['message']}")
+            return None
+    except Exception as e:
+        logger.error(f"Error handling updated odds: {str(e)}")
+        return None
+
 
 @tracer.capture_method
 def handle_event_finished(item: dict) -> dict:
-    update_info = {
-        'eventId': item['detail']['eventId'],
-        'eventStatus': 'finished',
-        'outcome': item['detail']['outcome']
-    }
-    gql_input = {
-        'input': update_info
-    }
+    """
+    Handle event finished notification.
+    
+    Args:
+        item: Event containing finished event data
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
+    try:
+        update_info = {
+            'eventId': item['detail']['eventId'],
+            'eventStatus': 'finished',
+            'outcome': item['detail']['outcome']
+        }
+        gql_input = {
+            'input': update_info
+        }
 
-    response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
-        'finishEvent']
+        response = gql_client.execute(gql(finish_event), variable_values=gql_input)[
+            'finishEvent']
 
-    if response['__typename'] == 'Event':
-        logger.debug("Event closed")
-        return form_event('com.livemarket', 'EventClosed', update_info)
-    elif 'Error' in response['__typename']:
-        logger.exception("Failed to finish event")
-        raise ValueError(
-            f"finish_event failed: {response['message']}")
+        if response['__typename'] == 'Event':
+            return form_event('com.livemarket', 'EventClosed', update_info)
+        elif 'Error' in response['__typename']:
+            logger.error(f"Failed to finish event: {response['message']}")
+            return None
+    except Exception as e:
+        logger.error(f"Error handling event finished: {str(e)}")
+        return None
+
 
 @tracer.capture_method
 def handle_add_event(item: dict) -> dict:
-
-    logger.debug('handle_add_event')
-    logger.debug('Item: ', item['detail'])
-    add_event_info = {
-        'eventId': item['detail']['eventId'],
-        'home': item['detail']['home'],
-        'away': item['detail']['away'],
-        'homeOdds': item['detail']['homeOdds'],
-        'awayOdds': item['detail']['awayOdds'],
-        'drawOdds': item['detail']['drawOdds'],
-        'start': item['detail']['start'],
-        'end': item['detail']['end'],
-        'updatedAt': item['detail']['updatedAt'],
-        'duration': item['detail']['duration'],
-        'eventStatus': item['detail']['eventStatus']
-    }
-
-    logger.debug('add_event_info', add_event_info)
-    gql_input = {
-        'input': add_event_info
-    }
-
+    """
+    Handle add event notification.
+    
+    Args:
+        item: Event containing new event data
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
     try:
+        add_event_info = {
+            'eventId': item['detail']['eventId'],
+            'home': item['detail']['home'],
+            'away': item['detail']['away'],
+            'homeOdds': item['detail']['homeOdds'],
+            'awayOdds': item['detail']['awayOdds'],
+            'drawOdds': item['detail']['drawOdds'],
+            'start': item['detail']['start'],
+            'end': item['detail']['end'],
+            'updatedAt': item['detail']['updatedAt'],
+            'duration': item['detail']['duration'],
+            'eventStatus': item['detail']['eventStatus']
+        }
+
+        gql_input = {
+            'input': add_event_info
+        }
+
         response = gql_client.execute(gql(add_event), variable_values=gql_input)[
             'addEvent']
 
-        logger.debug('response:', response)
         if response['__typename'] == 'Event':
-            logger.debug("Event closed")
             return form_event('com.livemarket', 'EventAdded', add_event_info)
         elif 'Error' in response['__typename']:
-            logger.exception("Failed to add event")
-            raise ValueError(
-                f"add_event failed: {response['message']}")
-    except Exception:
-        logger.exception(Exception)
-        raise Exception
+            logger.error(f"Failed to add event: {response['message']}")
+            return None
+    except Exception as e:
+        logger.error(f"Error handling add event: {str(e)}")
+        return None
 
 
-def form_event(source, detailType, detail):
-    return {
-        'Source': source,
-        'DetailType': detailType,
-        'Detail': json.dumps(detail),
-        'EventBusName': event_bus_name
-    }
+def form_event(source, detail_type, detail):
+    """
+    Create a properly formatted event for EventBridge.
+    
+    Args:
+        source: Event source
+        detail_type: The type of event
+        detail: The event payload
+        
+    Returns:
+        Formatted event for EventBridge
+    """
+    try:
+        return {
+            'Source': source,
+            'DetailType': detail_type,
+            'Detail': json.dumps(detail),
+            'EventBusName': event_bus_name
+        }
+    except Exception as e:
+        logger.error(f"Error forming event: {str(e)}")
+        return None
+
 
 @tracer.capture_method
 def record_handler(record: SQSRecord):
-    # This function processes a record from SQS
-    # Optionally return a dict which will be raised as a new event
-    payload = record.body
-    if payload:
+    """
+    Process a single record from SQS.
+    
+    Args:
+        record: SQS record to process
+        
+    Returns:
+        Event to be raised or None
+    """
+    try:
+        payload = record.body
+        if not payload:
+            return None
+            
         item = json.loads(payload)
-        if item['source'] == 'com.trading':
-            if item['detail-type'] == 'UpdatedOdds':
-                return handle_updated_odds(item)
+        
+        if item['source'] == 'com.trading' and item['detail-type'] == 'UpdatedOdds':
+            return handle_updated_odds(item)
+            
         if item['source'] == 'com.thirdparty':
             if item['detail-type'] == 'EventClosed':
                 return handle_event_finished(item)
@@ -136,61 +189,106 @@ def record_handler(record: SQSRecord):
                 return handle_market_unsuspended(item)
             elif item['detail-type'] == 'EventAdded':
                 return handle_add_event(item)
-    logger.warning({"message": "Unknown record type", "record": item})
-    return None
+                
+        return None
+    except Exception as e:
+        logger.error(f"Error processing record: {str(e)}")
+        return None
+
 
 @tracer.capture_method
 def handle_market_suspended(item: dict) -> dict:
-    update_info = {
-        'eventId': item['detail']['eventId'],
-        'market': item['detail']['market'],
-    }
-    gql_input = {
-        'input': update_info
-    }
-    response = gql_client.execute(gql(suspend_market), variable_values=gql_input)[
-        'suspendMarket']
+    """
+    Handle market suspended notification.
+    
+    Args:
+        item: Event containing market suspension data
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
+    try:
+        update_info = {
+            'eventId': item['detail']['eventId'],
+            'market': item['detail']['market'],
+        }
+        gql_input = {
+            'input': update_info
+        }
+        response = gql_client.execute(gql(suspend_market), variable_values=gql_input)[
+            'suspendMarket']
 
-    if response['__typename'] == 'Event':
-        logger.debug("Market suspended")
-        return form_event('com.livemarket', 'MarketSuspended', update_info)
-    elif 'Error' in response['__typename']:
-        logger.exception("Failed to suspend market")
-        raise ValueError(
-            f"suspendMarket failed: {response['message']}")
+        if response['__typename'] == 'Event':
+            return form_event('com.livemarket', 'MarketSuspended', update_info)
+        elif 'Error' in response['__typename']:
+            logger.error(f"Failed to suspend market: {response['message']}")
+            return None
+    except Exception as e:
+        logger.error(f"Error handling market suspended: {str(e)}")
+        return None
+
 
 @tracer.capture_method
 def handle_market_unsuspended(item: dict) -> dict:
-    update_info = {
-        'eventId': item['detail']['eventId'],
-        'market': item['detail']['market'],
-    }
-    gql_input = {
-        'input': update_info
-    }
-    response = gql_client.execute(gql(unsuspend_market), variable_values=gql_input)[
-        'unsuspendMarket']
+    """
+    Handle market unsuspended notification.
+    
+    Args:
+        item: Event containing market unsuspension data
+        
+    Returns:
+        Formatted event for EventBridge or None if error
+    """
+    try:
+        update_info = {
+            'eventId': item['detail']['eventId'],
+            'market': item['detail']['market'],
+        }
+        gql_input = {
+            'input': update_info
+        }
+        response = gql_client.execute(gql(unsuspend_market), variable_values=gql_input)[
+            'unsuspendMarket']
 
-    if response['__typename'] == 'Event':
-        logger.debug("Market unsuspended")
-        return form_event('com.livemarket', 'MarketUnsuspended', update_info)
-    elif 'Error' in response['__typename']:
-        logger.exception("Failed to unsuspend market")
-        raise ValueError(
-            f"unsuspendMarket failed: {response['message']}")
+        if response['__typename'] == 'Event':
+            return form_event('com.livemarket', 'MarketUnsuspended', update_info)
+        elif 'Error' in response['__typename']:
+            logger.error(f"Failed to unsuspend market: {response['message']}")
+            return None
+    except Exception as e:
+        logger.error(f"Error handling market unsuspended: {str(e)}")
+        return None
+
 
 @logger.inject_lambda_context(log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(event)
-    batch = event["Records"]
-    with processor(records=batch, handler=record_handler):
-        processed_messages = processor.process()
-        logger.debug(processed_messages)
+    """
+    Main Lambda handler function.
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        Batch processing response
+    """
+    try:
+        batch = event["Records"]
+        with processor(records=batch, handler=record_handler):
+            processed_messages = processor.process()
 
-    output_events = [x[1]
-                     for x in processed_messages if x[0] == "success" and x[1] is not None]
-    if output_events:
-        events.put_events(Entries=output_events)
+        # Extract successful events that returned a value
+        output_events = [
+            result[1] for result in processed_messages 
+            if result[0] == "success" and result[1] is not None
+        ]
+        
+        # Send events to EventBridge if any exist
+        if output_events:
+            events.put_events(Entries=output_events)
 
-    return processor.response()
+        return processor.response()
+    except Exception as e:
+        logger.error(f"Error in lambda handler: {str(e)}")
+        return {"batchItemFailures": []}

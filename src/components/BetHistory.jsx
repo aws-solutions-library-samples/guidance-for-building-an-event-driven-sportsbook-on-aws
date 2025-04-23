@@ -3,6 +3,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { useBets } from "../hooks/useBets";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { Pagination } from '@mui/material';
+import { decimalToFraction } from "../utils/oddsConverter";
 
 const dateOptions = {
   year: "numeric",
@@ -113,8 +114,20 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 
 const getRowClassName = (params) => {
   const { outcome, event, amount, odds } = params.row;
-  const [numerator, denominator] = odds.split("/");
-  const winAmount = (amount * parseInt(numerator)) / parseInt(denominator);
+  
+  // Make sure we're working with a valid number for odds
+  if (odds === undefined || odds === null || odds === '') {
+    return "draw-row";
+  }
+  
+  // Use decimal odds for calculation
+  const decimalOdds = parseFloat(odds);
+  if (isNaN(decimalOdds)) {
+    return "draw-row";
+  }
+  
+  // For decimal odds, the formula is stake * (odds - 1)
+  const winAmount = amount * (decimalOdds - 1);
   const profitAmount = winAmount;
 
   if (outcome === event.outcome && profitAmount > 0) {
@@ -127,11 +140,24 @@ const getRowClassName = (params) => {
 };
 
 const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
-  const [numerator, denominator] = odds.split("/");
-  const winAmount = (amount * parseInt(numerator)) / parseInt(denominator);
-  const profitAmount = winAmount+amount;
-  //round up the profitAmount to 2 digits
+  // Make sure we're working with a valid number for odds
+  if (odds === undefined || odds === null || odds === '') {
+    return 'N/A';
+  }
+  
+  // Use decimal odds for calculation
+  const decimalOdds = parseFloat(odds);
+  if (isNaN(decimalOdds)) {
+    return 'N/A';
+  }
+  
+  // For decimal odds, the formula is stake * (odds - 1)
+  const winAmount = amount * (decimalOdds - 1);
+  const profitAmount = outcome === eventOutcome ? amount + winAmount : 0;
+  
+  // Round up the profitAmount to 2 digits
   const roundedProfitAmount = Math.round(profitAmount * 100) / 100;
+  
   if (outcome !== eventOutcome) {
     return "-" + `$${amount}`;
   } else {
@@ -157,7 +183,18 @@ export const BetHistory = () => {
       field: "odds",
       headerName: "Your Odds",
       headerClassName: 'bets-theme-header',
-      sortable: true, // Add sortable prop
+      sortable: true,
+      valueFormatter: ({ value }) => {
+        // Make sure we're working with a valid number
+        if (value === undefined || value === null || value === '') {
+          return '';
+        }
+        
+        // Convert to fraction for display
+        const fractionOdds = decimalToFraction(value);
+        // console.log(`BetHistory odds: ${value} -> ${fractionOdds}`);
+        return fractionOdds;
+      },
     },
     {
       field: "outcome",

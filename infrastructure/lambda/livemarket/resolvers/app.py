@@ -33,6 +33,15 @@ events = session.client('events')
 @app.resolver(type_name="Query", field_name="getEvents")
 @tracer.capture_method
 def get_events(startKey: str = "") -> dict:
+    """
+    Get all running events.
+    
+    Args:
+        startKey: Optional pagination token
+        
+    Returns:
+        List of events or error response
+    """
     try:
         args = {
             'FilterExpression': Key('eventStatus').eq('running')
@@ -50,15 +59,24 @@ def get_events(startKey: str = "") -> dict:
         return event_list_response(result)
 
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in get_events: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in get_events: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
 
+
 def event_list_response(data: dict) -> dict:
+    """
+    Format event list response.
+    
+    Args:
+        data: Raw event data
+        
+    Returns:
+        Formatted event list response
+    """
     items = data.get('items', [])
-    logger.debug(items)
     for item in items:
         item['marketstatus'] = item.get('marketstatus', [])
     return {**{'__typename': 'EventList'}, **data}
@@ -67,6 +85,16 @@ def event_list_response(data: dict) -> dict:
 @app.resolver(type_name="Query", field_name="getEvent")
 @tracer.capture_method
 def get_event(eventId: str, timestamp: float = None) -> dict:
+    """
+    Get a specific event by ID, optionally at a specific point in time.
+    
+    Args:
+        eventId: ID of the event to retrieve
+        timestamp: Optional timestamp to get historical data
+        
+    Returns:
+        Event data or error response
+    """
     try:
         current_event = table.get_item(Key={'eventId': eventId})['Item']
 
@@ -99,19 +127,28 @@ def get_event(eventId: str, timestamp: float = None) -> dict:
             return events_error('InputError', 'The history for this event is not queryable for the requested timestamp')
 
         return event_response(matched_events[0])
-    except dynamodb.meta.client.exceptions.ResourceNotFoundException as e:
+    except dynamodb.meta.client.exceptions.ResourceNotFoundException:
         return events_error('InputError', 'The event does not exist')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"DynamoDB client error in get_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"Error in get_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
 
 
 @app.resolver(type_name="Mutation", field_name="updateEventOdds")
 @tracer.capture_method
 def update_event_odds(input: dict) -> dict:
+    """
+    Update the odds for an event.
+    
+    Args:
+        input: Event odds data to update
+        
+    Returns:
+        Updated event data or error response
+    """
     try:
         now = scalar_types_utils.aws_datetime()
         response = table.update_item(
@@ -134,23 +171,29 @@ def update_event_odds(input: dict) -> dict:
         history_table.put_item(Item=history_entry)
 
         return event_response(current_event)
-    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
         return events_error('InputError', 'The event does not exist')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"DynamoDB client error in update_event_odds: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"Error in update_event_odds: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="suspendMarket")
 @tracer.capture_method
 def suspend_market(input: dict) -> dict:
+    """
+    Suspend a market for an event.
+    
+    Args:
+        input: Market data to suspend
+        
+    Returns:
+        Updated event data or error response
+    """
     try:
-        now = scalar_types_utils.aws_datetime()
-        update_expression = ""
-        expression_values = {}
-
         # Check if the market exists in the marketstatus field
         response = table.get_item(Key={'eventId': input['eventId']}, ProjectionExpression='marketstatus')
         existing_markets = response.get('Item', {}).get('marketstatus', [])
@@ -158,12 +201,11 @@ def suspend_market(input: dict) -> dict:
         existing_market = next((market for market in existing_markets if market['name'] == input['market']), None)
         if existing_market:
             existing_market['status'] = 'Suspended'
-
         else:
-            #add new market to existing_markets
+            # Add new market to existing_markets
             existing_markets.append({'name': input['market'], 'status': 'Suspended'})
 
-        #iterate through existing_markets and generate "SET" message to dynamodb
+        # Update the marketstatus field
         update_expression = "SET marketstatus = :marketstatus"
         expression_values = {
             ':marketstatus': existing_markets
@@ -184,20 +226,26 @@ def suspend_market(input: dict) -> dict:
 
         return event_response(current_event)
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in suspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in suspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="unsuspendMarket")
 @tracer.capture_method
 def unsuspend_market(input: dict) -> dict:
+    """
+    Unsuspend a market for an event.
+    
+    Args:
+        input: Market data to unsuspend
+        
+    Returns:
+        Updated event data or error response
+    """
     try:
-        now = scalar_types_utils.aws_datetime()
-        update_expression = ""
-        expression_values = {}
-
         # Check if the market exists in the marketstatus field
         response = table.get_item(Key={'eventId': input['eventId']}, ProjectionExpression='marketstatus')
         existing_markets = response.get('Item', {}).get('marketstatus', [])
@@ -205,12 +253,11 @@ def unsuspend_market(input: dict) -> dict:
         existing_market = next((market for market in existing_markets if market['name'] == input['market']), None)
         if existing_market:
             existing_market['status'] = 'Active'
-
         else:
-            #add new market to existing_markets
+            # Add new market to existing_markets
             existing_markets.append({'name': input['market'], 'status': 'Active'})
 
-        #iterate through existing_markets and generate "SET" message to dynamodb
+        # Update the marketstatus field
         update_expression = "SET marketstatus = :marketstatus"
         expression_values = {
             ':marketstatus': existing_markets
@@ -231,17 +278,26 @@ def unsuspend_market(input: dict) -> dict:
 
         return event_response(current_event)
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in unsuspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in unsuspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="closeMarket")
 @tracer.capture_method
 def close_market(input: dict) -> dict:
+    """
+    Close a market for an event.
+    
+    Args:
+        input: Market data to close
+        
+    Returns:
+        Updated event data or error response
+    """
     try:
-        now = scalar_types_utils.aws_datetime()
         response = table.update_item(
             Key={'eventId': input['eventId']},
             UpdateExpression="SET marketstatus = list_append(if_not_exists(marketstatus, :empty_list), :status)",
@@ -260,15 +316,25 @@ def close_market(input: dict) -> dict:
 
         return event_response(current_event)
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in close_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in close_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="finishEvent")
 @tracer.capture_method
 def finish_event(input: dict) -> dict:
+    """
+    Mark an event as finished.
+    
+    Args:
+        input: Event data to update
+        
+    Returns:
+        Updated event data or error response
+    """
     try:
         now = scalar_types_utils.aws_datetime()
         response = table.update_item(
@@ -290,38 +356,56 @@ def finish_event(input: dict) -> dict:
         history_table.put_item(Item=history_entry)
 
         return event_response(current_event)
-    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
         return events_error('InputError', 'The event does not exist')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"DynamoDB client error in finish_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"Error in finish_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
 
 
 @app.resolver(type_name="Mutation", field_name="triggerFinishEvent")
 @tracer.capture_method
 def trigger_finish_event(input: dict) -> dict:
+    """
+    Trigger an event finish notification.
+    
+    Args:
+        input: Event data with outcome
+        
+    Returns:
+        Event data or error response
+    """
     try:
-        #effectively just raising event back to event bridge
+        # Effectively just raising event back to event bridge
         current_event = get_event(input['eventId'])
         current_event["outcome"] = input["outcome"]
         send_event(current_event, 'EventClosed')
-        logger.debug(current_event)
         return event_response(current_event)
-    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
         return events_error('InputError', 'The event does not exist')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"DynamoDB client error in trigger_finish_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
-        return events_error('UnknownError', 'An unknown error occured.')
+        logger.error(f"Error in trigger_finish_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="triggerSuspendMarket")
 @tracer.capture_method
 def trigger_suspend_market(input: dict) -> dict:
+    """
+    Trigger a market suspension notification.
+    
+    Args:
+        input: Market data to suspend
+        
+    Returns:
+        Event data or error response
+    """
     try:
         # Fetch the current event data
         current_event = get_event(input['eventId'])
@@ -338,15 +422,25 @@ def trigger_suspend_market(input: dict) -> dict:
 
         return event_response(current_event)
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in trigger_suspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in trigger_suspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="triggerUnsuspendMarket")
 @tracer.capture_method
 def trigger_unsuspend_market(input: dict) -> dict:
+    """
+    Trigger a market unsuspension notification.
+    
+    Args:
+        input: Market data to unsuspend
+        
+    Returns:
+        Event data or error response
+    """
     try:
         # Fetch the current event data
         current_event = get_event(input['eventId'])
@@ -363,55 +457,121 @@ def trigger_unsuspend_market(input: dict) -> dict:
 
         return event_response(current_event)
     except ClientError as e:
-        logger.exception({'ClientError': e})
+        logger.error(f"DynamoDB client error in trigger_unsuspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
     except Exception as e:
-        logger.exception({'UnknownError': e})
+        logger.error(f"Error in trigger_unsuspend_market: {str(e)}")
         return events_error('UnknownError', 'An unknown error occurred.')
+
 
 @app.resolver(type_name="Mutation", field_name="addEvent")
 @tracer.capture_method
 def add_event(input: dict) -> dict:
+    """
+    Add a new event.
+    
+    Args:
+        input: Event data to add
+        
+    Returns:
+        Added event data or error response
+    """
     try:
-        logger.debug('Adding event %s to DynamoDB Table', input)
         table.put_item(Item=input)
         return event_response(input)
-    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException as e:
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
         return events_error('InputError', 'The event could not be added in the dynamodb table')
     except ClientError as e:
-        logger.exception({'ClientError': e})
-        return events_error('UnknownError', 'An unknown error occured while adding event.')
+        logger.error(f"DynamoDB client error in add_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred while adding event.')
     except Exception as e:
-        return events_error('UnknownError', 'An unknown error occured while adding event.')
+        logger.error(f"Error in add_event: {str(e)}")
+        return events_error('UnknownError', 'An unknown error occurred while adding event.')
+
 
 def form_event(detail_type, event_data, market_name=None):
-    return {
-        'Source': 'com.thirdparty',
-        'DetailType': detail_type,
-        'Detail': json.dumps(event_data),
-        'EventBusName': event_bus_name
-    }
+    """
+    Create a properly formatted event for EventBridge.
+    
+    Args:
+        detail_type: The type of event
+        event_data: The event payload
+        market_name: Optional market name
+        
+    Returns:
+        Formatted event for EventBridge
+    """
+    try:
+        return {
+            'Source': 'com.thirdparty',
+            'DetailType': detail_type,
+            'Detail': json.dumps(event_data),
+            'EventBusName': event_bus_name
+        }
+    except Exception as e:
+        logger.error(f"Error forming event: {str(e)}")
+        raise
 
 
 def send_event(current_event, detail_type, market_name=None):
-    event_entry = form_event(detail_type, current_event, market_name)
-    response = events.put_events(Entries=[event_entry])
-    logger.debug(f'Event sent to EventBridge: {response}')
+    """
+    Send an event to EventBridge.
+    
+    Args:
+        current_event: Event data to send
+        detail_type: Type of event
+        market_name: Optional market name
+    """
+    try:
+        event_entry = form_event(detail_type, current_event, market_name)
+        events.put_events(Entries=[event_entry])
+    except Exception as e:
+        logger.error(f"Error sending event: {str(e)}")
+        raise
 
-def events_error(errorType: str, error_msg: str) -> dict:
-    return {'__typename': errorType, 'message': error_msg}
+
+def events_error(error_type: str, error_msg: str) -> dict:
+    """
+    Create an error response.
+    
+    Args:
+        error_type: Type of error
+        error_msg: Error message
+        
+    Returns:
+        Formatted error response
+    """
+    return {'__typename': error_type, 'message': error_msg}
 
 
 def event_response(data: dict) -> dict:
+    """
+    Create a success response for a single event.
+    
+    Args:
+        data: Event data
+        
+    Returns:
+        Formatted event response
+    """
     return {**{'__typename': 'Event'}, **data}
-
-
-def event_list_response(data: dict) -> dict:
-    return {**{'__typename': 'EventList'}, **data}
 
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.APPSYNC_RESOLVER, log_event=True)
 @tracer.capture_lambda_handler
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
-    logger.info(event)
-    return app.resolve(event, context)
+    """
+    Main Lambda handler function.
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        AppSync resolver response
+    """
+    try:
+        return app.resolve(event, context)
+    except Exception as e:
+        logger.error(f"Error in lambda handler: {str(e)}")
+        return {"errors": [{"message": "Internal server error"}]}

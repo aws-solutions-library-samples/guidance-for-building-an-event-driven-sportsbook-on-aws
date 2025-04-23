@@ -50,7 +50,9 @@ export const useSystemEvents = (config = {}) => {
             let cachedData = queryClient.getQueryData([CACHE_PATH])
             if (cachedData == undefined){
                 console.log('creating initial blank data')
-                queryClient.setQueryData([CACHE_PATH], [{id: idCount, source: 'waiting...', 'detailType': '...', detail: '...'}])
+                // Initialize with an empty array and immediately set it in the cache
+                cachedData = [{id: idCount, source: 'waiting...', 'detailType': '...', detail: '...'}];
+                queryClient.setQueryData([CACHE_PATH], cachedData);
             }
             return cachedData;
         },

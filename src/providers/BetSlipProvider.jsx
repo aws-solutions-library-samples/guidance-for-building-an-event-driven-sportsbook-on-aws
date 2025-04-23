@@ -67,7 +67,8 @@ export function BetSlipProvider(props) {
     setPendingBets((e) => e.concat(newPendingBet));
   };
 
-  const isValid = pendingBets.every((i) => i.selectedOdds === i.currentOdds);
+  // Compare decimal odds values directly
+  const isValid = pendingBets.every((i) => parseFloat(i.selectedOdds) === parseFloat(i.currentOdds));
 
   const acceptCurrentOdds = () => {
     setPendingBets((e) =>

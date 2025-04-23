@@ -13,7 +13,19 @@ export const useBets = (config = {}) => {
         const bets = res.data.getBets;
         if (bets["__typename"].includes("Error"))
           throw new Error(bets["message"]);
-        return bets.items;
+        
+        // Ensure all odds are properly formatted as strings
+        const formattedBets = bets.items.map(bet => {
+          // Parse the odds to ensure it's a proper number
+          const decimalOdds = parseFloat(bet.odds);
+          
+          return {
+            ...bet,
+            odds: decimalOdds.toString() // Convert back to string for consistency
+          };
+        });
+        
+        return formattedBets;
       }),
     {
       refetchInterval: 0,
@@ -29,15 +41,26 @@ export const useBets = (config = {}) => {
 export const useCreateBets = (config = {}) => {
   const queryClient = useQueryClient();
   return useMutation(
-    ({ data }) =>
-      API.graphql({
+    ({ data }) => {
+      // Use the decimal odds for creating bets
+      // The backend will continue to use decimal odds for all calculations
+      const betsWithDecimalOdds = {
+        ...data,
+        bets: data.bets.map(bet => ({
+          ...bet,
+          // Keep the odds as decimal (they're already in decimal format)
+        }))
+      };
+      
+      return API.graphql({
         query: mutations.createBets,
-        variables: { input: data },
+        variables: { input: betsWithDecimalOdds },
       }).then((res) => {
         const bets = res.data.createBets;
         if (bets["__typename"].includes("Error"))
           throw new Error(bets["__typename"]);
-      }),
+      });
+    },
     {
       onSuccess: () => {
         return queryClient.invalidateQueries([CACHE_PATH]);

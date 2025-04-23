@@ -178,7 +178,21 @@ export const useMarket = (user) => {
       () =>
         API.graphql({ query: queries.getEvents }).then((res) => {
           const result = res?.data?.getEvents?.items ?? [];
-          return result.map(deserializer);
+          // Make sure we're working with decimal odds
+          const eventsWithDecimalOdds = result.map(event => {
+            // Ensure all odds are parsed as numbers for calculations
+            const homeOdds = parseFloat(event.homeOdds);
+            const awayOdds = parseFloat(event.awayOdds);
+            const drawOdds = parseFloat(event.drawOdds);
+            
+            return {
+              ...event,
+              homeOdds: homeOdds.toString(),
+              awayOdds: awayOdds.toString(),
+              drawOdds: drawOdds.toString()
+            };
+          });
+          return eventsWithDecimalOdds.map(deserializer);
         }),
       {
         refetchInterval: 0,

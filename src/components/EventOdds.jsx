@@ -1,12 +1,13 @@
 import { Typography, Card, Button, Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { useEvents, useMarket } from "../hooks/useEvents";
 import { useBetSlip } from "../providers/BetSlipContext";
 import Zoom from "@mui/material/Zoom";
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from "react-slick";
+import { decimalToFraction } from "../utils/oddsConverter";
 
 const dateOptions = {
   year: "numeric",
@@ -16,12 +17,40 @@ const dateOptions = {
   minute: "numeric",
 };
 
-const renderOdds = (params) => {
+// Create a forwardRef component for BetSlipButton to work with Zoom
+const BetSlipButton = forwardRef(({ event, eventType, eventValue, label = "" }, ref) => {
+  const { addToSlip } = useBetSlip();
+
+  //Find market status that corresponds to eventType and put it into const
+  const marketStatus = event?.marketstatus?.find((ms) => ms.name === eventType);
+  
+  // Convert decimal odds to fraction for display
+  const displayOdds = decimalToFraction(eventValue);
+  
+  return (
+    <Box ref={ref}>
+      <Button
+        size="small"
+        onClick={() => addToSlip(event, eventType)}
+        disabled={marketStatus?.status === 'Suspended'}
+        className="soccer-odds-button"
+      >
+        {displayOdds}
+      </Button>
+      <Typography sx={{ fontSize: 10, textAlign: "center" }}>{label}</Typography>
+    </Box>
+  );
+});
+
+// Create a separate component for the odds cell renderer
+const OddsCell = (params) => {
   const { addToSlip } = useBetSlip();
   const eventType = params.field;
   const marketStatus = params.row.marketstatus?.find((ms) => ms.name === eventType);
-  //disabled: (row.marketstatus?.find((ms)=>ms.name === "homeOdds").status !== 'Active'),
 
+  // Convert decimal odds to fraction for display
+  const displayOdds = decimalToFraction(params.value);
+  
   return (
     <Button
       variant="outlined"
@@ -30,49 +59,77 @@ const renderOdds = (params) => {
       onClick={() => addToSlip(params.row, params.field)}
       disabled={marketStatus?.status === 'Suspended'}
     >
-      {params.value}
+      {displayOdds}
     </Button>
   );
 };
-
-
-const renderButton = (event, eventType, eventValue, label = "") => {
-  const { addToSlip } = useBetSlip();
-
-  //Find market status that corresponds to eventType and put it into const
-  const marketStatus = event?.marketstatus?.find((ms) => ms.name === eventType);
-
-  return (
-    <Box>
-      <Button
-        size="small"
-        onClick={() => addToSlip(event, eventType)}
-        disabled={marketStatus?.status === 'Suspended'}
-        className="soccer-odds-button"
-      >
-        {eventValue}
-      </Button>
-      <Typography sx={{ fontSize: 10, textAlign: "center" }}>{label}</Typography>
-    </Box>
-  );
-}
-
 
 export const EventOdds = () => {
   const { data: events, isLoading: loadingEvents } = useEvents();
   const suspendedMarkets = useMarket();
   const [showSlider, setShowSlider] = useState(true);
 
+  // Array of flag URLs
+  const flagUrls = [
+    "src/assets/teams/cjfc.png",
+    "src/assets/teams/ilfc.png",
+    "src/assets/teams/dlfc.png",
+    "src/assets/teams/sefc.png",
+    "src/assets/teams/ggfc.png",
+    "src/assets/teams/rtfc.png",
+    "src/assets/teams/ggufc.png",
+    "src/assets/teams/sffc.png",
+    "src/assets/teams/qpfc.png",
+    "src/assets/teams/ttfc.png",
+    "src/assets/teams/srfc.png",
+    "src/assets/teams/cufc.png",
+    "src/assets/teams/cjfc.png",
+    "src/assets/teams/ilfc.png",
+    "src/assets/teams/edfc.png",
+    "src/assets/teams/sefc.png",
+    "src/assets/teams/ggufc.png",
+    "src/assets/teams/rtufc.png",
+  ];
 
-  if (events !== undefined && suspendedMarkets.find !== undefined) {
-    events.map((event) => {
-      const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
-      event.marketstatus = internalEvent?.marketstatus;
-    })
-  }
+  // Map to store team name to flag URL mapping
+  const teamFlagMap = {};
+  
+  // Function to get a consistent flag URL for a team
+  const getTeamFlag = (teamName) => {
+    // If team already has an assigned flag, return it
+    if (teamFlagMap[teamName]) {
+      return teamFlagMap[teamName];
+    }
+    
+    // Find an unused flag
+    const usedFlags = Object.values(teamFlagMap);
+    const availableFlags = flagUrls.filter(flag => !usedFlags.includes(flag));
+    
+    // If all flags are used, use the index in the original array based on team name hash
+    if (availableFlags.length === 0) {
+      const hash = teamName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const index = hash % flagUrls.length;
+      teamFlagMap[teamName] = flagUrls[index];
+    } else {
+      // Assign the first available flag
+      teamFlagMap[teamName] = availableFlags[0];
+    }
+    
+    return teamFlagMap[teamName];
+  };
 
+  // Update events with market status
+  useEffect(() => {
+    if (events && Array.isArray(events) && suspendedMarkets && Array.isArray(suspendedMarkets)) {
+      events.forEach((event) => {
+        const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
+        event.marketstatus = internalEvent?.marketstatus;
+      });
+    }
+  }, [events, suspendedMarkets]);
 
   if (loadingEvents) return <Typography>Loading...</Typography>;
+
   const settings = {
     className: "center",
     infinite: true,
@@ -110,7 +167,7 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
-      renderCell: renderOdds,
+      renderCell: (params) => <OddsCell {...params} />,
     },
     {
       field: "awayOdds",
@@ -118,7 +175,7 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
-      renderCell: renderOdds,
+      renderCell: (params) => <OddsCell {...params} />,
     },
     {
       field: "drawOdds",
@@ -126,37 +183,12 @@ export const EventOdds = () => {
       sortable: false,
       align: "center",
       headerAlign: "center",
-      renderCell: renderOdds,
+      renderCell: (params) => <OddsCell {...params} />,
     },
     {
       field: "updatedAt",
     },
   ];
-
-  // Array of flag URLs
-const flagUrls = [
-  "https://cdn.sportmonks.com/images/soccer/teams/15/2447.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/9/6953.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/18/2706.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/26/2650.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/26/2394.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/29/1789.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/7/1703.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/28/1020.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/11/939.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/6/390.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/22/86.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/30/62.png",
-  "https://cdn.sportmonks.com/images/soccer/teams/21/53.png"
-
-];
-
-// Function to get a random flag URL
-const getRandomFlag = () => {
-  const randomIndex = Math.floor(Math.random() * flagUrls.length);
-  return flagUrls[randomIndex];
-  
-};
 
   return (
     <Card style={{ backgroundColor: "transparent", maxWidth: "1600px", height: showSlider ? "290px" : "750px" }}>
@@ -173,47 +205,45 @@ const getRandomFlag = () => {
       </Box>
       {showSlider ? (
         <Slider {...settings}>
-          {events.slice(0, 6).map((event) => (
+          {events && events.slice(0, 6).map((event) => (
             <div key={event.eventId} style={{ padding: "10px" }}>
               <Card className="soccer-today-card" style={{ margin: "10px" }}>
-
                 <Box sx={{ padding: 2 }}>
-                  <div class="match__head">
-                    <div class="match__head__left">
-                      <span class="icons">
-                        <i class="icon-football"></i>
+                  <div className="match__head">
+                    <div className="match__head__left">
+                      <span className="icons">
+                        <i className="icon-football"></i>
                       </span>
                       <span>
                         World Cup 2024
                       </span>
                     </div>
-                    <span class="today">
+                    <span className="today">
                       Today / 12:00
                     </span>
                   </div>
 
-                  <div class="match__vs">
-                    <div class="match__vs__left">
+                  <div className="match__vs">
+                    <div className="match__vs__left">
                       <span>
                       {event.home}
                       </span>
-                      <span class="flag">
-                      <img src={getRandomFlag()} alt={event.home} />
+                      <span className="flag">
+                      <img src={getTeamFlag(event.home)} alt={event.home} />
                       </span>
                     </div>
-                    <span class="vs">
+                    <span className="vs">
                       Vs
                     </span>
-                    <div class="match__vs__left">
-                      <span class="flag">
-                      <img src={getRandomFlag()} alt={event.home} />
+                    <div className="match__vs__left">
+                      <span className="flag">
+                      <img src={getTeamFlag(event.away)} alt={event.away} />
                       </span>
                       <span>
                       {event.away}
                       </span>
                     </div>
                   </div>
-
 
                   <Typography variant="caption">
                     Starts at{" "}
@@ -227,13 +257,13 @@ const getRandomFlag = () => {
                     }}
                   >
                     <Zoom in={true} timeout={500}>
-                      {renderButton(event, "homeOdds", event.homeOdds, "Home")}
+                      <BetSlipButton event={event} eventType="homeOdds" eventValue={event.homeOdds} label="Home" />
                     </Zoom>
                     <Zoom in={true} timeout={500}>
-                      {renderButton(event, "drawOdds", event.drawOdds, "Draw")}
+                      <BetSlipButton event={event} eventType="drawOdds" eventValue={event.drawOdds} label="Draw" />
                     </Zoom>
                     <Zoom in={true} timeout={500}>
-                      {renderButton(event, "awayOdds", event.awayOdds, "Away")}
+                      <BetSlipButton event={event} eventType="awayOdds" eventValue={event.awayOdds} label="Away" />
                     </Zoom>
                   </Box>
                 </Box>
@@ -243,7 +273,7 @@ const getRandomFlag = () => {
         </Slider>
       ) : (
         <DataGrid
-          rows={events}
+          rows={events || []}
           columns={columns}
           initialState={{
             pagination: {
