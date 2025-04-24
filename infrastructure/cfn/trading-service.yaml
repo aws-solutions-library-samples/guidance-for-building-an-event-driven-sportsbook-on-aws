@@ -22,17 +22,6 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
-
 Resources:
 
   SQSQueue:
@@ -87,7 +76,7 @@ Resources:
       Description: Lambda for receiving events from the trading queue
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
@@ -99,7 +88,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       DeadLetterQueue:
         Type: SQS  # Can be SQS or SNS
         TargetArn: !GetAtt DLQ.Arn

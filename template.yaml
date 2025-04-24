@@ -10,10 +10,7 @@ Globals:
     ReservedConcurrentExecutions: 50
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
-    KmsKeyArn: !If
-      - EnableEnvEncryption
-      - !GetAtt LambdaEnvironmentKMSKey.Arn
-      - !Ref AWS::NoValue
+    # KmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
 Parameters:
   EventBusName:
@@ -59,14 +56,6 @@ Parameters:
     Description: ARN of the ACM certificate for the CloudFront distribution
     Default: '' # Default to empty to make it optional
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: 'true'
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Description: Enable enhanced encryption for Lambda environment variables
-
 Conditions:
   WithAccessLogs: !Not
     - !Equals
@@ -80,9 +69,6 @@ Conditions:
     - !Equals
       - !Ref DomainName
       - ''
-  EnableEnvEncryption: !Equals
-    - !Ref EnableEnvVarEncryption
-    - 'true'
 
 Resources:
   EventBus:
@@ -116,11 +102,11 @@ Resources:
               StringEquals:
                 kms:CallerAccount: !Ref AWS::AccountId
 
-  LambdaEnvironmentKMSKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub alias/${AWS::StackName}-lambda-env-key
-      TargetKeyId: !Ref LambdaEnvironmentKMSKey
+  # LambdaEnvironmentKMSKeyAlias:
+  #   Type: AWS::KMS::Alias
+  #   Properties:
+  #     AliasName: !Sub alias/${AWS::StackName}-lambda-env-key
+  #     TargetKeyId: !Ref LambdaEnvironmentKMSKey
 
   # amazonq-ignore-next-line
   WebUIBucket:
@@ -169,59 +155,59 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
 
-  WAFWebACL:
-    Type: AWS::WAFv2::WebACL
-    Properties:
-      Name: !Sub ${AWS::StackName}-WebACL
-      Scope: CLOUDFRONT # Specify CLOUDFRONT for CloudFront distributions
-      DefaultAction:
-        Allow: {}
-      VisibilityConfig:
-        SampledRequestsEnabled: true
-        CloudWatchMetricsEnabled: true
-        MetricName: !Sub ${AWS::StackName}-WebACL
-      Rules:
-        # AWS Managed Rules for common threats
-        - Name: AWSManagedRulesCommonRuleSet
-          Priority: 0
-          OverrideAction:
-            None: {}
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: AWSManagedRulesCommonRuleSet
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: AWS
-              Name: AWSManagedRulesCommonRuleSet
+  # WAFWebACL:
+  #   Type: AWS::WAFv2::WebACL
+  #   Properties:
+  #     Name: !Sub ${AWS::StackName}-WebACL
+  #     Scope: CLOUDFRONT # Specify CLOUDFRONT for CloudFront distributions
+  #     DefaultAction:
+  #       Allow: {}
+  #     VisibilityConfig:
+  #       SampledRequestsEnabled: true
+  #       CloudWatchMetricsEnabled: true
+  #       MetricName: !Sub ${AWS::StackName}-WebACL
+  #     Rules:
+  #       # AWS Managed Rules for common threats
+  #       - Name: AWSManagedRulesCommonRuleSet
+  #         Priority: 0
+  #         OverrideAction:
+  #           None: {}
+  #         VisibilityConfig:
+  #           SampledRequestsEnabled: true
+  #           CloudWatchMetricsEnabled: true
+  #           MetricName: AWSManagedRulesCommonRuleSet
+  #         Statement:
+  #           ManagedRuleGroupStatement:
+  #             VendorName: AWS
+  #             Name: AWSManagedRulesCommonRuleSet
 
-        # AWS Managed Rules for known bad inputs
-        - Name: AWSManagedRulesKnownBadInputsRuleSet
-          Priority: 1
-          OverrideAction:
-            None: {}
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: AWSManagedRulesKnownBadInputsRuleSet
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: AWS
-              Name: AWSManagedRulesKnownBadInputsRuleSet
+  #       # AWS Managed Rules for known bad inputs
+  #       - Name: AWSManagedRulesKnownBadInputsRuleSet
+  #         Priority: 1
+  #         OverrideAction:
+  #           None: {}
+  #         VisibilityConfig:
+  #           SampledRequestsEnabled: true
+  #           CloudWatchMetricsEnabled: true
+  #           MetricName: AWSManagedRulesKnownBadInputsRuleSet
+  #         Statement:
+  #           ManagedRuleGroupStatement:
+  #             VendorName: AWS
+  #             Name: AWSManagedRulesKnownBadInputsRuleSet
 
-        # Rate limiting rule to prevent DDoS
-        - Name: RateLimitRule
-          Priority: 2
-          Action:
-            Block: {}
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: RateLimitRule
-          Statement:
-            RateBasedStatement:
-              Limit: 2000 # Requests per 5-minute period
-              AggregateKeyType: IP
+  #       # Rate limiting rule to prevent DDoS
+  #       - Name: RateLimitRule
+  #         Priority: 2
+  #         Action:
+  #           Block: {}
+  #         VisibilityConfig:
+  #           SampledRequestsEnabled: true
+  #           CloudWatchMetricsEnabled: true
+  #           MetricName: RateLimitRule
+  #         Statement:
+  #           RateBasedStatement:
+  #             Limit: 2000 # Requests per 5-minute period
+  #             AggregateKeyType: IP
 
   CloudFrontOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
@@ -237,7 +223,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
-        WebACLId: !GetAtt WAFWebACL.Arn
+        # WebACLId: !GetAtt WAFWebACL.Arn
         Origins:
           - DomainName: !GetAtt WebUIBucket.RegionalDomainName
             Id: S3Origin
@@ -320,6 +306,7 @@ Resources:
           RequireUppercase: true
 
   PostConfirmationFunction:
+    DependsOn: LambdaEnvironmentKMSKey
     Type: AWS::Serverless::Function
     Properties:
       Handler: postConfirmation.lambda_handler
@@ -327,10 +314,7 @@ Resources:
       Description: Event receiver for auth events
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If
-        - UseKmsKey
-        - !Ref LambdaEnvKmsKeyArn
-        - !Ref AWS::NoValue
+      KmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
       Events:
         CognitoPostConfirmation:
           Type: Cognito
@@ -345,10 +329,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If
-                - UseKmsKey
-                - !Ref LambdaEnvKmsKeyArn
-                - !Ref AWS::NoValue
+              Resource: !GetAtt LambdaEnvironmentKMSKey.Arn
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
@@ -421,7 +402,7 @@ Resources:
       AdditionalAuthenticationProviders:
         - AuthenticationType: AWS_IAM
       LogConfig:
-        CloudWatchLogsRoleArn: !Ref AppSyncLoggingRole
+        CloudWatchLogsRoleArn: !GetAtt AppSyncLoggingRole.Arn
         FieldLogLevel: ALL
       UserPoolConfig:
         UserPoolId: !Ref UserPool
@@ -444,14 +425,7 @@ Resources:
         AppSyncApiId: !GetAtt AppSyncApi.ApiId
         AppSyncEndpointArn: !GetAtt AppSyncApi.GraphQLEndpointArn
         EventBus: !Ref EventBus
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   PamServiceStack:
     Type: AWS::Serverless::Application
@@ -464,14 +438,7 @@ Resources:
         # amazonq-ignore-next-line
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
         UserPool: !Ref UserPool
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   ThirdPartyServiceStack:
     Type: AWS::Serverless::Application
@@ -483,14 +450,7 @@ Resources:
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
         LiveMarketDataStore: !GetAtt LiveMarketServiceStack.Outputs.LiveMarketDataStoreName
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   TradingServiceStack:
     Type: AWS::Serverless::Application
@@ -498,14 +458,7 @@ Resources:
       Location: infrastructure/cfn/trading-service.yaml
       Parameters:
         EventBus: !Ref EventBus
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   LiveMarketServiceStack:
     Type: AWS::Serverless::Application
@@ -516,14 +469,7 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   BettingServiceStack:
     Type: AWS::Serverless::Application
@@ -534,14 +480,7 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   SystemEventServiceStack:
     Type: AWS::Serverless::Application
@@ -552,14 +491,7 @@ Resources:
         AppSyncApiUrl: !GetAtt AppSyncApi.GraphQLUrl
         EventBus: !Ref EventBus
         AppSyncLambdaLayer: !Ref AppSyncLambdaLayer
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
   EventsServiceStack:
     Type: AWS::Serverless::Application
@@ -568,14 +500,7 @@ Resources:
       Location: infrastructure/cfn/sportingevents-service.yaml
       Parameters:
         EventBus: !Ref EventBus
-        LambdaEnvKmsKeyArn: !If
-          - HasKmsKeyArn
-          - !Ref LambdaEnvKmsKeyArn
-          - !If
-            - EnableEnvEncryption
-            - !GetAtt LambdaEnvironmentKMSKey.Arn
-            - ''
-        EnableEnvVarEncryption: !Ref EnableEnvVarEncryption
+        LambdaEnvKmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
 
 Outputs:
   Region:

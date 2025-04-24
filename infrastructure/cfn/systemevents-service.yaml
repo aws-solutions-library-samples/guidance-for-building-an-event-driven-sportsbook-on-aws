@@ -10,7 +10,7 @@ Globals:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: livemarket
+        POWERTOOLS_SERVICE_NAME: systemevents
 
 Parameters:
 
@@ -31,26 +31,13 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  EnableEnvEncryption: !Equals [!Ref EnableEnvVarEncryption, "true"]
-  HasKmsKeyArn: !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]
-  UseKmsKey: !Or [!Condition EnableEnvEncryption, !Condition HasKmsKeyArn]
-
 Resources:
 
   SQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
-      SqsManagedSspEnabled: true
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
@@ -58,7 +45,7 @@ Resources:
   DLQ:
     Type: AWS::SQS::Queue
     Properties:
-      SqsManagedSspEnabled: true
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -104,7 +91,7 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Events:
@@ -132,7 +119,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -146,7 +133,7 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/systemevents/resolver/
       Timeout: 10
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Policies:
@@ -155,7 +142,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
 
   SystemEventAppSyncRole:
     Type: AWS::IAM::Role

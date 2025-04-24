@@ -33,17 +33,6 @@ Parameters:
     Type: String
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
-
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
   
 Resources:
   UserResolverFunction:
@@ -54,11 +43,7 @@ Resources:
       Description: Lambda for Appsync resolvers
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: 
-        Fn::If:
-          - UseKmsKey
-          - !Ref LambdaEnvKmsKeyArn
-          - !Ref AWS::NoValue
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - Statement:
             - Effect: Allow
@@ -73,7 +58,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           ACCOUNT_ID: !Ref AWS::AccountId

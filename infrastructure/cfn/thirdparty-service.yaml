@@ -33,17 +33,6 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
-
 Resources:
   DLQ:
     Type: AWS::SQS::Queue
@@ -56,7 +45,7 @@ Resources:
       Description: Lambda for fetching third party event data
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Events:
         CWSchedule:
           Type: Schedule
@@ -72,11 +61,11 @@ Resources:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
         - Statement:
-            - Effect: Allow
-              Action:
-                - kms:Decrypt
-                - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
@@ -89,14 +78,14 @@ Resources:
       Description: Lambda for pinginfo interaction
       Timeout: 60
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - Statement:
-              - Effect: Allow
-                Action:
-                  - kms:Decrypt
-                  - kms:DescribeKey
-                Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref LambdaEnvKmsKeyArn
 
   PingInfoAppSyncRole:
     Type: AWS::IAM::Role

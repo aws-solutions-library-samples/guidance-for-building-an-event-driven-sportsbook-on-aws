@@ -31,16 +31,6 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
 
 Resources:
 
@@ -90,50 +80,47 @@ Resources:
       Queues:
         - Ref: SQSQueue
 
-BettingDataStore:
-  Type: AWS::DynamoDB::Table
-  Properties:
-    PointInTimeRecoverySpecification:
-      PointInTimeRecoveryEnabled: true
-    SSESpecification:
-      SSEEnabled: true
-    AttributeDefinitions:
-      - AttributeName: userId
-        AttributeType: S
-      - AttributeName: betId
-        AttributeType: S
-      - AttributeName: eventId
-        AttributeType: S
-      - AttributeName: betStatus
-        AttributeType: S
-    KeySchema:
-      - AttributeName: userId
-        KeyType: HASH
-      - AttributeName: betId
-        KeyType: RANGE
-    BillingMode: PAY_PER_REQUEST
-    GlobalSecondaryIndexes:
-      -
-        IndexName: eventId-userId-index
-        KeySchema:
-          - AttributeName: eventId
-            KeyType: HASH
-          - AttributeName: userId
-            KeyType: RANGE
-        Projection:
-          ProjectionType: ALL
-      -
-        IndexName: eventId-betStatus-index
-        KeySchema:
-          - AttributeName: eventId
-            KeyType: HASH
-          - AttributeName: betStatus
-            KeyType: RANGE
-        Projection:
-          ProjectionType: ALL
-    TimeToLiveSpecification:
-      AttributeName: ExpirationTime
-      Enabled: true
+  BettingDataStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: betId
+          AttributeType: S
+        - AttributeName: eventId
+          AttributeType: S
+        - AttributeName: betStatus
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: betId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        -
+          IndexName: eventId-userId-index
+          KeySchema:
+            - AttributeName: eventId
+              KeyType: HASH
+            - AttributeName: userId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        -
+          IndexName: eventId-betStatus-index
+          KeySchema:
+            - AttributeName: eventId
+              KeyType: HASH
+            - AttributeName: betStatus
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       TimeToLiveSpecification:
         AttributeName: ExpirationTime
         Enabled: true
@@ -146,7 +133,7 @@ BettingDataStore:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       DeadLetterQueue:
@@ -182,7 +169,7 @@ BettingDataStore:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue] 
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
@@ -201,7 +188,7 @@ BettingDataStore:
       Description: Lambda for Step function for settlement resolvers
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       DeadLetterQueue:
@@ -226,7 +213,7 @@ BettingDataStore:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
@@ -235,7 +222,7 @@ BettingDataStore:
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
           EVENT_BUS: !Ref EventBus
-  
+          
   StatesExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -299,7 +286,7 @@ BettingDataStore:
       Description: Lambda for AppSync resolvers
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Policies:
@@ -321,7 +308,7 @@ BettingDataStore:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
@@ -330,7 +317,6 @@ BettingDataStore:
           APPSYNC_URL: !Ref AppSyncApiUrl
           REGION: !Ref AWS::Region
           EVENT_BUS: !Ref EventBus
-
 
   BettingAppSyncRole:
     Type: AWS::IAM::Role

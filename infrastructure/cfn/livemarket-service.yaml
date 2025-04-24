@@ -31,17 +31,6 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
-
 Resources:
 
   LiveMarketDataStore:
@@ -99,7 +88,7 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/livemarket/seed/
       Timeout: 30
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref LiveMarketDataStore
@@ -108,7 +97,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref LiveMarketDataStore
@@ -123,7 +112,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
-      SqsManagedSspEnabled: true
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
@@ -131,7 +120,7 @@ Resources:
   DLQ:
     Type: AWS::SQS::Queue
     Properties:
-      SqsManagedSspEnabled: true
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -172,7 +161,7 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Events:
@@ -204,7 +193,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -219,7 +208,7 @@ Resources:
       Description: Lambda for AppSync resolvers
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -232,7 +221,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref LiveMarketDataStore

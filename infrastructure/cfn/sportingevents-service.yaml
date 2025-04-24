@@ -22,30 +22,19 @@ Parameters:
     Default: ""
     Description: ARN of the KMS key for Lambda environment variable encryption
 
-  EnableEnvVarEncryption:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: Enable enhanced encryption for Lambda environment variables
-
-Conditions:
-  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
 
 Resources:
   LambdaFunction:
     Type: AWS::Serverless::Function
     Description: 'Lambda function that receives data from event producers and processes them'
     Properties:
-      FunctionName:
       Handler: app.lambda_handler
       CodeUri: ../lambda/sportingevents/receiver/
       Description: Lambda for receiving sporting events
       Runtime: python3.12
       Timeout: 10
       MemorySize: 256
-      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -54,10 +43,7 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:DescribeKey
-              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
-      DeadLetterQueue:
-        Type: SQS  # Can be SQS or SNS
-        TargetArn: !GetAtt DLQ.Arn
+              Resource: !Ref LambdaEnvKmsKeyArn
       Events:
         ApiEvent:
           Type: Api
