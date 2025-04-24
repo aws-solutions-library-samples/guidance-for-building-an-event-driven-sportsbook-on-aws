@@ -4,6 +4,7 @@ import { useBets } from "../hooks/useBets";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { Pagination } from '@mui/material';
 import { decimalToFraction } from "../utils/oddsConverter";
+import { useGlobal } from "../providers/GlobalContext";
 
 const dateOptions = {
   year: "numeric",
@@ -183,6 +184,7 @@ const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
 
 export const BetHistory = () => {
   const { data: bets, isLoading: loadingBets } = useBets();
+  const { oddsFormat } = useGlobal();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
@@ -210,10 +212,10 @@ export const BetHistory = () => {
           return '';
         }
         
-        // Convert to fraction for display
-        const fractionOdds = decimalToFraction(value);
+        // Convert to fraction for display if oddsFormat is fractional
         // console.log(`BetHistory odds: ${value} -> ${fractionOdds}`);
-        return fractionOdds;
+        const decimalOdds = parseFloat(value).toFixed(2);
+        return oddsFormat === "decimal" ? decimalOdds : decimalToFraction(decimalOdds);
       },
     },
     {

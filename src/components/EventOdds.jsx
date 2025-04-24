@@ -3,6 +3,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { useEvents, useMarket } from "../hooks/useEvents";
 import { useBetSlip } from "../providers/BetSlipContext";
+import { useGlobal } from "../providers/GlobalContext";
 import Zoom from "@mui/material/Zoom";
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -19,15 +20,19 @@ const dateOptions = {
   minute: "numeric",
 };
 
+
+
 // Create a forwardRef component for BetSlipButton to work with Zoom
 const BetSlipButton = forwardRef(({ event, eventType, eventValue, label = "" }, ref) => {
   const { addToSlip } = useBetSlip();
+  const { oddsFormat } = useGlobal();
 
   //Find market status that corresponds to eventType and put it into const
   const marketStatus = event?.marketstatus?.find((ms) => ms.name === eventType);
   
   // Convert decimal odds to fraction for display
-  const displayOdds = decimalToFraction(eventValue);
+  const decimalNum = typeof eventValue === 'string' ? parseFloat(eventValue) : eventValue;
+  const displayOdds = oddsFormat == "decimal" ? decimalNum.toFixed(2) : decimalToFraction(decimalNum);
   
   return (
     <Box ref={ref}>
@@ -47,11 +52,13 @@ const BetSlipButton = forwardRef(({ event, eventType, eventValue, label = "" }, 
 // Create a separate component for the odds cell renderer
 const OddsCell = (params) => {
   const { addToSlip } = useBetSlip();
+  const { oddsFormat } = useGlobal();
   const eventType = params.field;
   const marketStatus = params.row.marketstatus?.find((ms) => ms.name === eventType);
 
   // Convert decimal odds to fraction for display
-  const displayOdds = decimalToFraction(params.value);
+  const decimalNum = typeof params.value === 'string' ? parseFloat(params.value) : params.value;
+  const displayOdds = oddsFormat == "decimal" ? decimalNum.toFixed(2) : decimalToFraction(decimalNum);
   
   return (
     <Button
