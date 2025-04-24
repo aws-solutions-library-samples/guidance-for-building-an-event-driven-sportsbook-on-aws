@@ -4,6 +4,7 @@ import { useBets } from "../hooks/useBets";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { Pagination } from '@mui/material';
 import { decimalToFraction } from "../utils/oddsConverter";
+import { useGlobal } from "../providers/GlobalContext";
 
 const dateOptions = {
   year: "numeric",
@@ -155,7 +156,7 @@ const getRowClassName = (params) => {
   }
 };
 
-const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
+const calculateOutcome = (amount, odds, outcome, eventOutcome, currencySymbol) => {
   // Make sure we're working with a valid number for odds
   if (odds === undefined || odds === null || odds === '') {
     return 'N/A';
@@ -175,14 +176,15 @@ const calculateOutcome = (amount, odds, outcome, eventOutcome) => {
   const roundedProfitAmount = Math.round(profitAmount * 100) / 100;
   
   if (outcome !== eventOutcome) {
-    return "-" + `$${amount}`;
+    return "-" + `${currencySymbol}${amount}`;
   } else {
-    return `$${roundedProfitAmount}`;
+    return `${currencySymbol}${roundedProfitAmount}`;
   }
 };
 
 export const BetHistory = () => {
   const { data: bets, isLoading: loadingBets } = useBets();
+  const { oddsFormat, currencySymbol } = useGlobal();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
@@ -210,10 +212,10 @@ export const BetHistory = () => {
           return '';
         }
         
-        // Convert to fraction for display
-        const fractionOdds = decimalToFraction(value);
+        // Convert to fraction for display if oddsFormat is fractional
         // console.log(`BetHistory odds: ${value} -> ${fractionOdds}`);
-        return fractionOdds;
+        const decimalOdds = parseFloat(value).toFixed(2);
+        return oddsFormat === "decimal" ? decimalOdds : decimalToFraction(decimalOdds);
       },
     },
     {
@@ -233,7 +235,8 @@ export const BetHistory = () => {
           params.row.amount,
           params.row.odds,
           params.row.outcome,
-          params.row.event.outcome
+          params.row.event.outcome,
+          currencySymbol
         ),
     },
     {

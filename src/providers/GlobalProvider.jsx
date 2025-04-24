@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { globalContext } from "./GlobalContext";
+import { use } from "react";
 
 export function GlobalProvider(props) {
     const [bShowSnackbar, setShowSnackbar] = useState(false);
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const [snackbarMessage, setSnackbarMessage] = useState('undefined error');
     const [currencySymbol, setCurrency] = useState('£');
+    const [oddsFormat, setOddsFormat] = useState('decimal');
 
     const closeSnackbar = () => {
         setSnackbarMessage();
@@ -46,6 +48,19 @@ export function GlobalProvider(props) {
         }
     }
 
+    const toggleOddsFormat = () => {
+        switch(oddsFormat){
+            case 'decimal':
+                setOddsFormat('fractional');
+                return;
+            case 'fractional':
+                setOddsFormat('decimal');
+                return;
+            default:
+                setOddsFormat('decimal');
+        }
+    }
+
     return (
         <globalContext.Provider
             value={{
@@ -58,6 +73,8 @@ export function GlobalProvider(props) {
                 snackbarSeverity,
                 currencySymbol,
                 toggleCurrency,
+                oddsFormat,
+                toggleOddsFormat,
             }}
             {...props}
         />

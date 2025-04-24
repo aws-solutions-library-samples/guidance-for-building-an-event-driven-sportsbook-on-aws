@@ -14,7 +14,7 @@ const conditionMap = {
 
 export const BetSlipItem = ({ bet, updateBetAmount }) => {
   const { removeFromSlip, updateInSlip } = useBetSlip();
-  const { currencySymbol } = useGlobal();
+  const { currencySymbol, oddsFormat } = useGlobal();
   const { data: event, isLoading } = useEvent(bet.eventId);
   const [betAmount, setBetAmount] = useState(bet.amount);
 
@@ -23,11 +23,19 @@ export const BetSlipItem = ({ bet, updateBetAmount }) => {
   
   // console.log(`BetSlipItem odds: ${bet.currentOdds} -> ${decimalToFraction(bet.currentOdds)}`);
 
+  const displayOdds = (odds) => {
+    if (oddsFormat === "decimal") {
+      return parseFloat(bet.currentOdds).toFixed(2);
+    } else {
+      return decimalToFraction(odds);
+    }
+  };
+
   const calculatePossibleWinning = () => {
     // Use the decimal odds directly for calculation
     const decimalOdds = parseFloat(bet.currentOdds);
     // For decimal odds, the formula is stake * (odds - 1)
-    return (betAmount * (decimalOdds - 1)).toFixed(2);
+    return (betAmount * (decimalOdds)).toFixed(2);
   };
 
   const handleBetAmountChange = (event, bet) => {
@@ -49,11 +57,11 @@ export const BetSlipItem = ({ bet, updateBetAmount }) => {
           </Typography>
           {oddsChanged && (
             <Typography variant={"subtitle2"}>
-              Starting Odds: {decimalToFraction(bet.selectedOdds)}
+              Starting Odds: {displayOdds(bet.selectedOdds)}
             </Typography>
           )}
           <Typography variant={"subtitle2"}>
-            Current Odds: {decimalToFraction(bet.currentOdds)} - {conditionMap[bet.outcome]}
+            Current Odds: {displayOdds(bet.currentOdds)} - {conditionMap[bet.outcome]}
           </Typography>
           <Box display="flex" alignItems="center" gap={2}> {/* Add gap prop */}
             <Box>

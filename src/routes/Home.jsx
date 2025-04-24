@@ -2,7 +2,6 @@ import { Box } from "@mui/material";
 
 import EventOdds from "../components/EventOdds";
 import BetHistory from "../components/BetHistory";
-import EdgeMap from "../components/EdgeMap";
 import { useTheme } from "@mui/material/styles";
 
 export default function Home() {
@@ -10,12 +9,6 @@ export default function Home() {
   
   return (
     <Box>
-      {/* 
-        EdgeMap component - 
-        Renders an interactive map showing latency 
-        from different AWS edge locations
-        <EdgeMap /> 
-      */}
       <Box sx={{
         padding: "5px 0px 5px 0px",
       }}>

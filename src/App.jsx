@@ -1,6 +1,3 @@
-import diceImage from "./assets/dice.jpeg";
-import bgImage from "./assets/background.jpg";
-import headerImage from "./assets/header.jpg";
 import { Outlet } from "react-router-dom";
 import { Amplify } from "aws-amplify";
 import { useEffect, useState } from "react";

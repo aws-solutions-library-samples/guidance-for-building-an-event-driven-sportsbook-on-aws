@@ -22,6 +22,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import MenuIcon from '@mui/icons-material/Menu';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import PercentIcon from '@mui/icons-material/Percent';
 import { Switch, useMediaQuery } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
@@ -78,6 +79,7 @@ const CustomWalletIcon = styled(LocalAtmIcon)({
 function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMode }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const { currencySymbol, toggleCurrency } = useGlobal();
+  const { oddsFormat, toggleOddsFormat } = useGlobal();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -163,6 +165,12 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
               {currencySymbol == "$" && <AttachMoneyIcon />}
             </ListItemIcon>
             Switch currency
+          </MenuItem>
+          <MenuItem onClick={toggleOddsFormat}>
+            <ListItemIcon>
+              <PercentIcon />
+            </ListItemIcon>
+            Switch odds format ({oddsFormat})
           </MenuItem>
           <MenuItem onClick={handleCloseNavMenu}>
             <ListItemIcon>
@@ -336,6 +344,17 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
               sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
             >
               Switch currency
+            </Button>
+
+            <Button 
+              variant="outlined" 
+              onClick={toggleOddsFormat}
+              startIcon={
+                <PercentIcon />
+              }
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Switch odds format ({oddsFormat})
             </Button>
             
             <Button 

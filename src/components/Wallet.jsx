@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import WalletPending from "./WalletPending";
 
-import walletLogo from "../assets/wallet.jpeg";
 import {
   useWallet,
   useWithdrawFunds,
