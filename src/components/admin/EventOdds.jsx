@@ -43,9 +43,9 @@ const renderOdds = (params) => {
     try {
       const input = { eventId: params.row.eventId, market: params.field };
       const response = await API.graphql(graphqlOperation(triggerSuspendMarketMutation, { input }));
-      console.log(`Market '${params.field}' (${params.row.eventId}) suspended`);
+      // console.log(`Market '${params.field}' (${params.row.eventId}) suspended`);
     } catch (error) {
-      console.error(`Error suspending market '${params.field}' (${params.row.eventId}):`, error);
+      // console.error(`Error suspending market '${params.field}' (${params.row.eventId}):`, error);
     }
   };
 
@@ -53,9 +53,9 @@ const renderOdds = (params) => {
     try {
       const input = { eventId: params.row.eventId, market: params.field };
       const response = await API.graphql(graphqlOperation(triggerUnsuspendMarketMutation, { input }));
-      console.log(`Market '${params.field}' (${params.row.eventId}) unsuspended`);
+      // console.log(`Market '${params.field}' (${params.row.eventId}) unsuspended`);
     } catch (error) {
-      console.error(`Error unsuspending market '${params.field}' (${params.row.eventId}):`, error);
+      // console.error(`Error unsuspending market '${params.field}' (${params.row.eventId}):`, error);
     }
   };
 
@@ -123,9 +123,8 @@ export const EventOdds = () => {
   );
   
   const handleFinishEvent = async (eventId, outcome) => {
-    console.log('closing event', {'eventId': eventId, 'outcome': outcome})
+    // console.log('closing event', {'eventId': eventId, 'outcome': outcome})
     handleTriggerFinishEvent(eventId, outcome);
-    console.log("Event finished. Good luck settling!");
   };
     
   if (loadingEvents) return <Typography>Loading...</Typography>;

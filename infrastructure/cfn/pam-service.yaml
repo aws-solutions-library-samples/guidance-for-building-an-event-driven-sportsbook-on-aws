@@ -29,6 +29,22 @@ Parameters:
   UserPool:
     Type: String
   
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
+  EnableEnvVarEncryption:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable enhanced encryption for Lambda environment variables
+
+Conditions:
+  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
+  
 Resources:
   UserResolverFunction:
     Type: AWS::Serverless::Function
@@ -38,6 +54,11 @@ Resources:
       Description: Lambda for Appsync resolvers
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: 
+        Fn::If:
+          - UseKmsKey
+          - !Ref LambdaEnvKmsKeyArn
+          - !Ref AWS::NoValue
       Policies:
         - Statement:
             - Effect: Allow
@@ -47,6 +68,12 @@ Resources:
                 - !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPool}'
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           ACCOUNT_ID: !Ref AWS::AccountId

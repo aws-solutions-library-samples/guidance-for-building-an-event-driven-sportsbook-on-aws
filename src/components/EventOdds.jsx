@@ -278,6 +278,10 @@ export const EventOdds = () => {
     },
   ];
 
+  const handleSliderNext = React.useCallback(() => {
+    sliderRef.current?.slickNext();
+  }, []);
+
   return (
     <Card style={{ backgroundColor: "transparent", maxWidth: "1600px", minHeight: showSlider ? "420px" : "750px" }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
@@ -287,7 +291,7 @@ export const EventOdds = () => {
         <Button
           variant="outlined"
           size="small"
-          onClick={() => sliderRef.current?.slickNext()}
+          onClick={handleSliderNext}
           sx={{ display: { xs: 'none', md: 'flex' } }}
         >
           See More

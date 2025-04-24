@@ -25,18 +25,38 @@ Parameters:
 
   AppSyncLambdaLayer:
     Type: String
+
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
+  EnableEnvVarEncryption:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable enhanced encryption for Lambda environment variables
+
+Conditions:
+  UseKmsKey: !And [!Equals [!Ref EnableEnvVarEncryption, "true"], !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]]
+
 Resources:
 
   SQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
 
   DLQ:
     Type: AWS::SQS::Queue
+    Properties:
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -65,50 +85,58 @@ Resources:
           Condition:
             StringEqualsIfExists:
               aws:SourceAccount: !Ref AWS::AccountId
+            Bool:
+              aws:SecureTransport: "true"
       Queues:
         - Ref: SQSQueue
 
-  BettingDataStore:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: betId
-          AttributeType: S
-        - AttributeName: eventId
-          AttributeType: S
-        - AttributeName: betStatus
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: betId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      GlobalSecondaryIndexes:
-        -
-          IndexName: eventId-userId-index
-          KeySchema:
-            - AttributeName: eventId
-              KeyType: HASH
-            - AttributeName: userId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        -
-          IndexName: eventId-betStatus-index
-          KeySchema:
-            - AttributeName: eventId
-              KeyType: HASH
-            - AttributeName: betStatus
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+BettingDataStore:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    PointInTimeRecoverySpecification:
+      PointInTimeRecoveryEnabled: true
+    SSESpecification:
+      SSEEnabled: true
+    AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: betId
+        AttributeType: S
+      - AttributeName: eventId
+        AttributeType: S
+      - AttributeName: betStatus
+        AttributeType: S
+    KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      - AttributeName: betId
+        KeyType: RANGE
+    BillingMode: PAY_PER_REQUEST
+    GlobalSecondaryIndexes:
+      -
+        IndexName: eventId-userId-index
+        KeySchema:
+          - AttributeName: eventId
+            KeyType: HASH
+          - AttributeName: userId
+            KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      -
+        IndexName: eventId-betStatus-index
+        KeySchema:
+          - AttributeName: eventId
+            KeyType: HASH
+          - AttributeName: betStatus
+            KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+    TimeToLiveSpecification:
+      AttributeName: ExpirationTime
+      Enabled: true
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
 
   BettingBatchFunction:
     Type: AWS::Serverless::Function
@@ -118,8 +146,12 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Layers:
         - !Ref AppSyncLambdaLayer
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Events:
         SQSEvent:
           Type: SQS
@@ -145,6 +177,12 @@ Resources:
                 - appsync:GraphQL
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/lockBetsForEvent
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue] 
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
@@ -163,8 +201,12 @@ Resources:
       Description: Lambda for Step function for settlement resolvers
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Layers:
         - !Ref AppSyncLambdaLayer
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -179,6 +221,12 @@ Resources:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/withdrawFunds
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/depositFunds
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/deductFunds
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore
@@ -209,6 +257,17 @@ Resources:
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: "*"
+        - PolicyName: XRayTracingPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                  - "xray:GetSamplingRules"
+                  - "xray:GetSamplingTargets"
+                Resource: "*"
 
   BettingSettlementStateMachine:
     Type: "AWS::StepFunctions::StateMachine"
@@ -229,6 +288,8 @@ Resources:
             }
           - {lambdaArn: !GetAtt [ BettingSettlementFunction, Arn ]}
       RoleArn: !GetAtt [ StatesExecutionRole, Arn ]
+      TracingConfiguration:
+        Enabled: true 
 
   BettingResolverFunction:
     Type: AWS::Serverless::Function
@@ -238,6 +299,7 @@ Resources:
       Description: Lambda for AppSync resolvers
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Layers:
         - !Ref AppSyncLambdaLayer
       Policies:
@@ -254,6 +316,12 @@ Resources:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/withdrawFunds
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/depositFunds
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/deductFunds
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           DB_TABLE: !Ref BettingDataStore

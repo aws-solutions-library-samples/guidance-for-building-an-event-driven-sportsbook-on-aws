@@ -26,18 +26,39 @@ Parameters:
   AppSyncLambdaLayer:
     Type: String
 
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
+  EnableEnvVarEncryption:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable enhanced encryption for Lambda environment variables
+
+Conditions:
+  EnableEnvEncryption: !Equals [!Ref EnableEnvVarEncryption, "true"]
+  HasKmsKeyArn: !Not [!Equals [!Ref LambdaEnvKmsKeyArn, ""]]
+  UseKmsKey: !Or [!Condition EnableEnvEncryption, !Condition HasKmsKeyArn]
+
 Resources:
 
   SQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
+      SqsManagedSspEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
 
   DLQ:
     Type: AWS::SQS::Queue
+    Properties:
+      SqsManagedSspEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -70,6 +91,8 @@ Resources:
           Condition:
             StringEqualsIfExists:
               aws:SourceAccount: !Ref AWS::AccountId
+            Bool:
+              aws:SecureTransport: "true"
       Queues:
         - Ref: SQSQueue
 
@@ -81,6 +104,7 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Layers:
         - !Ref AppSyncLambdaLayer
       Events:
@@ -91,6 +115,9 @@ Resources:
             BatchSize: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -100,6 +127,12 @@ Resources:
                 - appsync:GraphQL
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/addSystemEvent
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -113,8 +146,16 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/systemevents/resolver/
       Timeout: 10
+      KmsKeyArn: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
       Layers:
         - !Ref AppSyncLambdaLayer
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !If [UseKmsKey, !Ref LambdaEnvKmsKeyArn, !Ref AWS::NoValue]
 
   SystemEventAppSyncRole:
     Type: AWS::IAM::Role

@@ -5,7 +5,7 @@ from gql.client import Client
 from gql.transport.requests import RequestsHTTPTransport
 from boto3 import Session as AWSSession
 
-def get_client(region, gql_endpoint):
+def get_client(region, gql_endpoint, timeout=5):
     aws = AWSSession(aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                      aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
                      aws_session_token=os.getenv('AWS_SESSION_TOKEN'),
@@ -21,7 +21,8 @@ def get_client(region, gql_endpoint):
     transport = RequestsHTTPTransport(
         url=gql_endpoint,
         headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
-        auth=auth
+        auth=auth,
+        timeout=timeout
     )
     client = Client(transport=transport, fetch_schema_from_transport=False)
     return client
