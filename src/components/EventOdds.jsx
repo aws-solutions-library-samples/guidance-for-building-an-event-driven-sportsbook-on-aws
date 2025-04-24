@@ -126,28 +126,31 @@ export const EventOdds = () => {
   };
 
   // Array of flag URLs
-  const flagUrls = [
-    "src/assets/teams/cjfc.png",
-    "src/assets/teams/ilfc.png",
-    "src/assets/teams/edfc.png",
-    "src/assets/teams/sefc.png",
-    "src/assets/teams/ggfc.png",
-    "src/assets/teams/rtfc.png",
-    "src/assets/teams/ggufc.png",
-    "src/assets/teams/sffc.png",
-    "src/assets/teams/qpfc.png",
-    "src/assets/teams/ttfc.png",
-    "src/assets/teams/srfc.png",
-    "src/assets/teams/cufc.png",
-    "src/assets/teams/prfc.png",
-    "src/assets/teams/csfc.png",
-    "src/assets/teams/nnfc.png",
-    "src/assets/teams/moonfc.png",
-    "src/assets/teams/mmfc.png",
-    "src/assets/teams/ckfc.png",
-    "src/assets/teams/dlfc.png",
-    "src/assets/teams/mffc.png",
-  ];
+  let flagUrls = [];
+  [
+    "cjfc",
+    "ilfc",
+    "edfc",
+    "sefc",
+    "ggfc",
+    "rtfc",
+    "ggufc",
+    "sffc",
+    "qpfc",
+    "ttfc",
+    "srfc",
+    "cufc",
+    "prfc",
+    "csfc",
+    "nnfc",
+    "moonfc",
+    "mmfc",
+    "ckfc",
+    "dlfc",
+    "mffc"
+  ].forEach(t => {
+    flagUrls.push( new URL(`../assets/teams/${t}.png`, import.meta.url).href )
+  });
 
   // Map to store team name to flag URL mapping
   const teamFlagMap = {};

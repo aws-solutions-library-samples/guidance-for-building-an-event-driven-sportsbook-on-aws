@@ -29,7 +29,7 @@ export const fetchEvent = (eventId) =>
     const awayOdds = parseFloat(result.awayOdds);
     const drawOdds = parseFloat(result.drawOdds);
     
-    console.log(`Event ${eventId} odds: home=${homeOdds}, away=${awayOdds}, draw=${drawOdds}`);
+    // console.log(`Event ${eventId} odds: home=${homeOdds}, away=${awayOdds}, draw=${drawOdds}`);
     
     return {
       ...result,
