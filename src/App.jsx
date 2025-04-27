@@ -41,14 +41,20 @@ import {
 
 Amplify.configure({
   Auth: {
-    region: AWS_REGION,
-    userPoolId: AWS_USER_POOL_ID,
-    userPoolWebClientId: AWS_USER_POOL_WEB_CLIENT_ID,
-    mandatorySignIn: true,
+    Cognito: {
+      region: AWS_REGION,
+      userPoolId: AWS_USER_POOL_ID,
+      userPoolClientId: AWS_USER_POOL_WEB_CLIENT_ID,
+      mandatorySignIn: true,
+    }
   },
-  aws_appsync_graphqlEndpoint: AWS_APPSYNC_API_URL,
-  aws_appsync_region: AWS_REGION,
-  aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
+  API: {
+    GraphQL: {
+      endpoint: AWS_APPSYNC_API_URL,
+      region: AWS_REGION,
+      defaultAuthMode: 'userPool'
+    }
+  }
 });
 
 
@@ -284,9 +290,11 @@ export default function AuthenticatedApp() {
     <AmplifyThemeProvider amplifyTheme={amplifyTheme}>
       <GlobalProvider>
         <BetSlipProvider>
-          <Authenticator components={components} formFields={formFields}>
-            {({ signOut, user }) => <App signOut={signOut} user={user} />}
-          </Authenticator>
+          <Authenticator.Provider>
+            <Authenticator loginMechanisms={['email']} components={components} formFields={formFields}>
+              {({ signOut, user }) => <App signOut={signOut} user={user} />}
+            </Authenticator>
+          </Authenticator.Provider>
         </BetSlipProvider>
       </GlobalProvider>
     </AmplifyThemeProvider>

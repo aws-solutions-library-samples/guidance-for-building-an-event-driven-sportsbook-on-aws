@@ -6,7 +6,9 @@ import {
   Box,
   styled,
   keyframes,
+  Popover
 } from "@mui/material";
+// import Popover from "@base-ui-components/react";
 import DeleteIcon from "@mui/icons-material/HighlightOff";
 import { useSystemEvents, useClearHistory } from "../../hooks/useSystemEvents";
 import moment from "moment";
@@ -25,7 +27,7 @@ import StartIcon from "@mui/icons-material/Start";
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import PauseIcon from "@mui/icons-material/Pause";
 import RestartAltIcon from '@mui/icons-material/RestartAlt';import Button from "@mui/material/Button";
-import { Unstable_Popup as BasePopup } from "@mui/base/Unstable_Popup";
+// import { Popover as BasePopup } from "@base-ui-components/react";
 
 const ChatContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -214,18 +216,26 @@ const PopupBody = styled('div')(
                     >
                       Details
                     </Button>
-                    <BasePopup
+                    <Popover
                       id={id}
                       open={open && selectedEvent === event}
-                      anchor={anchor}
+                      anchorEl={anchor}
                       onClose={handleClose}
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'center',
+                      }}
                     >
                       <PopupBody>
                         <Typography variant="caption" component="span">
                           {selectedEvent?.detail}
                         </Typography>
                       </PopupBody>
-                    </BasePopup>
+                    </Popover>
                   </TimelineContent>
                   </TimelineItem>
             );

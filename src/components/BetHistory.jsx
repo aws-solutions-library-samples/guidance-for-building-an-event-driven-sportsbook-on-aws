@@ -198,8 +198,10 @@ export const BetHistory = () => {
       flex: 1,
       headerClassName: 'bets-theme-header',
       sortable: true,
-      valueGetter: (params) =>
-        `${params.row.event.home || ""} vs ${params.row.event.away || ""}`,
+      valueGetter: (params) => {
+        if (!params || !params.row || !params.row.event) return 'N/A';
+        return `${params.row.event.home || ""} vs ${params.row.event.away || ""}`;
+      }
     },
     {
       field: "odds",
@@ -295,7 +297,8 @@ export const BetHistory = () => {
           params.row.amount,
           params.row.odds,
           params.row.outcome,
-          params.row.event.outcome
+          params.row.event.outcome,
+          currencySymbol
         ),
     }
   ];

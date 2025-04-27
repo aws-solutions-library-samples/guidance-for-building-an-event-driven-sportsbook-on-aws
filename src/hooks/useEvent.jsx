@@ -1,8 +1,10 @@
-import { API } from "aws-amplify";
+import { generateClient } from 'aws-amplify/api';
 import { useQuery } from "@tanstack/react-query";
 import * as queries from "../graphql/queries.js";
 
 export const CACHE_PREFIX = "event-";
+
+const client = generateClient();
 
 export const useEvent = (eventId, config = {}) => {
   return useQuery([CACHE_PREFIX, eventId], () => fetchEvent(eventId), {
@@ -16,7 +18,7 @@ export const useEvent = (eventId, config = {}) => {
 };
 
 export const fetchEvent = (eventId) =>
-  API.graphql({
+  client.graphql({
     query: queries.getEvent,
     variables: { eventId: eventId },
   }).then((res) => {
