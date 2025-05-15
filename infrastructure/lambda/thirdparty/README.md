@@ -1,59 +1,45 @@
 # Third Party Service
 
 ## Overview
-The Third Party Service is a collection of components that integrate external functionality and data sources into the Sportsbook application. It provides various utilities including AI-powered chatbot support, external data fetching for odds updates, and network latency monitoring across different AWS regions.
+The Third Party Service is a collection of Lambda functions that integrate external functionality and data sources into the Sportsbook application. It currently consists of two main components: a Fetcher service that simulates third-party odds updates and a PingInfo service that measures network latency across different AWS regions.
 
 ## Architecture
 The service follows a serverless architecture built on AWS with the following components:
 
-- **Chatbot**: Lambda function that provides AI-powered customer support using Amazon Bedrock and Kendra
 - **Fetcher**: Lambda function that simulates fetching updated odds from external providers
 - **PingInfo**: Lambda function that measures and reports network latency to different AWS regions
 
 ## Key Features
 
-- **AI-Powered Support**: Conversational chatbot using Claude models via Amazon Bedrock
-- **Knowledge Retrieval**: Integration with Amazon Kendra for information retrieval
-- **Odds Simulation**: Simulated third-party odds updates for sporting events
+- **Odds Simulation**: Simulated third-party odds updates for sporting events with realistic house edge calculations
 - **Network Latency Monitoring**: Real-time latency measurements across AWS regions
-- **GraphQL API**: Provides APIs for chatbot interaction and latency information
+- **GraphQL API**: Provides API for latency information
+- **EventBridge Integration**: Publishes odds updates to EventBridge for consumption by other services
 - **Error Handling**: Comprehensive error handling with proper exception management
 - **Logging**: Structured logging with AWS Lambda Powertools
+- **Tracing**: Distributed tracing with AWS X-Ray
 
 ## Components
 
-### Chatbot (`/chatbot`)
-The chatbot component provides:
-- AI-powered customer support using Claude models via Amazon Bedrock
-- Conversation history tracking in DynamoDB
-- Integration with Amazon Kendra for knowledge retrieval
-- Context-aware responses that include current sporting events
-- Robust error handling
-- Structured logging
-
 ### Fetcher (`/fetcher`)
-The fetcher component simulates:
-- Polling external APIs for updated odds
-- Random generation of new odds for sporting events
-- Publishing odds updates to EventBridge for consumption by other services
-- Implementing proper error handling
-- Using structured logging for better observability
+The fetcher component:
+- Simulates polling external APIs for updated odds
+- Generates random but realistic odds for predefined sporting events
+- Applies a 10% house edge to the generated odds
+- Ensures odds are unique and follow betting market rules
+- Publishes odds updates to EventBridge for consumption by other services
+- Implements proper error handling and retry logic
+- Uses structured logging for better observability
 
 ### PingInfo (`/pinginfo`)
-The pinginfo component provides:
-- Network latency measurements to multiple AWS regions
-- GraphQL API for retrieving latency information
-- Real-time monitoring of network performance
-- Error handling with specific error types
-- Structured logging
-- Comprehensive documentation
+The pinginfo component:
+- Measures network latency to multiple AWS regions (us-east-1, us-west-2, eu-west-2, ap-southeast-1, ap-northeast-1)
+- Provides a GraphQL API for retrieving latency information
+- Converts response time to milliseconds for easy consumption
+- Implements proper error handling with specific error types
+- Uses structured logging and tracing
 
 ## Data Models
-
-### Chatbot
-- `sessionId`: Unique identifier for a chat session
-- `prompt`: User message
-- Conversation history stored in DynamoDB
 
 ### Fetcher
 - Simulated odds updates with:
@@ -70,74 +56,70 @@ The pinginfo component provides:
 ## Integration Points
 
 The Third Party Service integrates with:
-- **Amazon Bedrock**: For AI-powered conversational capabilities
-- **Amazon Kendra**: For knowledge retrieval and information search
-- **EventBridge**: For publishing odds updates
-- **DynamoDB**: For storing conversation history
-- **AppSync**: For GraphQL API endpoints
-- **Live Market Service**: Provides event data to the chatbot and receives odds updates
-
-## Testing
-
-The Third Party Service includes comprehensive unit tests:
-- Tests for chatbot responses
-- Tests for odds generation
-- Tests for latency measurements
-- Tests for error handling scenarios
-
-Tests are implemented using pytest and mock AWS services to ensure the service functions correctly in isolation.
+- **EventBridge**: For publishing odds updates from the Fetcher service
+- **AppSync**: For GraphQL API endpoints from the PingInfo service
+- **EC2 API**: For measuring latency to different regions
 
 ## Use Cases
-
-### Chatbot
-- Providing customer support for sportsbook users
-- Answering questions about sporting events and betting
-- Offering contextual information based on current events
 
 ### Fetcher
 - Simulating real-world odds updates from external providers
 - Keeping the sportsbook's odds current and competitive
 - Triggering market updates based on external data
+- Applying realistic house edge to maintain profitability
 
 ### PingInfo
 - Monitoring network performance across regions
 - Helping users select optimal regions for low-latency betting
 - Supporting operational monitoring and troubleshooting
 
-## Security
+## Example Responses
 
-The service implements security through:
-- Input validation for all API requests
-- AWS IAM roles and policies for access control
-- Secure integration with AWS services
-- Proper error handling and logging
-- Prevention of information leakage
-
-## Example Interactions
-
-### Chatbot
-```
-User: "What sporting events are happening today?"
-Chatbot: "Currently running events include Manchester United vs Liverpool, LA Lakers vs Chicago Bulls, and Wimbledon Finals."
-```
-
-### PingInfo
+### Fetcher EventBridge Event
 ```json
 {
-  "items": [
-    {
-      "pingLocation": "us-east-1",
-      "pingLatency": 45
-    },
-    {
-      "pingLocation": "us-west-2",
-      "pingLatency": 78
-    },
-    {
-      "pingLocation": "eu-west-2",
-      "pingLatency": 120
+  "Source": "com.thirdparty",
+  "DetailType": "UpdatedOdds",
+  "Detail": {
+    "eventId": "e46436a8-a916-4143-a05c-99d120eabfdb",
+    "homeOdds": "2.5",
+    "awayOdds": "3.2",
+    "drawOdds": "4.1"
+  },
+  "EventBusName": "sportsbook-events"
+}
+```
+
+### PingInfo GraphQL Response
+```json
+{
+  "data": {
+    "getPingInfo": {
+      "__typename": "PingInfo",
+      "items": [
+        {
+          "pingLocation": "us-east-1",
+          "pingLatency": 45
+        },
+        {
+          "pingLocation": "us-west-2",
+          "pingLatency": 78
+        },
+        {
+          "pingLocation": "eu-west-2",
+          "pingLatency": 120
+        },
+        {
+          "pingLocation": "ap-southeast-1",
+          "pingLatency": 180
+        },
+        {
+          "pingLocation": "ap-northeast-1",
+          "pingLatency": 150
+        }
+      ]
     }
-  ]
+  }
 }
 ```
 
