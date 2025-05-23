@@ -13,6 +13,7 @@ export const useBets = (config = {}) => {
     queryFn: async () => {
       const res = await client.graphql({ query: queries.getBets });
       const bets = res.data.getBets;
+
       if (bets["__typename"].includes("Error"))
         throw new Error(bets["message"]);
 

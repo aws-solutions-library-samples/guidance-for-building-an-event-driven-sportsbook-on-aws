@@ -117,7 +117,7 @@ function App({ user, signOut }) {
     snackbarMessage,
     snackbarSeverity,
   } = useGlobal();
-  const isLocked = useUser(user);
+  const isLocked = useUser(user).isLocked;
   const [isDarkMode, setIsDarkMode] = useState(false);
   const theme = getTheme(isDarkMode);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));

@@ -12,6 +12,7 @@ const client = generateClient();
 
 export const useUser = (user) => {
   const [isLocked, setIsLocked] = useState(null);
+  const [email, setEmail] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -22,24 +23,30 @@ export const useUser = (user) => {
     }
 
     // Handle both v5 and v6 user attribute structures
-    const fetchLockStatus = async () => {
+    const fetchUserData = async () => {
       try {
         // If user.attributes exists (v5 structure), use it directly
         if (user.attributes && user.attributes['custom:isLocked'] !== undefined) {
           setIsLocked(user.attributes['custom:isLocked'] === 'true');
+          if (user.attributes.email) {
+            setEmail(user.attributes.email);
+          }
         }
         // Otherwise, try to fetch attributes using v6 API
         else {
           const attributes = await fetchUserAttributes();
           setIsLocked(attributes['custom:isLocked'] === 'true');
+          if (attributes.email) {
+            setEmail(attributes.email);
+          }
         }
       } catch (error) {
-        console.error("Error fetching user lock status:", error);
+        console.error("Error fetching user data:", error);
         setIsLocked(false); // Default to unlocked on error
       }
     };
 
-    fetchLockStatus();
+    fetchUserData();
 
     const sub = client.graphql({
       query: subscriptions.updatedUserStatus
@@ -62,7 +69,7 @@ export const useUser = (user) => {
     return () => sub.unsubscribe();
   }, [user, queryClient]);
 
-  return isLocked;
+  return { isLocked, email };
 };
 
 const getUser = async () => {

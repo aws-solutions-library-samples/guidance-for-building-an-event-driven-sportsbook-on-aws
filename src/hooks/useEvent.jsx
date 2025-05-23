@@ -7,7 +7,9 @@ export const CACHE_PREFIX = "event-";
 const client = generateClient();
 
 export const useEvent = (eventId, config = {}) => {
-  return useQuery([CACHE_PREFIX, eventId], () => fetchEvent(eventId), {
+  return useQuery({
+    queryKey: [CACHE_PREFIX, eventId],
+    queryFn: () => fetchEvent(eventId),
     refetchInterval: 5000,
     useErrorBoundary: false,
     enabled: true,

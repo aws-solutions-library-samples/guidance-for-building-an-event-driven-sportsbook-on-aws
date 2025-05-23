@@ -15,10 +15,7 @@ export const useClearHistory = () => {
         mutationKey: [CACHE_PATH],
         mutationFn: async () => {
             console.log('clearing history');
-            queryClient.setQueryData({
-                queryKey: [CACHE_PATH],
-                data: []
-            });
+            queryClient.setQueryData([CACHE_PATH], []);
             idCount = 0;
             return true; // Return a value to indicate success
         },
@@ -33,18 +30,19 @@ export const useSystemEvents = (config = {}) => {
             query: subscriptions.updatedSystemEvents
         }).subscribe({
             next: ({ data }) => {
-                queryClient.setQueryData({
-                    queryKey: [CACHE_PATH],
-                    updater: (oldData) => {
-                        const newEvent = { id: idCount++, ...data.updatedSystemEvents };
-                        const newItems = oldData.filter(
-                            // Parse newEvent.detail with following schema "{eventId=39d96a19-4590-4492-8ac7-8f79934eeecb, market=homeOdds, eventStatus=running}" to object
-                            (e) => e.id !== newEvent.id
-                        );
-                        newItems.push(newEvent);
-                        return newItems;
+                // console.log('Received system event:', data.updatedSystemEvents);
+                queryClient.setQueryData(
+                    [CACHE_PATH],
+                    (oldData = []) => {
+                        // Use timestamp + counter to ensure unique IDs
+                        const newEvent = { 
+                            id: `${Date.now()}-${idCount++}`, 
+                            ...data.updatedSystemEvents 
+                        };
+                        // Create a new array with the new event added
+                        return [...oldData, newEvent];
                     }
-                });
+                );
             },
             error: (error) => { console.warn(error); }
         });
@@ -58,16 +56,12 @@ export const useSystemEvents = (config = {}) => {
         queryKey: [CACHE_PATH],
         queryFn: () => {
             // We don't fetch data, just return existing data
-            let cachedData = queryClient.getQueryData({ queryKey: [CACHE_PATH] });
+            let cachedData = queryClient.getQueryData([CACHE_PATH]);
 
             if (cachedData == undefined) {
-                console.log('creating initial blank data');
                 // Initialize with an empty array and immediately set it in the cache
-                cachedData = [{id: idCount, source: 'waiting...', 'detailType': '...', detail: '...'}];
-                queryClient.setQueryData({
-                    queryKey: [CACHE_PATH],
-                    data: cachedData
-                });
+                cachedData = [{id: `init-${Date.now()}`, source: 'waiting...', 'detailType': '...', detail: '...'}];
+                queryClient.setQueryData([CACHE_PATH], cachedData);
             }
 
             return cachedData;

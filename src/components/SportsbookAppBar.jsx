@@ -58,7 +58,8 @@ import { useGlobal } from "../providers/GlobalContext";
 
 import { Link, useLocation } from "react-router-dom";
 import {
-  useLockUser
+  useLockUser,
+  useUser,
 } from "../hooks/useUser";
 
 const pages = ["About", "Admin"];
@@ -115,7 +116,8 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const userEmail = user?.attributes?.email || user?.username || '';
+  const { email } = useUser(user);
+  const userEmail = email || user?.username || '';
 
   const accountSettings = () => {
     return (
