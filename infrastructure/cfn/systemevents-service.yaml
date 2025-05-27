@@ -10,7 +10,7 @@ Globals:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: livemarket
+        POWERTOOLS_SERVICE_NAME: systemevents
 
 Parameters:
 
@@ -26,18 +26,26 @@ Parameters:
   AppSyncLambdaLayer:
     Type: String
 
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
 Resources:
 
   SQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
 
   DLQ:
     Type: AWS::SQS::Queue
+    Properties:
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -70,6 +78,8 @@ Resources:
           Condition:
             StringEqualsIfExists:
               aws:SourceAccount: !Ref AWS::AccountId
+            Bool:
+              aws:SecureTransport: "true"
       Queues:
         - Ref: SQSQueue
 
@@ -81,6 +91,7 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Events:
@@ -91,6 +102,9 @@ Resources:
             BatchSize: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -100,6 +114,12 @@ Resources:
                 - appsync:GraphQL
               Resource:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/addSystemEvent
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -113,8 +133,16 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/systemevents/resolver/
       Timeout: 10
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
 
   SystemEventAppSyncRole:
     Type: AWS::IAM::Role

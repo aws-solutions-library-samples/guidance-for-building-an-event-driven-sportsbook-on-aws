@@ -3,6 +3,7 @@
 
 default_stages:
   - commit
+  - manual
 repos:
   # General
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -40,3 +41,11 @@ repos:
       - id: prettier
         name: Prettier
         files: \.(js)
+
+  # ASH
+  - repo: git@github.com:awslabs/automated-security-helper.git
+    rev: 'v2.0.1' # update with the latest tagged version in the repository
+    hooks:
+    - id: ash
+      name: scan files using ash
+      stages: [ manual ]

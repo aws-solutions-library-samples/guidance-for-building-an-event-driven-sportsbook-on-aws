@@ -26,6 +26,11 @@ Parameters:
   AppSyncLambdaLayer:
     Type: String
 
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
 Resources:
 
   LiveMarketDataStore:
@@ -83,9 +88,16 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: ../lambda/livemarket/seed/
       Timeout: 30
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref LiveMarketDataStore
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref LiveMarketDataStore
@@ -100,12 +112,15 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
 
   DLQ:
     Type: AWS::SQS::Queue
+    Properties:
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -133,6 +148,8 @@ Resources:
           Condition:
             StringEqualsIfExists:
               aws:SourceAccount: !Ref AWS::AccountId
+            Bool:
+              aws:SecureTransport: "true"
       Queues:
         - Ref: SQSQueue
 
@@ -144,6 +161,7 @@ Resources:
       Description: Lambda for receiving events for this service
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Layers:
         - !Ref AppSyncLambdaLayer
       Events:
@@ -154,6 +172,9 @@ Resources:
             BatchSize: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -167,6 +188,12 @@ Resources:
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/suspendMarket
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/unsuspendMarket
                 - !Sub arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}/types/Mutation/fields/addEvent
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           REGION: !Ref AWS::Region
@@ -181,6 +208,7 @@ Resources:
       Description: Lambda for AppSync resolvers
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -188,6 +216,12 @@ Resources:
             TableName: !Ref LiveMarketDataStore
         - DynamoDBCrudPolicy:
             TableName: !Ref LiveMarketHistoryStore
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref LiveMarketDataStore

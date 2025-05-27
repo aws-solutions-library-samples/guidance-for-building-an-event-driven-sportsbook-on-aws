@@ -16,22 +16,34 @@ Globals:
 Parameters:
   EventBus:
     Type: String
+  
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
 
 Resources:
   LambdaFunction:
     Type: AWS::Serverless::Function
     Description: 'Lambda function that receives data from event producers and processes them'
     Properties:
-      FunctionName:
       Handler: app.lambda_handler
       CodeUri: ../lambda/sportingevents/receiver/
       Description: Lambda for receiving sporting events
       Runtime: python3.12
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Events:
         ApiEvent:
           Type: Api

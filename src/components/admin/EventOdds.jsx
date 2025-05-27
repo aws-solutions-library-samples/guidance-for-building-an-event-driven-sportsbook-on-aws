@@ -2,10 +2,12 @@ import { Typography, Card, Button, Box, ButtonGroup, useMediaQuery, useTheme } f
 import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid } from "@mui/x-data-grid";
 import { useEvents, useFinishEvent, useMarket } from "../../hooks/useEvents";
-import { API, graphqlOperation } from "aws-amplify";
+import { generateClient } from 'aws-amplify/api';
 import { suspendMarketMutation, closeMarketMutation, triggerUnsuspendMarketMutation, triggerSuspendMarketMutation } from "../../graphql/mutations";
 import { useState } from "react";
 import { useEffect } from "react";
+
+const client = generateClient();
 
 const dateOptions = {
   year: "numeric",
@@ -42,20 +44,24 @@ const renderOdds = (params) => {
   const handleSuspend = async () => {
     try {
       const input = { eventId: params.row.eventId, market: params.field };
-      const response = await API.graphql(graphqlOperation(triggerSuspendMarketMutation, { input }));
-      console.log(`Market '${params.field}' (${params.row.eventId}) suspended`);
+      const response = await client.graphql({
+        query: triggerSuspendMarketMutation,
+        variables: { input }
+      })
     } catch (error) {
-      console.error(`Error suspending market '${params.field}' (${params.row.eventId}):`, error);
+      // TODO: Proper logging
     }
   };
 
   const handleUnsuspend = async () => {
     try {
       const input = { eventId: params.row.eventId, market: params.field };
-      const response = await API.graphql(graphqlOperation(triggerUnsuspendMarketMutation, { input }));
-      console.log(`Market '${params.field}' (${params.row.eventId}) unsuspended`);
+      const response = await client.graphql({
+        query: triggerUnsuspendMarketMutation,
+        variables: { input }
+      })
     } catch (error) {
-      console.error(`Error unsuspending market '${params.field}' (${params.row.eventId}):`, error);
+      // TODO: Proper logging
     }
   };
 
@@ -94,7 +100,10 @@ const renderOdds = (params) => {
 const suspendMarket = async ({ event, market }) => {
   try {
     const input = { eventId: event, market };
-    const response = await API.graphql(graphqlOperation(suspendMarketMutation, { input }));
+    const response = await client.graphql({
+      query: suspendMarketMutation,
+      variables: { input }
+    })
     console.log(`Market '${market}' (${event}) suspended`);
   } catch (error) {
     console.error(`Error suspending market '${market}' (${event}):`, error);
@@ -104,7 +113,10 @@ const suspendMarket = async ({ event, market }) => {
 const closeMarket = async ({ event, market }) => {
   try {
     const input = { eventId: event, market };
-    const response = await API.graphql(graphqlOperation(closeMarketMutation, { input }));
+    const response = await client.graphql({
+      query: closeMarketMutation,
+      variables: { input }
+    })
     console.log(`Market '${market}' (${event}) closed`);
   } catch (error) {
     console.error(`Error closing market '${market}' (${event}):`, error);
@@ -123,9 +135,8 @@ export const EventOdds = () => {
   );
   
   const handleFinishEvent = async (eventId, outcome) => {
-    console.log('closing event', {'eventId': eventId, 'outcome': outcome})
+    // console.log('closing event', {'eventId': eventId, 'outcome': outcome})
     handleTriggerFinishEvent(eventId, outcome);
-    console.log("Event finished. Good luck settling!");
   };
     
   if (loadingEvents) return <Typography>Loading...</Typography>;

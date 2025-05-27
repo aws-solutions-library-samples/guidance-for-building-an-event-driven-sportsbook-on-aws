@@ -8,10 +8,10 @@ import boto3
 # Configure AWS credentials
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
-AWS_SESSION_TOKEN = 'IQoJb3JpZ2luX2VjEC0aDGV1LWNlbnRyYWwtMSJHMEUCIBdjy2pU2B9mbKqGD6rMA9B3LAAdh9yrDrnHaoYBwzD7AiEAvedfQD3pL6zrRsrNjtpI6/BhvCYTteQSsYy/vovi1Okq6wEIRhADGgw5NjcwNTczMTIxNjEiDIqoVc7l+QnGdx+wUCrIAaHu57ZZKxAy/7dzwp2/dejQhYAAnp42agyyCUhMhHISjunNG3y+fahmySKPgTwh/coiaYaej9ecoa6AJE+L9XTEaGa8R0X0NzqIt9DJEAQR92cPDT4FPDO2rFk5FNndqxTNFXOP1dKixgg+J99oNYwkEtRODqGxwn4tZSb99whu/bo5cYrsLc3te8Zs0N22IuT4jOI+aLH9ixkrw/veeOkv0ws7wgnpz9dnvLPVvFzotZijtWseV5ffPdk4pA9SxJZbd3mkYa0tMKv/9a8GOpgByRQkLXs4WZnLtsqnIUYY7muG2hCKGx1yauBI0A6z+DYF5ZUPspEdvbVwB9w5uRpQIt/XsSStsALV8oVkAT0Zb3wgshioTkb61C1ggPaurDgdMHcNT7iBAsNfnvkaQpgQPG2VMpbtHa9Q73/mZzzzL1fCfxpa8b5tFSb6oVIo1wRIMth9HJr5oHO3549vQbTtY5N6kUXVu/o='  # Required for temporary credentials
+AWS_SESSION_TOKEN = ''  # Required for temporary credentials
 
 # GraphQL endpoint
-GRAPHQL_ENDPOINT = 'https://65ends773vem3ca3gah35nhqlq.appsync-api.eu-central-1.amazonaws.com/graphql'
+GRAPHQL_ENDPOINT = 'https://XXX.appsync-api.eu-central-1.amazonaws.com/graphql'
 
 # GraphQL mutation for creating bets
 CREATE_BETS_MUTATION = """
@@ -75,7 +75,8 @@ def send_graphql_request(query: str, variables: Optional[dict] = None) -> dict:
         GRAPHQL_ENDPOINT,
         json={'query': query, 'variables': variables},
         auth=aws_auth,
-        headers=headers
+        headers=headers,
+        timeout=(3.05, 27)
     )
 
     return response.json()

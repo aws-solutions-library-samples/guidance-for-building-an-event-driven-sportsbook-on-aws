@@ -81,6 +81,22 @@ export const EventOdds = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const sliderRef = useRef(null);
 
+  const handleSliderNext = React.useCallback(() => {
+    sliderRef.current?.slickNext();
+  }, []);
+
+  // Update events with market status
+  useEffect(() => {
+    if (events && Array.isArray(events) && suspendedMarkets && Array.isArray(suspendedMarkets)) {
+      events.forEach((event) => {
+        const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
+        event.marketstatus = internalEvent?.marketstatus;
+      });
+    }
+  }, [events, suspendedMarkets]);
+
+  if (loadingEvents) return <Typography>Loading...</Typography>;
+
   // Custom arrow components for the slider
   const NextArrow = (props) => {
     const { onClick } = props;
@@ -186,18 +202,6 @@ export const EventOdds = () => {
     return teamFlagMap[teamName];
   };
 
-  // Update events with market status
-  useEffect(() => {
-    if (events && Array.isArray(events) && suspendedMarkets && Array.isArray(suspendedMarkets)) {
-      events.forEach((event) => {
-        const internalEvent = suspendedMarkets.find((market) => market.eventId === event.eventId);
-        event.marketstatus = internalEvent?.marketstatus;
-      });
-    }
-  }, [events, suspendedMarkets]);
-
-  if (loadingEvents) return <Typography>Loading...</Typography>;
-
   const settings = {
     className: "soccer-slider",
     infinite: true,
@@ -278,6 +282,8 @@ export const EventOdds = () => {
     },
   ];
 
+  
+
   return (
     <Card style={{ backgroundColor: "transparent", maxWidth: "1600px", minHeight: showSlider ? "420px" : "750px" }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
@@ -287,7 +293,7 @@ export const EventOdds = () => {
         <Button
           variant="outlined"
           size="small"
-          onClick={() => sliderRef.current?.slickNext()}
+          onClick={handleSliderNext}
           sx={{ display: { xs: 'none', md: 'flex' } }}
         >
           See More

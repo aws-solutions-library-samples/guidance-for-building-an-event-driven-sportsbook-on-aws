@@ -22,13 +22,22 @@ Parameters:
 
   EventBus:
     Type: String
+  
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
 
 
 Resources:
 
+  # amazonq-ignore-next-line
   WalletDataStore:
     Type: AWS::DynamoDB::Table
     Properties:
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -40,6 +49,7 @@ Resources:
         - AttributeName: userId
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
+
 
   EventBridgeMutationsRole:
     Type: AWS::IAM::Role
@@ -103,11 +113,18 @@ Resources:
       Description: Lambda for Appsync resolvers
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref WalletDataStore
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           DB_TABLE: !Ref WalletDataStore

@@ -36,11 +36,6 @@ export function BetSlipProvider(props) {
       pb.map((i) => {
         const newData = eventData.find((e) => e?.eventId === i.eventId);
         if (newData && newData[oddsMap[i.outcome]] !== i.currentOdds) {
-          console.log(
-            `Change in ${i.eventId}: ${i.currentOdds} -> ${
-              newData[oddsMap[i.outcome]]
-            }`
-          );
           i.currentOdds = newData[oddsMap[i.outcome]];
         }
         return i;
@@ -55,7 +50,6 @@ export function BetSlipProvider(props) {
   };
 
   const addToSlip = (event, selection) => {
-    console.log(`Adding ${selection} bet to slip. bet: `, event);
     const newPendingBet = {
       selectedOdds: event[selection],
       currentOdds: event[selection],

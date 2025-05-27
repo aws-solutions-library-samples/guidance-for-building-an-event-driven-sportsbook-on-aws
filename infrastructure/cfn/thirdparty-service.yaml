@@ -28,7 +28,15 @@ Parameters:
   LiveMarketDataStore:
     Type: String
 
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
+
 Resources:
+  DLQ:
+    Type: AWS::SQS::Queue
+
   OddsFetcherFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -37,6 +45,7 @@ Resources:
       Description: Lambda for fetching third party event data
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Events:
         CWSchedule:
           Type: Schedule
@@ -45,9 +54,18 @@ Resources:
             Name: ThirdParty1Minute
             Description: Calls the odds fetcher function
             Enabled: true
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - Statement:
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
@@ -60,6 +78,14 @@ Resources:
       Description: Lambda for pinginfo interaction
       Timeout: 60
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref LambdaEnvKmsKeyArn
 
   PingInfoAppSyncRole:
     Type: AWS::IAM::Role

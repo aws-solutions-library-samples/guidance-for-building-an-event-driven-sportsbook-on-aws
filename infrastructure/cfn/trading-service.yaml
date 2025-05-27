@@ -16,6 +16,11 @@ Parameters:
 
   EventBus:
     Type: String
+  
+  LambdaEnvKmsKeyArn:
+    Type: String
+    Default: ""
+    Description: ARN of the KMS key for Lambda environment variable encryption
 
 Resources:
 
@@ -23,12 +28,15 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
       RedrivePolicy:
         maxReceiveCount: 2
         deadLetterTargetArn: !GetAtt DLQ.Arn
 
   DLQ:
     Type: AWS::SQS::Queue
+    Properties:
+      SqsManagedSseEnabled: true
 
   EventRule:
     Type: AWS::Events::Rule
@@ -55,6 +63,8 @@ Resources:
           Condition:
             StringEqualsIfExists:
               aws:SourceAccount: !Ref AWS::AccountId
+            Bool:
+              aws:SecureTransport: "true"
       Queues:
         - Ref: SQSQueue
 
@@ -66,12 +76,22 @@ Resources:
       Description: Lambda for receiving events from the trading queue
       Timeout: 10
       MemorySize: 256
+      KmsKeyArn: !Ref LambdaEnvKmsKeyArn
       Environment:
         Variables:
           EVENT_BUS: !Ref EventBus
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+              Resource: !Ref LambdaEnvKmsKeyArn
+      DeadLetterQueue:
+        Type: SQS  # Can be SQS or SNS
+        TargetArn: !GetAtt DLQ.Arn
       Events:
         MySQSEvent:
           Type: SQS

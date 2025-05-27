@@ -17,17 +17,15 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import Settings from '@mui/icons-material/Settings';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import MenuIcon from '@mui/icons-material/Menu';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PercentIcon from '@mui/icons-material/Percent';
 import { Switch, useMediaQuery } from "@mui/material";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
 
-import { Auth } from "aws-amplify";
+
+// import { Auth } from "aws-amplify";
 
 import {
   AppBar,
@@ -60,7 +58,8 @@ import { useGlobal } from "../providers/GlobalContext";
 
 import { Link, useLocation } from "react-router-dom";
 import {
-  useLockUser
+  useLockUser,
+  useUser,
 } from "../hooks/useUser";
 
 const pages = ["About", "Admin"];
@@ -86,7 +85,15 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { mutateAsync: lockUser } = useLockUser();
-  const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username } });
+  // const handleLockUser = (lockStatus) => lockUser({ data: { isLocked: lockStatus, userId: user.username } });
+  function handleLockUser(lockStatus) {
+    return lockUser({
+      data: {
+        isLocked: lockStatus,
+        userId: user?.username || user?.userId || ''
+      }
+    });
+  }
 
   const popupState = usePopupState({ variant: "popover", popupId: "wallet" });
   const profileMenuState = usePopupState({ variant: "popover", popupId: "profile" });
@@ -108,6 +115,9 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+
+  const { email } = useUser(user);
+  const userEmail = email || user?.username || '';
 
   const accountSettings = () => {
     return (
@@ -149,7 +159,7 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         >
           <MenuItem sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-            <AccountCircleRoundedIcon /> {user.attributes.email}
+            <AccountCircleRoundedIcon /> {userEmail}
           </MenuItem>
           <Divider />
           <MenuItem onClick={handleLock}>
@@ -250,7 +260,7 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
               {!isMobile && (
                 <div className="header-bar">
                   <Typography sx={{ mr: 2, display: { xs: "none", md: "flex" } }}>
-                    {user.attributes.email}
+                    {userEmail}
                   </Typography>
                 </div>
               )}
@@ -321,7 +331,7 @@ function SportsbookAppBar({ user, signOut, isLocked, handleThemeChange, isDarkMo
           <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.2)' }} />
           
           <Typography variant="body2" sx={{ mb: 1 }}>
-            {user.attributes.email}
+            {userEmail}
           </Typography>
           
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

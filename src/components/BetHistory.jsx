@@ -39,9 +39,13 @@ const getSelectedHoverBackgroundColor = (color, mode) =>
   mode === "dark" ? darken(color, 0.4) : lighten(color, 0.4);
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
-  // Make cell text black but keep headers white
+  // Make cell text black but keep headers visible in both light/dark mode
   "& .MuiDataGrid-cell": {
     color: "#000000",
+  },
+  "& .MuiDataGrid-columnHeaders": {
+    color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
+    backgroundColor: theme.palette.mode === "dark" ? "#333333" : "#f5f5f5",
   },
   // Remove scrollbar
   "& .MuiDataGrid-virtualScroller::-webkit-scrollbar": {
@@ -198,8 +202,10 @@ export const BetHistory = () => {
       flex: 1,
       headerClassName: 'bets-theme-header',
       sortable: true,
-      valueGetter: (params) =>
-        `${params.row.event.home || ""} vs ${params.row.event.away || ""}`,
+      valueGetter: (value, row, column, apiRef) => {
+        if (!row?.event?.home || !row?.event?.away) return 'N/A';
+        return `${row.event.home} vs ${row.event.away}`;
+      }
     },
     {
       field: "odds",
@@ -230,14 +236,16 @@ export const BetHistory = () => {
       headerName: "Outcome",
       headerClassName: 'bets-theme-header',
       sortable: true,
-      valueGetter: (params) =>
-        calculateOutcome(
-          params.row.amount,
-          params.row.odds,
-          params.row.outcome,
-          params.row.event.outcome,
+      valueGetter: (value, row, column, apiRef) => {
+        if (!row?.event?.outcome) return 'N/A';
+        return calculateOutcome(
+          row.amount,
+          row.odds,
+          row.outcome,
+          row.event.outcome,
           currencySymbol
-        ),
+        );
+      }
     },
     {
       field: "event.outcome",
@@ -245,8 +253,10 @@ export const BetHistory = () => {
       headerClassName: 'bets-theme-header',
       sortable: true,
       flex: 1,
-      valueGetter: (params) =>
-        `${params.row.event.outcome || ""}`,
+      valueGetter: (value, row, column, apiRef) => {
+        if (!row?.event?.outcome) return 'N/A';
+        return row.event.outcome;
+      },
       valueFormatter: ({ value }) => conditionFormat[value],
     },
     {
@@ -255,8 +265,9 @@ export const BetHistory = () => {
       headerClassName: 'bets-theme-header',
       sortable: true,
       flex: 1,
-      valueFormatter: ({ value }) =>
-        new Date(value).toLocaleString("en-GB", dateOptions),
+      valueFormatter: ({ value }) =>{
+        new Date(value).toLocaleString("en-GB", dateOptions)
+      },        
     },
     {
       field: "betStatus",
@@ -295,19 +306,19 @@ export const BetHistory = () => {
           params.row.amount,
           params.row.odds,
           params.row.outcome,
-          params.row.event.outcome
+          params.row.event.outcome,
+          currencySymbol
         ),
     }
   ];
 
   const columns = isMobile ? mobileColumns : desktopColumns;
 
-
   return (
     <div style={{ padding: "9px" }} >
     <Card className="recent-trades">
       <Typography variant="h5" className="title" sx={{ padding: 2 }}>
-        Recent Trades
+        Placed Bets
       </Typography>
       <StyledDataGrid className="bets-datagrid"
         rows={bets}
