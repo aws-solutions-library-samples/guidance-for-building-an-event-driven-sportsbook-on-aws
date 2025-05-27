@@ -232,8 +232,8 @@ def event_matches_bet(event, bet):
         else:
             raise ValueError(f'The specified outcome should be one of {OUTCOME_HOME_WIN}, {OUTCOME_AWAY_WIN}, {OUTCOME_DRAW}')
 
-        # Compare decimal odds as strings
-        return event_odds == bet['odds']
+        # Convert both odds to Decimal before comparing
+        return Decimal(event_odds) == Decimal(bet['odds'])
     except Exception as e:
         logger.exception("Error matching event to bet")
         return False
