@@ -7,7 +7,11 @@ import { suspendMarketMutation, closeMarketMutation, triggerUnsuspendMarketMutat
 import { useState } from "react";
 import { useEffect } from "react";
 
-const client = generateClient();
+// Function to get a random outcome
+const getRandomOutcome = () => {
+  const outcomes = ['homeWin', 'awayWin', 'draw'];
+  return outcomes[Math.floor(Math.random() * outcomes.length)];
+};
 
 const dateOptions = {
   year: "numeric",
@@ -225,7 +229,7 @@ export const EventOdds = () => {
             variant="contained"
             startIcon={!isMobile && <CancelIcon />}
             onClick={() => {
-              handleFinishEvent(params.row.eventId, 'homeWin')
+              handleFinishEvent(params.row.eventId, params.row.outcome || getRandomOutcome())
             }}
             sx={{ 
               fontSize: isMobile ? 11 : 'inherit',
