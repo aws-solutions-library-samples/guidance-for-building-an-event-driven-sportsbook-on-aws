@@ -1,12 +1,41 @@
-# Sportsbook EDA
+# Guidance Title (required)
 
-## Architecture Overview
+Guidance for Building an Event-Driven Sportsbook on AWS.
 
-This application is built using a serverless architecture on AWS, consisting of multiple microservices that handle different aspects of the sportsbook functionality. Each service has its own documentation that provides more details about its purpose, architecture, and implementation.
+**Example:** *Guidance for Product Substitutions on AWS*
 
-## Service Documentation
+This title correlates exactly to the Guidance it’s linked to, including its corresponding sample code repository. 
 
-The following services are available in this application:
+
+## Table of Contents (required)
+
+List the top-level sections of the README template, along with a hyperlink to the specific section.
+
+### Required
+
+1. [Overview](#overview-required)
+    - [Architecture](#Architecture)
+    - [Cost](#cost)
+2. [Prerequisites](#prerequisites-required)
+    - [Operating System](#operating-system-required)
+3. [Deployment Steps](#deployment-steps-required)
+4. [Deployment Validation](#deployment-validation-required)
+5. [Running the Guidance](#running-the-guidance-required)
+6. [Next Steps](#next-steps-required)
+7. [Cleanup](#cleanup-required)
+8. [Notices](#notices-optional)
+
+***Optional***
+
+8. [FAQ, known issues, additional considerations, and limitations](#faq-known-issues-additional-considerations-and-limitations-optional)
+9. [Revisions](#revisions-optional)
+10. [Authors](#authors-optional)
+
+## Overview
+
+This application demonstrates how to build an event-driven, serverless sportsbook application on AWS to help betting operating operators effectively handle spiky and seasonal traffic. Using microservices and serverless computing, the application shows operators how to overcome the scaling limitations of traditional sportsbook applications. Each microservice has its own documentation that provides more details about its purpose, architecture, and implementation.
+
+Select a link from the following list to learn more about the microservice.
 
 - [Auth Service](/infrastructure/lambda/auth/README.md) - Handles user authentication and authorization
 - [Betting Service](/infrastructure/lambda/betting/README.md) - Manages betting operations
@@ -19,192 +48,171 @@ The following services are available in this application:
 - [User Service](/infrastructure/lambda/user/README.md) - Handles user management
 - [Wallet Service](/infrastructure/lambda/wallet/README.md) - Manages user wallet operations
 
-For more detailed information about each service, please refer to its respective README file.
+### High Level Architecture
 
-## Key Features
+![High Level Architecture Diagram](./assets/images/architecture.png)
 
-- **Serverless Architecture**: Built entirely on AWS serverless services for scalability and cost efficiency
-- **Event-Driven Design**: Uses EventBridge for asynchronous communication between services
-- **GraphQL API**: Provides a unified API layer using AWS AppSync
-- **Authentication**: Secure user authentication with AWS Cognito
-- **Real-time Updates**: Live market data and bet status updates
-- **Comprehensive Testing**: Unit and integration tests for all services
-- **Observability**: Structured logging and distributed tracing with AWS Lambda Powertools
+### Cost ( required )
 
-## Testing
+This section is for a high-level cost estimate. Think of a likely straightforward scenario with reasonable assumptions based on the problem the Guidance is trying to solve. Provide an in-depth cost breakdown table in this section below ( you should use AWS Pricing Calculator to generate cost breakdown ).
 
-The application includes comprehensive unit tests for services:
-- Auth Service tests
-- Betting Service tests
-- Wallet Service tests
-- User Service tests
+Start this section with the following boilerplate text:
 
-Tests are implemented using pytest and mock AWS services to ensure each service functions correctly in isolation.
+_You are responsible for the cost of the AWS services used while running this Guidance. As of <month> <year>, the cost for running this Guidance with the default settings in the <Default AWS Region (Most likely will be US East (N. Virginia)) > is approximately $<n.nn> per month for processing ( <nnnnn> records )._
 
-To run tests for a specific service:
+Replace this amount with the approximate cost for running your Guidance in the default Region. This estimate should be per month and for processing/serving resonable number of requests/entities.
 
-```bash
-python -m pytest tests/auth -v
-python -m pytest tests/betting -v
-```
+Suggest you keep this boilerplate text:
+_We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance._
 
-## Pre-requisites
-To deploy this sample you will need to install:
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+### Sample Cost Table ( required )
 
-First install the UI dependencies from the project root:
+**Note : Once you have created a sample cost table using AWS Pricing Calculator, copy the cost breakdown to below table and upload a PDF of the cost estimation on BuilderSpace. Do not add the link to the pricing calculator in the ReadMe.**
 
-```bash
-npm install
-```
+The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
 
-## Deployment
+| AWS service  | Dimensions | Cost [USD] |
+| ----------- | ------------ | ------------ |
+| Amazon API Gateway | 1,000,000 REST API calls per month  | $ 3.50month |
+| Amazon Cognito | 1,000 active users per month without advanced security feature | $ 0.00 |
 
-There are two stages to deploying:
-1. Deploy the backend infrastructure
-2. Deploy the frontend application
+## Prerequisites
 
-Run the following command from the repository root to deploy the backend:
+### Operating System
 
-```bash
-sam build
-sam deploy --guided --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
-```
+These deployment instructions are optimized to best work on **<Amazon Linux 2 AMI>**. Deployment to other operating systems may require additional steps.
 
-The default parameters can be accepted or overridden as desired.
-
-The stack will be deployed and config will be saved to `samconfig.toml`.
-You can omit the `--guided` and `--capabilities` CLI options for subsequent deployments: `sam build && sam deploy`
-
-### Deploy the frontend application
-
-To deploy the frontend application, run the following commands:
-
-```bash
-npm run config
-npm run build
-npm run deploy
-```
-
-In order, these commands:
-
-1. Generates a `.env.local` file with stack outputs from the infrastructure build
-2. Builds the frontend application
-3. Copies the application build to the s3 bucket that CloudFront points at
-
-### Accessing the Web App
-
-After completing the deployment steps UI is available at the `WebUrl` displayed in the stack outputs.
-If you need to obtain the deployed web URL at any point, run the following command
-from the project root:
-
-```bash
-npm run-script echo-ui-url
-```
+The following tools are required to install the sample application.
+- AWS CLI >= 2.15
+- AWS SAM CLI >= 1.136
 
 
-<details>
-  <summary>Expand for Claude LLM prompt</summary>
-  
-  **Wallet Component Documentation**
+### Third-party tools
 
-**Overview**
-The Wallet component is a part of a betting application built on AWS. It allows users to deposit and withdraw funds from their wallets, which are used for placing bets on events. The component is built using React.js for the frontend, AWS AppSync for the GraphQL API, and AWS Lambda functions for the backend logic.
+- NodeJS >= 22.18
+- Python >= 3.12
 
-**Architecture**
-The Wallet component follows a serverless architecture on AWS. The frontend is built with React.js and uses Apollo Client to interact with the GraphQL API provided by AWS AppSync. The backend consists of AWS Lambda functions that handle various operations such as creating wallets, depositing funds, withdrawing funds, and deducting funds.
 
-The AWS AppSync API connects to the Lambda functions and provides a GraphQL interface for the frontend to interact with. The Lambda functions emit messages to Amazon EventBridge, which triggers other Lambda functions to handle specific events, such as creating a wallet when a new user signs up.
+## Deployment Steps
 
-The application is deployed using AWS SAM (Serverless Application Model) and includes CloudFormation templates for all components.
+1. Clone the repo using command.
+    ```bash
+    git clone https://github.com/aws-solutions-library-samples/guidance-for-building-an-event-driven-sportsbook-on-aws.git event-driven-sportsbook
+    ```
 
-**Key Components**
+2. Change directory to the repository folder.
+    ```bash
+    cd event-driven-sportsbook
+    ```
 
-1. **Frontend**
-   - `Wallet.jsx`: The main React component that renders the wallet UI and handles user interactions.
-   - `useWallet.jsx`: A custom React hook that fetches wallet data from the backend using GraphQL queries.
-   - `useWithdrawFunds.jsx`: A custom React hook that handles withdrawing funds from the wallet.
-   - `useDepositFunds.jsx`: A custom React hook that handles depositing funds into the wallet.
+3. Initialise a Python virtual environment.
+    ```bash
+    python3 -m venv .venv
+    ```
 
-2. **Backend**
-   - `wallet-service.yaml`: The AWS SAM template that defines the AWS resources for the Wallet component, including Lambda functions, DynamoDB table, and AppSync resolvers.
-   - `wallet/receiver/app.py`: A Lambda function that listens to events from Amazon EventBridge and creates wallets for new users.
-   - `wallet/resolvers/app.py`: A Lambda function that handles GraphQL resolvers for wallet operations, such as getting wallet data, withdrawing funds, and depositing funds.
+4. Activate the virtual environment.
+    ```bash
+    source .venv/bin/activate
+    ```
 
-3. **GraphQL**
-   - `schema.graphql`: The GraphQL schema that defines the types, queries, and mutations for the Wallet component and other components in the application.
-   - `queries.js`: A file containing GraphQL query definitions for fetching data, such as wallet information and events.
-   - `mutations.js`: A file containing GraphQL mutation definitions for modifying data, such as creating wallets, withdrawing funds, and depositing funds.
+5. Install the required Python libraries to the virtual environment.
+    ```bash
+    python3 -m pip install -r requirements.txt
+    ```
 
-**Key Features**
+6. Open the `samconfig.toml` file and set the AWS reqion to host the application.  
+    - `region`
+        - _**Description:**_ The AWS region where the application will be deployed.
+        - _**Default:**_ `eu-west-2`
 
-- **User Authentication**: The application integrates with AWS Cognito User Pools for user authentication and authorization.
-- **Wallet Management**: Users can create, deposit funds into, and withdraw funds from their wallets.
-- **Event-Driven Architecture**: The application uses Amazon EventBridge to trigger various events and handle them asynchronously.
-- **Distributed Tracing**: AWS X-Ray is used for distributed tracing, allowing for monitoring and troubleshooting of the application.
-- **Error Handling**: Errors are handled gracefully, with appropriate error messages displayed to the user.
-- **Serverless**: The application is built using serverless technologies, enabling scalability and cost-efficiency.
+7. Build and deploy the microservices.
+    ```bash
+    sam build
+    sam deploy --config-file samconfig.toml
+    ```
 
-**Data Storage**
-The wallet data is stored in an AWS DynamoDB table named `WalletDataStore`. Each user has a unique `userId` as the partition key, and their wallet balance is stored as a `balance` attribute.
+8. Install web application npm dependencies.
+    ```
+    npm install
+    ``` 
 
-**Request Handling**
+9. Update the web application configuration, then build and deploy the web application.
+    ```bash
+    npm run config
+    npm run build
+    npm run deploy
+    ```
+    > [!TIP]
+    > In order, these commands:
+    > 1. Generates a `.env.local` file with stack outputs from the infrastructure build
+    > 2. Builds the frontend application
+    > 3. Copies the application build to the s3 bucket that CloudFront points at
 
-1. **Frontend Requests**
-   - The frontend uses Apollo Client to send GraphQL queries and mutations to the AWS AppSync API.
-   - The `useWallet` hook in `useWallet.jsx` fetches the wallet data by executing the `getWallet` query.
-   - The `useWithdrawFunds` and `useDepositFunds` hooks handle withdrawing and depositing funds by executing the `withdrawFunds` and `depositFunds` mutations, respectively.
 
-2. **Backend Request Processing**
-   - The AWS AppSync API maps incoming GraphQL operations to corresponding Lambda function resolvers defined in `wallet-service.yaml`.
-   - The `wallet/resolvers/app.py` file contains the Lambda function handlers for the resolvers.
-   - The `get_wallet`, `withdraw_funds`, and `deposit_funds` functions in `wallet/resolvers/app.py` handle the respective operations by interacting with the DynamoDB table.
-   - The `create_wallet` function in `wallet/resolvers/app.py` creates a new wallet entry in the DynamoDB table when a new user signs up.
-   - The `wallet/receiver/app.py` file contains a Lambda function that listens to events from Amazon EventBridge and triggers the creation of a new wallet when a `UserSignedUp` event is received.
+## Deployment Validation
 
-**Key Methods**
+* Using the AWS Management Console, open CloudFormation and verify that the sportsbook CloudFormation stack was successfully deployed.
+* Get the web application URL - WebUrl from the sportsbook CloudFormation stack outputs.
 
-1. **Frontend**
-   - `useWallet`: A React hook that fetches the wallet data from the backend using the `getWallet` GraphQL query.
-   - `useWithdrawFunds`: A React hook that executes the `withdrawFunds` GraphQL mutation to withdraw funds from the user's wallet.
-   - `useDepositFunds`: A React hook that executes the `depositFunds` GraphQL mutation to deposit funds into the user's wallet.
 
-2. **Backend**
-   - `get_wallet`: A Lambda function resolver that retrieves the user's wallet data from the DynamoDB table.
-   - `withdraw_funds`: A Lambda function resolver that deducts the specified amount from the user's wallet balance in the DynamoDB table.
-   - `deposit_funds`: A Lambda function resolver that adds the specified amount to the user's wallet balance in the DynamoDB table.
-   - `create_wallet`: A Lambda function resolver that creates a new wallet entry in the DynamoDB table for a new user.
-   - `handle_auth_event`: A Lambda function handler in `wallet/receiver/app.py` that listens for `UserSignedUp` events and triggers the creation of a new wallet.
+## Running the Guidance
 
-**Development and Deployment**
-The Wallet component is developed and deployed using AWS SAM (Serverless Application Model). The deployment process involves packaging the Lambda functions, creating or updating the necessary AWS resources (e.g., DynamoDB table, Lambda functions, AppSync API), and deploying the frontend application.
+* Go to the web application using a web browser.
+* Register an account using a valid email address.
 
-**Testing and Monitoring**
-Unit tests and integration tests should be implemented for the frontend and backend components to ensure the correctness of the application. AWS CloudWatch is used for monitoring and logging the application's performance and errors.
 
-**Security Considerations**
-The application follows best practices for security, including:
+## Next Steps
 
-- User authentication and authorization using AWS Cognito User Pools
-- API access control through AWS AppSync and AWS IAM roles
-- Data encryption at rest (DynamoDB) and in transit (HTTPS)
-- Secure deployment process using AWS SAM and CloudFormation
+Complete the Event-driven Sportsbook workshop to understand how the application works.
 
-**Dependencies and External Services**
-The Wallet component depends on the following AWS services:
 
-- AWS Lambda
-- AWS AppSync
-- AWS DynamoDB
-- AWS EventBridge
-- AWS X-Ray
-- AWS Cognito User Pools
-- AWS CloudWatch
+## Cleanup
 
-Additionally, the frontend depends on the following external libraries:
+1. Log intto the AWS Management Console then empty the sportsbook WebUIBucket Amazon S3 bucket.
 
-- React.js
-- Apollo Client
-- Material-UI
-</details>
+2. Delete the sportsbook CloudFormation stack by executing the following command from the project root directory.
+    ```bash
+    sam delete --config-file samconfig.toml
+    ```
+
+
+## FAQ, known issues, additional considerations, and limitations (optional)
+
+
+**Known issues (optional)**
+
+<If there are common known issues, or errors that can occur during the Guidance deployment, describe the issue and resolution steps here>
+
+
+**Additional considerations (if applicable)**
+
+<Include considerations the customer must know while using the Guidance, such as anti-patterns, or billing considerations.>
+
+**Examples:**
+
+- “This Guidance creates a public AWS bucket required for the use-case.”
+- “This Guidance created an Amazon SageMaker notebook that is billed per hour irrespective of usage.”
+- “This Guidance creates unauthenticated public API endpoints.”
+
+
+Provide a link to the *GitHub issues page* for users to provide feedback.
+
+
+**Example:** *“For any feedback, questions, or suggestions, please use the issues tab under this repo.”*
+
+## Revisions (optional)
+
+Document all notable changes to this project.
+
+Consider formatting this section based on Keep a Changelog, and adhering to Semantic Versioning.
+
+## Notices ( required )
+
+Include below mandatory legal disclaimer for Guidance
+
+*Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided “as is” without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.*
+
+
+## Authors (optional)
+
+Name of code contributors

@@ -58,6 +58,7 @@ coverage.xml
 *.cover
 .env
 venv/
+.venv/
 ENV/
 
 # Specific directories
