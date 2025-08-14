@@ -14,12 +14,6 @@
 7. [Cleanup](#cleanup)
 8. [Notices](#notices)
 
-***Optional***
-
-8. [FAQ, known issues, additional considerations, and limitations](#faq-known-issues-additional-considerations-and-limitations-optional)
-9. [Revisions](#revisions-optional)
-10. [Authors](#authors-optional)
-
 ## Overview
 
 This application demonstrates how to build an event-driven, serverless sportsbook application on AWS to help betting operating operators effectively handle spiky and seasonal traffic. Using microservices and serverless computing, the application shows operators how to overcome the scaling limitations of traditional sportsbook applications. Each microservice has its own documentation that provides more details about its purpose, architecture, and implementation.
