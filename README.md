@@ -1,29 +1,18 @@
-# Guidance Title (required)
+# Guidance for Building an Event-Driven Sportsbook on AWS
 
-Guidance for Building an Event-Driven Sportsbook on AWS.
+## Table of Contents
 
-**Example:** *Guidance for Product Substitutions on AWS*
-
-This title correlates exactly to the Guidance it’s linked to, including its corresponding sample code repository. 
-
-
-## Table of Contents (required)
-
-List the top-level sections of the README template, along with a hyperlink to the specific section.
-
-### Required
-
-1. [Overview](#overview-required)
-    - [Architecture](#Architecture)
+1. [Overview](#overview)
+    - [Architecture](#high-level-architecture)
     - [Cost](#cost)
-2. [Prerequisites](#prerequisites-required)
-    - [Operating System](#operating-system-required)
-3. [Deployment Steps](#deployment-steps-required)
-4. [Deployment Validation](#deployment-validation-required)
-5. [Running the Guidance](#running-the-guidance-required)
-6. [Next Steps](#next-steps-required)
-7. [Cleanup](#cleanup-required)
-8. [Notices](#notices-optional)
+2. [Prerequisites](#prerequisites)
+    - [Operating System](#operating-system)
+3. [Deployment Steps](#deployment-steps)
+4. [Deployment Validation](#deployment-validation)
+5. [Running the Guidance](#running-the-guidance)
+6. [Next Steps](#next-steps)
+7. [Cleanup](#cleanup)
+8. [Notices](#notices)
 
 ***Optional***
 
@@ -52,35 +41,30 @@ Select a link from the following list to learn more about the microservice.
 
 ![High Level Architecture Diagram](./assets/images/architecture.png)
 
-### Cost ( required )
+### Cost
 
-This section is for a high-level cost estimate. Think of a likely straightforward scenario with reasonable assumptions based on the problem the Guidance is trying to solve. Provide an in-depth cost breakdown table in this section below ( you should use AWS Pricing Calculator to generate cost breakdown ).
+_You are responsible for the cost of the AWS services used while running this Guidance. As of August 2025, the cost for running this Guidance with the default settings in AWS Region US EAST 1 (N. Virginia) > is approximately $5.28 per month for processing 50 bets daily._
 
-Start this section with the following boilerplate text:
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of <month> <year>, the cost for running this Guidance with the default settings in the <Default AWS Region (Most likely will be US East (N. Virginia)) > is approximately $<n.nn> per month for processing ( <nnnnn> records )._
+### Sample Cost Table
 
-Replace this amount with the approximate cost for running your Guidance in the default Region. This estimate should be per month and for processing/serving resonable number of requests/entities.
-
-Suggest you keep this boilerplate text:
-_We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance._
-
-### Sample Cost Table ( required )
-
-**Note : Once you have created a sample cost table using AWS Pricing Calculator, copy the cost breakdown to below table and upload a PDF of the cost estimation on BuilderSpace. Do not add the link to the pricing calculator in the ReadMe.**
-
-The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
+The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month assuming **non-production** traffic volumes.
 
 | AWS service  | Dimensions | Cost [USD] |
 | ----------- | ------------ | ------------ |
-| Amazon API Gateway | 1,000,000 REST API calls per month  | $ 3.50month |
-| Amazon Cognito | 1,000 active users per month without advanced security feature | $ 0.00 |
+| [AWS AppSync](https://aws.amazon.com/appsync/pricing/) | 850,000 API requests per month  | $ 3.40 |
+| [Amazon Cognito](https://aws.amazon.com/cognito/pricing/) | 1 active user per month without advanced security feature | $ 0.05 |
+| [Amazon SQS](https://aws.amazon.com/sqs/pricing/) | 0.8 million standard queue per month | $ 0.32 |
+| [Amazon DynamoDB](https://aws.amazon.com/dynamodb/pricing/) | 1 GB storage, 150,000 write requests, 300,000 read requests per month | $ 0.36 |
+| [AWS Lambda](https://aws.amazon.com/lambda/pricing/) | 1,500,000 requests per month with 200 ms average duration, 256 MB memory, 512 ephemeral storage | $ 0.10 |
+| [AWS Step Functions](https://aws.amazon.com/step-functions/pricing/) | 6000 workflow requests per month with 3 state transitions per workflow | $ 0.35 |
+| [Amazon EventBridge](https://aws.amazon.com/eventbridge/pricing/) | 1,000,000 invocations, 500,000 events ingested, 500,000 events delivered per month | $ 0.70 |
 
 ## Prerequisites
 
 ### Operating System
 
-These deployment instructions are optimized to best work on **<Amazon Linux 2 AMI>**. Deployment to other operating systems may require additional steps.
+These deployment instructions are optimized to best work on a Linux based system. Deployment to other operating systems may require additional steps.
 
 The following tools are required to install the sample application.
 - AWS CLI >= 2.15
@@ -120,39 +104,52 @@ The following tools are required to install the sample application.
     python3 -m pip install -r requirements.txt
     ```
 
-6. Open the `samconfig.toml` file and set the AWS reqion to host the application.  
-    - `region`
-        - _**Description:**_ The AWS region where the application will be deployed.
-        - _**Default:**_ `eu-west-2`
-
-7. Build and deploy the microservices.
+6. Build and deploy the microservices.
     ```bash
     sam build
-    sam deploy --config-file samconfig.toml
+    sam deploy --guided --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
     ```
 
-8. Install web application npm dependencies.
+7. Provide a value for the `Stack Name` and `AWS Region` when you are prompted by the guided deployment process. 
+    - `Stack Name`
+        - _**Description:**_ The name of the Cloudformation application stack.
+        - _**Example:**_ `sportsbook`
+    - `AWS Region`
+        - _**Description:**_ The AWS region where the application will be deployed.
+        - _**Example:**_ `eu-west-2`
+
+8. Accept the default values for the following parameters.
+    - `EventBusName`
+    - `AccessLogsBucket`
+    - `CognitoAdvancedSecurity`
+    - `GeoRestrictiontype`
+    - `GeoRestrictionLocation`
+    - `DomainName`
+    - `CertificateArn`
+
+9. Install the web application npm dependencies.
     ```
     npm install
     ``` 
 
-9. Update the web application configuration, then build and deploy the web application.
+10. Update the web application configuration, then build and deploy the web application.
     ```bash
     npm run config
     npm run build
     npm run deploy
     ```
-    > [!TIP]
-    > In order, these commands:
-    > 1. Generates a `.env.local` file with stack outputs from the infrastructure build
-    > 2. Builds the frontend application
-    > 3. Copies the application build to the s3 bucket that CloudFront points at
+    
+    >[!TIP]
+    >In order, these commands:
+    >1. Generates a `.env.local` file with stack outputs from the infrastructure build
+    >2. Builds the frontend application
+    >3. Copies the application build to the s3 bucket that CloudFront points at
 
 
 ## Deployment Validation
 
 * Using the AWS Management Console, open CloudFormation and verify that the sportsbook CloudFormation stack was successfully deployed.
-* Get the web application URL - WebUrl from the sportsbook CloudFormation stack outputs.
+* Get the web application URL - WebUrl from the CloudFormation stack outputs.
 
 
 ## Running the Guidance
@@ -176,43 +173,8 @@ Complete the Event-driven Sportsbook workshop to understand how the application 
     ```
 
 
-## FAQ, known issues, additional considerations, and limitations (optional)
-
-
-**Known issues (optional)**
-
-<If there are common known issues, or errors that can occur during the Guidance deployment, describe the issue and resolution steps here>
-
-
-**Additional considerations (if applicable)**
-
-<Include considerations the customer must know while using the Guidance, such as anti-patterns, or billing considerations.>
-
-**Examples:**
-
-- “This Guidance creates a public AWS bucket required for the use-case.”
-- “This Guidance created an Amazon SageMaker notebook that is billed per hour irrespective of usage.”
-- “This Guidance creates unauthenticated public API endpoints.”
-
-
-Provide a link to the *GitHub issues page* for users to provide feedback.
-
-
-**Example:** *“For any feedback, questions, or suggestions, please use the issues tab under this repo.”*
-
-## Revisions (optional)
-
-Document all notable changes to this project.
-
-Consider formatting this section based on Keep a Changelog, and adhering to Semantic Versioning.
-
-## Notices ( required )
+## Notices
 
 Include below mandatory legal disclaimer for Guidance
 
 *Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided “as is” without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.*
-
-
-## Authors (optional)
-
-Name of code contributors
