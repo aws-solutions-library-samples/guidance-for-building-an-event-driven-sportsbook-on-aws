@@ -22,7 +22,7 @@
         "messageAttributes": {},
         "md5OfBody": "fbb02cdf2512acc409501c145e78ab11",
         "eventSource": "aws:sqs",
-        "eventSourceARN": "arn:aws:sqs:eu-west-1:967057312161:sportsbook-SQSQueue-DZbHP9jiFN8q",
+        "eventSourceARN": "arn:aws:sqs:eu-west-1:123456789012:sportsbook-SQSQueue-DZbHP9jiFN8q",
         "awsRegion": "eu-west-1"
       }
     ]
