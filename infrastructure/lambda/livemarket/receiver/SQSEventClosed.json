@@ -1,0 +1,29 @@
+{
+    "source": "com.thirdparty",
+    "detailType": "EventClosed",
+    "detail": {
+        "eventId": "8badd072-b6e2-41fe-9c55-6d719b4af546",
+        "outcome": "homeWin"
+     }
+}
+
+{
+    "Records": [
+      {
+        "messageId": "3016af22-07b2-47dc-b123-e720780f40e2",
+        "receiptHandle": "AQEBxvkp/N/aLRK/c4CEvapngepRdnDDXsqJizqbGph4MLhRAyoTvoRL+hZedMMVYC/327ZochEPCLvquwByTl5Vrbd3tY5sgOonJstPna6IVUSVL3zCFynMh+WzK9zl9v8dG4bjCDSOigOUpW8KjxcXIskwpya23EH8PRyjDuxoQLvNuKNMgudS//1v/HLBGGuOgP2OwcHt2cHEke5s4ai2H4WG7pGwwgzkvu5V1EUemv7Ot49FydIq4zeUruJCwE++3wN7F+Or+Y+ZcEbhWe5xwawHG+ZJ9XJHDKNBCx/Nvs6WZY7OU2BWdk9pVFgQp/YoTyZftE1cMmXndS8r6+AH+xBTAjlCCHurKbMhfgbJv5GxN4Z0ubQU4DGiUCVE7C23svUtgNjgzZ8bdGnovYf6zrjcP7TmGTLODqsVXj8LSFc=",
+        "body": "{\n    \"source\": \"com.thirdparty\",\n    \"detail-type\": \"EventClosed\",\n    \"detail\": {\n        \"eventId\": \"a0ed26b1-626e-4e30-8111-cc2b8e0293d7\"\n     }\n}",
+        "attributes": {
+          "ApproximateReceiveCount": "1",
+          "SentTimestamp": "1690470288388",
+          "SenderId": "AIDA6CKI3RGQ5L4DQIXCJ",
+          "ApproximateFirstReceiveTimestamp": "1690470288389"
+        },
+        "messageAttributes": {},
+        "md5OfBody": "fbb02cdf2512acc409501c145e78ab11",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "arn:aws:sqs:eu-west-1:123456789012:sportsbook-SQSQueue-DZbHP9jiFN8q",
+        "awsRegion": "eu-west-1"
+      }
+    ]
+  }

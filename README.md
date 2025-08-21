@@ -1,214 +1,181 @@
-# Guidance Title (required)
+# Guidance for Building an Event-Driven Sportsbook on AWS
 
-The Guidance title should be consistent with the title established first in Alchemy.
+## Table of Contents
 
-**Example:** *Guidance for Product Substitutions on AWS*
-
-This title correlates exactly to the Guidance it’s linked to, including its corresponding sample code repository. 
-
-
-## Table of Contents (required)
-
-List the top-level sections of the README template, along with a hyperlink to the specific section.
-
-### Required
-
-1. [Overview](#overview-required)
+1. [Overview](#overview)
+    - [Architecture](#high-level-architecture)
     - [Cost](#cost)
-2. [Prerequisites](#prerequisites-required)
-    - [Operating System](#operating-system-required)
-3. [Deployment Steps](#deployment-steps-required)
-4. [Deployment Validation](#deployment-validation-required)
-5. [Running the Guidance](#running-the-guidance-required)
-6. [Next Steps](#next-steps-required)
-7. [Cleanup](#cleanup-required)
-8. [Notices](#notices-optional)
+2. [Prerequisites](#prerequisites)
+    - [Operating System](#operating-system)
+3. [Deployment Steps](#deployment-steps)
+4. [Deployment Validation](#deployment-validation)
+5. [Running the Guidance](#running-the-guidance)
+6. [Next Steps](#next-steps)
+7. [Cleanup](#cleanup)
+8. [Notices](#notices)
 
-***Optional***
+## Overview
 
-8. [FAQ, known issues, additional considerations, and limitations](#faq-known-issues-additional-considerations-and-limitations-optional)
-9. [Revisions](#revisions-optional)
-10. [Authors](#authors-optional)
+This application demonstrates how to build an event-driven, serverless sportsbook application on AWS to help betting operating operators effectively handle spiky and seasonal traffic. Using microservices and serverless computing, the application shows operators how to overcome the scaling limitations of traditional sportsbook applications. Each microservice has its own documentation that provides more details about its purpose, architecture, and implementation.
 
-## Overview (required)
+Select a link from the following list to learn more about the microservice.
 
-1. Provide a brief overview explaining the what, why, or how of your Guidance. You can answer any one of the following to help you write this:
+- [Auth Service](/infrastructure/lambda/auth/README.md) - Handles user authentication and authorization
+- [Betting Service](/infrastructure/lambda/betting/README.md) - Manages betting operations
+- [GraphQL Service](/infrastructure/lambda/gql/README.md) - Provides the GraphQL API layer
+- [Live Market Service](/infrastructure/lambda/livemarket/README.md) - Handles live market data
+- [Sporting Events Service](/infrastructure/lambda/sportingevents/README.md) - Manages sporting event data
+- [System Events Service](/infrastructure/lambda/systemevents/README.md) - Handles system-wide events
+- [Third Party Service](/infrastructure/lambda/thirdparty/README.md) - Integrates with third-party providers
+- [Trading Service](/infrastructure/lambda/trading/README.md) - Manages trading operations
+- [User Service](/infrastructure/lambda/user/README.md) - Handles user management
+- [Wallet Service](/infrastructure/lambda/wallet/README.md) - Manages user wallet operations
 
-    - **Why did you build this Guidance?**
-    - **What problem does this Guidance solve?**
+### High Level Architecture
 
-2. Include the architecture diagram image, as well as the steps explaining the high-level overview and flow of the architecture. 
-    - To add a screenshot, create an ‘assets/images’ folder in your repository and upload your screenshot to it. Then, using the relative file path, add it to your README. 
+![High Level Architecture Diagram](./assets/images/architecture.png)
 
-### Cost ( required )
+### Cost
 
-This section is for a high-level cost estimate. Think of a likely straightforward scenario with reasonable assumptions based on the problem the Guidance is trying to solve. Provide an in-depth cost breakdown table in this section below ( you should use AWS Pricing Calculator to generate cost breakdown ).
+_You are responsible for the cost of the AWS services used while running this Guidance. As of August 2025, the cost for running this Guidance with the default settings in AWS Region US EAST 1 (N. Virginia) > is approximately $5.28 per month for processing 50 bets daily._
 
-Start this section with the following boilerplate text:
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of <month> <year>, the cost for running this Guidance with the default settings in the <Default AWS Region (Most likely will be US East (N. Virginia)) > is approximately $<n.nn> per month for processing ( <nnnnn> records )._
+### Sample Cost Table
 
-Replace this amount with the approximate cost for running your Guidance in the default Region. This estimate should be per month and for processing/serving resonable number of requests/entities.
-
-Suggest you keep this boilerplate text:
-_We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance._
-
-### Sample Cost Table ( required )
-
-**Note : Once you have created a sample cost table using AWS Pricing Calculator, copy the cost breakdown to below table and upload a PDF of the cost estimation on BuilderSpace. Do not add the link to the pricing calculator in the ReadMe.**
-
-The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
+The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month assuming **non-production** traffic volumes.
 
 | AWS service  | Dimensions | Cost [USD] |
 | ----------- | ------------ | ------------ |
-| Amazon API Gateway | 1,000,000 REST API calls per month  | $ 3.50month |
-| Amazon Cognito | 1,000 active users per month without advanced security feature | $ 0.00 |
+| [AWS AppSync](https://aws.amazon.com/appsync/pricing/) | 850,000 API requests per month  | $ 3.40 |
+| [Amazon Cognito](https://aws.amazon.com/cognito/pricing/) | 1 active user per month without advanced security feature | $ 0.05 |
+| [Amazon SQS](https://aws.amazon.com/sqs/pricing/) | 0.8 million standard queue per month | $ 0.32 |
+| [Amazon DynamoDB](https://aws.amazon.com/dynamodb/pricing/) | 1 GB storage, 150,000 write requests, 300,000 read requests per month | $ 0.36 |
+| [AWS Lambda](https://aws.amazon.com/lambda/pricing/) | 1,500,000 requests per month with 200 ms average duration, 256 MB memory, 512 ephemeral storage | $ 0.10 |
+| [AWS Step Functions](https://aws.amazon.com/step-functions/pricing/) | 6000 workflow requests per month with 3 state transitions per workflow | $ 0.35 |
+| [Amazon EventBridge](https://aws.amazon.com/eventbridge/pricing/) | 1,000,000 invocations, 500,000 events ingested, 500,000 events delivered per month | $ 0.70 |
 
-## Prerequisites (required)
+## Prerequisites
 
-### Operating System (required)
+### Operating System
 
-- Talk about the base Operating System (OS) and environment that can be used to run or deploy this Guidance, such as *Mac, Linux, or Windows*. Include all installable packages or modules required for the deployment. 
-- By default, assume Amazon Linux 2/Amazon Linux 2023 AMI as the base environment. All packages that are not available by default in AMI must be listed out.  Include the specific version number of the package or module.
+These deployment instructions are optimized to best work on a Linux based system. Deployment to other operating systems may require additional steps.
 
-**Example:**
-“These deployment instructions are optimized to best work on **<Amazon Linux 2 AMI>**.  Deployment in another OS may require additional steps.”
+The following tools are required to install the sample application.
+- AWS CLI >= 2.15
+- AWS SAM CLI >= 1.136
 
-- Include install commands for packages, if applicable.
 
+### Third-party tools
 
-### Third-party tools (If applicable)
+- NodeJS >= 22.18
+- Python >= 3.12
 
-*List any installable third-party tools required for deployment.*
 
+## Deployment Steps
 
-### AWS account requirements (If applicable)
+1. Clone the repo using command.
+    ```bash
+    git clone https://github.com/aws-solutions-library-samples/guidance-for-building-an-event-driven-sportsbook-on-aws.git event-driven-sportsbook
+    ```
 
-*List out pre-requisites required on the AWS account if applicable, this includes enabling AWS regions, requiring ACM certificate.*
+2. Change directory to the repository folder.
+    ```bash
+    cd event-driven-sportsbook
+    ```
 
-**Example:** “This deployment requires you have public ACM certificate available in your AWS account”
+3. Initialise a Python virtual environment.
+    ```bash
+    python3 -m venv .venv
+    ```
 
-**Example resources:**
-- ACM certificate 
-- DNS record
-- S3 bucket
-- VPC
-- IAM role with specific permissions
-- Enabling a Region or service etc.
+4. Activate the virtual environment.
+    ```bash
+    source .venv/bin/activate
+    ```
 
+5. Install the required Python libraries to the virtual environment.
+    ```bash
+    python3 -m pip install -r requirements.txt
+    ```
 
-### aws cdk bootstrap (if sample code has aws-cdk)
+6. Build and deploy the microservices.
+    ```bash
+    sam build
+    sam deploy --guided --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
+    ```
 
-<If using aws-cdk, include steps for account bootstrap for new cdk users.>
+7. Provide a value for the `Stack Name` and `AWS Region` when you are prompted by the guided deployment process. 
+    - `Stack Name`
+        - _**Description:**_ The name of the Cloudformation application stack.
+        - _**Example:**_ `sportsbook`
+    - `AWS Region`
+        - _**Description:**_ The AWS region where the application will be deployed.
+        - _**Example:**_ `eu-west-2`
 
-**Example blurb:** “This Guidance uses aws-cdk. If you are using aws-cdk for first time, please perform the below bootstrapping....”
+8. Accept the default values for the following parameters.
+    - `EventBusName`
+    - `AccessLogsBucket`
+    - `CognitoAdvancedSecurity`
+    - `GeoRestrictiontype`
+    - `GeoRestrictionLocation`
+    - `DomainName`
+    - `CertificateArn`
 
-### Service limits  (if applicable)
+9. Install the web application npm dependencies.
+    ```
+    npm install
+    ``` 
 
-<Talk about any critical service limits that affect the regular functioning of the Guidance. If the Guidance requires service limit increase, include the service name, limit name and link to the service quotas page.>
+10. Update the web application configuration, then build and deploy the web application.
+    ```bash
+    npm run config
+    npm run build
+    npm run deploy
+    ```
+    
+    >[!TIP]
+    >In order, these commands:
+    >1. Generates a `.env.local` file with stack outputs from the infrastructure build
+    >2. Builds the frontend application
+    >3. Copies the application build to the s3 bucket that CloudFront points at
 
-### Supported Regions (if applicable)
 
-<If the Guidance is built for specific AWS Regions, or if the services used in the Guidance do not support all Regions, please specify the Region this Guidance is best suited for>
+## Deployment Validation
 
+* Using the AWS Management Console, open CloudFormation and verify that the sportsbook CloudFormation stack was successfully deployed.
+* Get the web application URL - WebUrl from the CloudFormation stack outputs.
 
-## Deployment Steps (required)
 
-Deployment steps must be numbered, comprehensive, and usable to customers at any level of AWS expertise. The steps must include the precise commands to run, and describe the action it performs.
+## Running the Guidance
 
-* All steps must be numbered.
-* If the step requires manual actions from the AWS console, include a screenshot if possible.
-* The steps must start with the following command to clone the repo. ```git clone xxxxxxx```
-* If applicable, provide instructions to create the Python virtual environment, and installing the packages using ```requirement.txt```.
-* If applicable, provide instructions to capture the deployed resource ARN or ID using the CLI command (recommended), or console action.
+* Go to the web application using a web browser.
+* Register an account using a valid email address.
 
- 
-**Example:**
 
-1. Clone the repo using command ```git clone xxxxxxxxxx```
-2. cd to the repo folder ```cd <repo-name>```
-3. Install packages in requirements using command ```pip install requirement.txt```
-4. Edit content of **file-name** and replace **s3-bucket** with the bucket name in your account.
-5. Run this command to deploy the stack ```cdk deploy``` 
-6. Capture the domain name created by running this CLI command ```aws apigateway ............```
+## Next Steps
 
+Complete the Event-driven Sportsbook workshop to understand how the application works.
 
 
-## Deployment Validation  (required)
+## Cleanup
 
-<Provide steps to validate a successful deployment, such as terminal output, verifying that the resource is created, status of the CloudFormation template, etc.>
+1. Log intto the AWS Management Console then empty the sportsbook WebUIBucket Amazon S3 bucket.
 
+2. Delete the sportsbook CloudFormation stack by executing the following command from the project root directory.
+    ```bash
+    sam delete --config-file samconfig.toml
+    ```
 
-**Examples:**
 
-* Open CloudFormation console and verify the status of the template with the name starting with xxxxxx.
-* If deployment is successful, you should see an active database instance with the name starting with <xxxxx> in        the RDS console.
-*  Run the following CLI command to validate the deployment: ```aws cloudformation describe xxxxxxxxxxxxx```
-
-
-
-## Running the Guidance (required)
-
-<Provide instructions to run the Guidance with the sample data or input provided, and interpret the output received.> 
-
-This section should include:
-
-* Guidance inputs
-* Commands to run
-* Expected output (provide screenshot if possible)
-* Output description
-
-
-
-## Next Steps (required)
-
-Provide suggestions and recommendations about how customers can modify the parameters and the components of the Guidance to further enhance it according to their requirements.
-
-
-## Cleanup (required)
-
-- Include detailed instructions, commands, and console actions to delete the deployed Guidance.
-- If the Guidance requires manual deletion of resources, such as the content of an S3 bucket, please specify.
-
-
-
-## FAQ, known issues, additional considerations, and limitations (optional)
-
-
-**Known issues (optional)**
-
-<If there are common known issues, or errors that can occur during the Guidance deployment, describe the issue and resolution steps here>
-
-
-**Additional considerations (if applicable)**
-
-<Include considerations the customer must know while using the Guidance, such as anti-patterns, or billing considerations.>
-
-**Examples:**
-
-- “This Guidance creates a public AWS bucket required for the use-case.”
-- “This Guidance created an Amazon SageMaker notebook that is billed per hour irrespective of usage.”
-- “This Guidance creates unauthenticated public API endpoints.”
-
-
-Provide a link to the *GitHub issues page* for users to provide feedback.
-
-
-**Example:** *“For any feedback, questions, or suggestions, please use the issues tab under this repo.”*
-
-## Revisions (optional)
-
-Document all notable changes to this project.
-
-Consider formatting this section based on Keep a Changelog, and adhering to Semantic Versioning.
-
-## Notices ( required )
-
-Include below mandatory legal disclaimer for Guidance
+## Notices
 
 *Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided “as is” without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.*
 
+## Authors
 
-## Authors (optional)
-
-Name of code contributors
+- [Steve Parker](mailto:sprkem@amazon.co.uk)
+- [Kevin Park](mailto:kkevpar@amazon.co.uk)
+- [Sergey Viktorovich Kurson](mailto:kursonsk@amazon.de)
+- [Dimitrios Papageorgiou](mailto:dpapageo@amazon.com)
+- [Imhoertha Ojior](mailto:iojior@amazon.co.uk)
+- [Raul Tavares](mailto:tavaraul@amazon.co.uk)

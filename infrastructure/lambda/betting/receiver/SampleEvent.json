@@ -1,0 +1,21 @@
+{
+    "Records": [
+        {
+            "messageId": "584c085f-4a70-40f3-b5aa-3a03bb54aa4b",
+            "receiptHandle": "AQEBDRDPkI0SlmZ9+lFc0n7WMCXfR7FV4qJ6Ret0s2+0csGGjdTW69jiLJqVwRME8mdP4R3qhrxCZ0wL2TwcDW+MfgG/3Uv6dydDlZARoM8Tz+VgChdKDbL6JqIoGRiJU8rNJz79BXUUo69evFAOsllSD/MIeDpVgJe7aWbMdEXJzO5y77F7idCs3kNeodWDFBsdgS8DqAzpQVmjd1SABo8Ne6qzGbt/qW7eC2rtNbS+szmPmY0Vw8IAG/SgKMFg30Y1zb5Yon1ejD3qfFT0eRsYwCAgZWX2F8fnr70ijXGhbQx73l+If1DpYg+p0hZ2l+sQOFozGw9bF8vwHug802RQupwHnrjaiV5VHbP2UelxzmppGRfxjO8x1gXXL71Cuz6yxCNmpjLt5b2LISCW3EUTMpHsz7zOKjAxw0BqCYUxNLLnfFjOlnetqCJRwG7sF7bFDXpSpw0eu7fNe+ej8qR2Yw==",
+            "body": "{\"version\":\"0\",\"id\":\"46ac80a9-a169-4884-84ed-cdeb7187ead9\",\"detail-type\":\"EventClosed\",\"source\":\"com.livemarket\",\"account\":\"123456789012\",\"time\":\"2023-07-27T19:52:18Z\",\"region\":\"eu-west-1\",\"resources\":[],\"detail\":{\"eventId\":\"a0ed26b1-626e-4e30-8111-cc2b8e0293d7\",\"eventStatus\":\"finished\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "2",
+                "AWSTraceHeader": "Root=1-64c2caf1-6dfc0ef77634931e70daac37;Parent=add5f32066074d10;Sampled=1;Lineage=0982e219:0",
+                "SentTimestamp": "1690487538210",
+                "SenderId": "AIDAJ2E4ZHTZPIG4AM4I6",
+                "ApproximateFirstReceiveTimestamp": "1690487538211"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "673d9110070c1816117b8dc7636611e3",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:123456789012:sportsbook-BettingServiceStack-13VJ4HUHH5G4R-SQSQueue-DDMfVbrqiCTR",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

@@ -1,0 +1,183 @@
+from os import getenv
+import json
+import boto3
+
+from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.batch import BatchProcessor, EventType
+from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
+from botocore.exceptions import ClientError
+from gql_utils import get_client
+from mutations import lock_bets_for_event
+from gql import gql
+
+processor = BatchProcessor(event_type=EventType.SQS)
+tracer = Tracer()
+logger = Logger()
+
+event_bus_name = getenv('EVENT_BUS')
+session = boto3.Session()
+events = session.client('events')
+
+table_name = getenv('DB_TABLE')
+region = getenv("REGION")
+step_function = boto3.client('stepfunctions')
+
+session = boto3.Session()
+dynamodb = session.resource('dynamodb')
+table = dynamodb.Table(table_name)
+
+appsync_url = getenv("APPSYNC_URL")
+gql_client = get_client(region, appsync_url)
+
+def form_event(source, detailType, detail):
+    """
+    Form an event for EventBridge.
+    
+    Args:
+        source: Event source
+        detailType: Event detail type
+        detail: Event details
+        
+    Returns:
+        EventBridge event
+    """
+    return {
+        'Source': source,
+        'DetailType': detailType,
+        'Detail': json.dumps(detail, default=str),
+        'EventBusName': event_bus_name
+    }
+
+@tracer.capture_method
+def record_handler(record: SQSRecord):
+    """
+    Process a record from SQS.
+    
+    Args:
+        record: SQS record
+        
+    Returns:
+        Event to be raised or None
+    """
+    try:
+        payload = record.body
+        if payload:
+            item = json.loads(payload)
+            if item['source'] == 'com.livemarket':
+                if item['detail-type'] == 'EventClosed':
+                    return handle_event_closed(item)
+
+        return None
+    except Exception as e:
+        logger.exception("Error processing record")
+        return None
+
+@tracer.capture_method
+def handle_event_closed(item: dict) -> dict:
+    """
+    Handle an event closed event.
+    
+    Args:
+        item: Event data
+        
+    Returns:
+        Event to be raised
+    """
+    try:
+        update_info = {
+            'eventId': item['detail']['eventId']
+        }
+        gql_input = {
+            'input': update_info
+        }
+        response = gql_client.execute(gql(lock_bets_for_event), variable_values=gql_input)[
+            'lockBetsForEvent']
+
+        update_info['bets'] = response['items']
+
+        # Start step functions for each bet
+        for bet in update_info['bets']:
+            result = step_function.start_execution(
+                stateMachineArn=getenv('STEP_FUNCTION_ARN'),
+                input=json.dumps(bet, default=str)
+                )
+            bet['result'] = result
+
+        if response['__typename'] == 'BetList':
+            return form_event('com.betting', 'SettlementStarted', update_info)
+        elif 'Error' in response['__typename']:
+            logger.error(f"Failed to update odds: {response['message']}")
+            raise ValueError(f"updateEventOdds failed: {response['message']}")
+    except Exception as e:
+        logger.exception("Error handling event closed")
+        raise
+
+def raise_bet_event(formevent) -> dict:
+    """
+    Raise a bet event.
+    
+    Args:
+        formevent: Event to raise
+        
+    Returns:
+        EventBridge response
+    """
+    try:
+        return events.put_events(
+            Entries=[
+                formevent
+            ]
+        )
+    except Exception as e:
+        logger.exception("Error raising bet event")
+        raise
+
+def bet_list_response(data: dict) -> dict:
+    """
+    Create a bet list response.
+    
+    Args:
+        data: Bet data
+        
+    Returns:
+        BetList response dictionary
+    """
+    return {**{'__typename': 'BetList'}, **data}
+
+def betting_error(errorType: str, error_msg: str) -> dict:
+    """
+    Create a betting error response.
+    
+    Args:
+        errorType: Type of error
+        error_msg: Error message
+        
+    Returns:
+        Error response dictionary
+    """
+    return {'__typename': errorType, 'message': error_msg}
+
+@logger.inject_lambda_context(log_event=True)
+@tracer.capture_lambda_handler
+def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    """
+    Lambda handler function.
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        Batch processor response
+    """
+    batch = event["Records"]
+    with processor(records=batch, handler=record_handler):
+        processed_messages = processor.process()
+
+    output_events = [x[1]
+                     for x in processed_messages if x[0] == "success" and x[1] is not None]
+    if output_events:
+        events.put_events(Entries=output_events)
+
+    return processor.response()

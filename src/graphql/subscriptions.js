@@ -1,0 +1,91 @@
+/* eslint-disable */
+// this is an auto generated file. This will be overwritten
+
+export const updatedEventOdds = /* GraphQL */ `
+  subscription UpdatedEventOdds {
+    updatedEventOdds {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+        eventStatus
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const updatedSystemEvents = /* GraphQL */ `
+  subscription UpdatedSystemEvents {
+    updatedSystemEvents {
+      ... on SystemEvent {
+        source
+        detailType
+        detail
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+export const updatedUserStatus = /* GraphQL */ `
+  subscription UpdatedUserStatus {
+    updatedUserStatus {
+      ... on User {
+        userId
+        isLocked
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const marketStatusUpdated = /* GraphQL */ `
+  subscription MarketStatusUpdated {
+    marketStatusUpdated {
+      ... on Event {
+        eventId
+        marketstatus {
+          name
+          status
+        }
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
+
+export const addEvent = /* GraphQL */ `
+  subscription AddEvent {
+    addEvent {
+      ... on Event {
+        eventId
+        homeOdds
+        awayOdds
+        drawOdds
+        home
+        away
+        start
+        end
+        updatedAt
+        eventStatus
+      }
+      ... on Error {
+        message
+      }
+    }
+  }
+`;
