@@ -1,6 +1,6 @@
 # amazonq-ignore-next-lineAWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Sportsbook Event Driven Example Application
+Description: Sportsbook Event Driven (SO9575) Example Application
 
 Globals:
 
