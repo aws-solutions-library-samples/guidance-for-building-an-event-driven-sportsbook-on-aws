@@ -16,7 +16,9 @@
 
 ## Overview
 
-This application demonstrates how to build an event-driven, serverless sportsbook application on AWS to help betting operating operators effectively handle spiky and seasonal traffic. Using microservices and serverless computing, the application shows operators how to overcome the scaling limitations of traditional sportsbook applications. Each microservice has its own documentation that provides more details about its purpose, architecture, and implementation.
+This application demonstrates how to build an event-driven, serverless sportsbook application on AWS to help betting and gambling operators effectively handle spiky and seasonal traffic. Using microservices and serverless computing, the application shows operators how to overcome the scaling limitations of traditional sportsbook applications. Each microservice has its own documentation that provides more details about its purpose, architecture, and implementation.
+
+>__NOTE:__ This guidance demonstrates an architectural pattern. The application is not production ready in its current state.
 
 Select a link from the following list to learn more about the microservice.
 
@@ -37,7 +39,7 @@ Select a link from the following list to learn more about the microservice.
 
 ### Cost
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of August 2025, the cost for running this Guidance with the default settings in AWS Region US EAST 1 (N. Virginia) > is approximately $5.28 per month for processing 50 bets daily._
+_You are responsible for the cost of the AWS services used while running this Guidance. As of August 2025, the cost for running this Guidance with the default settings in AWS Region US EAST 1 (N. Virginia) is approximately $16.70 per month for processing 1200 bets daily. This value will not scale linearly because of volume based pricing used by some AWS services used for the sportsbook application._
 
 
 ### Sample Cost Table
@@ -46,13 +48,13 @@ The following table provides a sample cost breakdown for deploying this Guidance
 
 | AWS service  | Dimensions | Cost [USD] |
 | ----------- | ------------ | ------------ |
-| [AWS AppSync](https://aws.amazon.com/appsync/pricing/) | 850,000 API requests per month  | $ 3.40 |
-| [Amazon Cognito](https://aws.amazon.com/cognito/pricing/) | 1 active user per month without advanced security feature | $ 0.05 |
-| [Amazon SQS](https://aws.amazon.com/sqs/pricing/) | 0.8 million standard queue per month | $ 0.32 |
-| [Amazon DynamoDB](https://aws.amazon.com/dynamodb/pricing/) | 1 GB storage, 150,000 write requests, 300,000 read requests per month | $ 0.36 |
-| [AWS Lambda](https://aws.amazon.com/lambda/pricing/) | 1,500,000 requests per month with 200 ms average duration, 256 MB memory, 512 ephemeral storage | $ 0.10 |
-| [AWS Step Functions](https://aws.amazon.com/step-functions/pricing/) | 6000 workflow requests per month with 3 state transitions per workflow | $ 0.35 |
-| [Amazon EventBridge](https://aws.amazon.com/eventbridge/pricing/) | 1,000,000 invocations, 500,000 events ingested, 500,000 events delivered per month | $ 0.70 |
+| [AWS AppSync](https://aws.amazon.com/appsync/pricing/) | 950,000 API requests per month  | $ 3.80 |
+| [Amazon Cognito](https://aws.amazon.com/cognito/pricing/) | 50 active user per month without advanced security feature | $ 2.50 |
+| [Amazon SQS](https://aws.amazon.com/sqs/pricing/) | 4,130,000 standard queue requests per month | $ 1.65 |
+| [Amazon DynamoDB](https://aws.amazon.com/dynamodb/pricing/) | 5 GB storage, 2,525,000 write requests, 2,533,000 read requests per month | $ 4.57 |
+| [AWS Lambda](https://aws.amazon.com/lambda/pricing/) | 4,500,000 requests per month with 200 ms average duration, 256 MB memory, 512 ephemeral storage | $ 0.70 |
+| [AWS Step Functions](https://aws.amazon.com/step-functions/pricing/) | 72000 workflow requests per month with 1 state transitions per workflow | $ 1.70 |
+| [Amazon EventBridge](https://aws.amazon.com/eventbridge/pricing/) | 3,570,000 invocations, 1,785,000 events ingested, 1,785,000 events delivered per month | $ 1.78 |
 
 ## Prerequisites
 
