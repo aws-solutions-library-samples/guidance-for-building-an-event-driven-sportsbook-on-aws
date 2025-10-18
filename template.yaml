@@ -7,7 +7,7 @@ Globals:
   Function:
     Runtime: python3.12
     Tracing: Active
-    ReservedConcurrentExecutions: 50
+    ReservedConcurrentExecutions: 5
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:10
     # KmsKeyArn: !GetAtt LambdaEnvironmentKMSKey.Arn
