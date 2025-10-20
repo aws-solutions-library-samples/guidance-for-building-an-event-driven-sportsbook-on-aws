@@ -161,7 +161,7 @@ Complete the Event-driven Sportsbook workshop to understand how the application 
 
 ## Cleanup
 
-1. Log intto the AWS Management Console then empty the sportsbook WebUIBucket Amazon S3 bucket.
+1. Log into the AWS Management Console then empty the sportsbook WebUIBucket Amazon S3 bucket.
 
 2. Delete the sportsbook CloudFormation stack by executing the following command from the project root directory.
     ```bash
