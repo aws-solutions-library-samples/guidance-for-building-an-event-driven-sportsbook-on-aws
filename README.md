@@ -70,7 +70,7 @@ The following tools are required to install the sample application.
 ### Third-party tools
 
 - NodeJS >= 22.18
-- Python >= 3.12
+- Python = 3.12
 
 
 ## Deployment Steps
@@ -122,13 +122,24 @@ The following tools are required to install the sample application.
     - `GeoRestrictionLocation`
     - `DomainName`
     - `CertificateArn`
+    - `Confirm changes before deploy [y/N]`
+    - `Allow SAM CLI IAM role creation [Y/n]`
+    - `Disable rollback [y/N]`
 
-9. Install the web application npm dependencies.
+9. Allow creation of the publicly accessible EventsService REST API by entering `y` to the following question.  
+    - `LambdaFunction has no authentication. Is this okay? [y/N]`
+
+10. Accept the default value for the following parameters.
+    - `Save arguments to configuration file [Y/n]`
+    - `SAM configuration file [samconfig.toml]`
+    - `SAM configuration environment [default]`
+
+11. Install the web application npm dependencies.
     ```
     npm install
     ``` 
 
-10. Update the web application configuration, then build and deploy the web application.
+12. Update the web application configuration, then build and deploy the web application.
     ```bash
     npm run config
     npm run build
