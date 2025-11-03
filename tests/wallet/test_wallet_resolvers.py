@@ -46,7 +46,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('100.00')
+                'balance': '100.00'
             }
         )
         
@@ -79,7 +79,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('100.00')
+                'balance': '100.00'
             }
         )
         
@@ -97,7 +97,7 @@ class TestWalletResolvers:
         # Verify the database was updated
         response = wallet_table.get_item(Key={'userId': 'test-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('150.00')
+        assert response['Item']['balance'] == '150.00'
 
     def test_withdraw_funds_success(self, wallet_table, appsync_event_withdraw_funds):
         """Test successful funds withdrawal."""
@@ -105,7 +105,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('100.00')
+                'balance': '100.00'
             }
         )
         
@@ -123,7 +123,7 @@ class TestWalletResolvers:
         # Verify the database was updated
         response = wallet_table.get_item(Key={'userId': 'test-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('50.00')
+        assert response['Item']['balance'] == '50.00'
 
     def test_withdraw_funds_insufficient_balance(self, wallet_table, appsync_event_withdraw_funds):
         """Test withdrawal with insufficient funds."""
@@ -131,7 +131,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('20.00')
+                'balance': '20.00'
             }
         )
         
@@ -149,7 +149,7 @@ class TestWalletResolvers:
         # Verify the database was not updated
         response = wallet_table.get_item(Key={'userId': 'test-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('20.00')
+        assert response['Item']['balance'] == '20.00'
 
     def test_create_wallet(self, wallet_table, appsync_event_create_wallet):
         """Test wallet creation."""
@@ -167,7 +167,7 @@ class TestWalletResolvers:
         # Verify the database was updated
         response = wallet_table.get_item(Key={'userId': 'new-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('0')
+        assert response['Item']['balance'] == '0'
         
         # Verify the event was raised
         self.mock_raise_event.assert_called_once_with('WalletCreated', {'userId': 'new-user-id'})
@@ -178,7 +178,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('100.00')
+                'balance': '100.00'
             }
         )
         
@@ -196,7 +196,7 @@ class TestWalletResolvers:
         # Verify the database was updated
         response = wallet_table.get_item(Key={'userId': 'test-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('75.00')
+        assert response['Item']['balance'] == '75.00'
 
     def test_deduct_funds_insufficient_balance(self, wallet_table, appsync_event_deduct_funds):
         """Test deduction with insufficient funds."""
@@ -204,7 +204,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('20.00')
+                'balance': '20.00'
             }
         )
         
@@ -222,7 +222,7 @@ class TestWalletResolvers:
         # Verify the database was not updated
         response = wallet_table.get_item(Key={'userId': 'test-user-id'})
         assert 'Item' in response
-        assert response['Item']['balance'] == Decimal('20.00')
+        assert response['Item']['balance'] == '20.00'
 
     def test_get_wallet_by_user_id_success(self, wallet_table):
         """Test successful wallet retrieval by user ID."""
@@ -230,7 +230,7 @@ class TestWalletResolvers:
         wallet_table.put_item(
             Item={
                 'userId': 'test-user-id',
-                'balance': Decimal('100.00')
+                'balance': '100.00'
             }
         )
         
