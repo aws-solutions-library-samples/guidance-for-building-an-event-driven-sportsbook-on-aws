@@ -19,10 +19,10 @@ class WalletItem(TypedDict):
     
     Attributes:
         userId: Unique identifier for the user
-        balance: Current wallet balance as Decimal
+        balance: Current wallet balance as string (stored in DynamoDB)
     """
     userId: str
-    balance: Decimal
+    balance: str
     
 class WalletResponse(TypedDict):
     """
@@ -166,10 +166,12 @@ def withdraw_funds(input: WithdrawInput) -> WalletResponse | ErrorResponse:
 
     try:
         item = _try_get_wallet(userId)
+        current_balance = Decimal(item['balance'])
         withdraw_amount = Decimal(input['amount'])
         
-        if item['balance'] >= withdraw_amount:
-            item['balance'] -= withdraw_amount
+        if current_balance >= withdraw_amount:
+            new_balance = current_balance - withdraw_amount
+            item['balance'] = str(new_balance)
         else:
             return wallet_error('InsufficientFundsError', 'Wallet contains insufficient funds to withdraw')
 
@@ -208,7 +210,10 @@ def deposit_funds(input: DepositInput) -> WalletResponse | ErrorResponse:
 
     try:
         item = _try_get_wallet(userId)
-        item['balance'] += Decimal(input['amount'])
+        current_balance = Decimal(item['balance'])
+        deposit_amount = Decimal(input['amount'])
+        new_balance = current_balance + deposit_amount
+        item['balance'] = str(new_balance)
 
         table.update_item(
             Key={'userId': userId},
@@ -275,7 +280,7 @@ def create_wallet(input: CreateWalletInput) -> WalletResponse:
     try:
         item: WalletItem = {
             'userId': input['userId'],
-            'balance': Decimal(0),
+            'balance': '0',
         }
         
         table.put_item(Item=item)
@@ -311,9 +316,11 @@ def deduct_funds(input: DeductFundsInput) -> WalletResponse | ErrorResponse:
 
     try:
         item = _try_get_wallet(userId)
+        current_balance = Decimal(item['balance'])
         
-        if item['balance'] >= amount:
-            item['balance'] -= amount
+        if current_balance >= amount:
+            new_balance = current_balance - amount
+            item['balance'] = str(new_balance)
         else:
             return wallet_error('InsufficientFundsError', 'Wallet contains insufficient funds to deduct')
 
@@ -383,12 +390,16 @@ def wallet_response(data: WalletItem) -> WalletResponse:
     Create a wallet response.
     
     Args:
-        data: Wallet data
+        data: Wallet data with string balance from DynamoDB
         
     Returns:
-        WalletResponse: Formatted wallet response
+        WalletResponse: Formatted wallet response with Decimal balance
     """
-    return {'__typename': 'Wallet', **data}
+    return {
+        '__typename': 'Wallet', 
+        'userId': data['userId'],
+        'balance': Decimal(data['balance'])
+    }
 
 
 @tracer.capture_method
